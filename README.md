@@ -4,7 +4,27 @@
 
 ## 运行方式
 
-直接用浏览器打开 [index.html](./index.html)。界面不需要安装依赖。
+推荐用本地静态服务运行，便于浏览器按正常页面方式加载模块：
+
+```bash
+python3 -m http.server 4173
+```
+
+然后打开：
+
+```text
+http://127.0.0.1:4173
+```
+
+如果端口被占用，可以换成 5173：
+
+```bash
+python3 -m http.server 5173
+```
+
+停止服务使用 `Ctrl + C`。
+
+这个演示没有前端构建步骤，也可以直接用浏览器打开 [index.html](./index.html)。
 
 自动化行为测试使用 Node.js：
 
