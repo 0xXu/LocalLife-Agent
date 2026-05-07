@@ -4,10 +4,38 @@
 
 ## 运行方式
 
-推荐用本地静态服务运行，便于浏览器按正常页面方式加载模块：
+推荐用本地静态服务运行，便于浏览器按正常页面方式加载模块。
+
+### PowerShell / Windows
+
+```powershell
+python -m http.server 4173 --bind 127.0.0.1
+```
+
+如果端口被占用，可以换成 5173：
+
+```powershell
+python -m http.server 5173 --bind 127.0.0.1
+```
+
+Windows 上如果 `python3` 执行后马上回到 `PS>`，通常是系统商店别名或环境变量问题，服务没有真正启动。正常启动时终端会停在类似 `Serving HTTP on 127.0.0.1 port 4173` 的输出，不会立刻回到命令提示符。
+
+### Bash / macOS / Linux / Git Bash
 
 ```bash
-python3 -m http.server 4173
+python3 -m http.server 4173 --bind 127.0.0.1
+```
+
+如果端口被占用，可以换成 5173：
+
+```bash
+python3 -m http.server 5173 --bind 127.0.0.1
+```
+
+如果你的 Bash 环境没有 `python3`，可以改用：
+
+```bash
+python -m http.server 4173 --bind 127.0.0.1
 ```
 
 然后打开：
@@ -16,17 +44,19 @@ python3 -m http.server 4173
 http://127.0.0.1:4173
 ```
 
-如果端口被占用，可以换成 5173：
-
-```bash
-python3 -m http.server 5173
-```
-
 停止服务使用 `Ctrl + C`。
 
 这个演示没有前端构建步骤，也可以直接用浏览器打开 [index.html](./index.html)。
 
 自动化行为测试使用 Node.js：
+
+PowerShell / Windows：
+
+```powershell
+npm.cmd test
+```
+
+Bash：
 
 ```bash
 npm test
