@@ -1,0 +1,32 @@
+[
+  {
+    "id": "act_001",
+    "name": "City Science Museum",
+    "category": "family_activity",
+    "tags": ["child_friendly", "indoor", "nearby"],
+    "source": "mock_poi_db"
+  },
+  {
+    "id": "res_014",
+    "name": "Green Canopy Cafe",
+    "category": "restaurant",
+    "tags": ["low_fat", "child_seat", "booking_supported"],
+    "availability": [{"time": "15:45", "available": true}],
+    "source": "mock_poi_db"
+  },
+  {
+    "id": "res_022",
+    "name": "Light Bowl Bistro",
+    "category": "restaurant",
+    "tags": ["low_fat", "child_seat", "fallback"],
+    "availability": [{"time": "16:00", "available": true}],
+    "source": "mock_poi_db"
+  },
+  {
+    "id": "walk_006",
+    "name": "Riverside Low-Sugar Dessert Walk",
+    "category": "dessert_walk",
+    "tags": ["low_sugar", "walkable", "shareable"],
+    "source": "mock_poi_db"
+  }
+]
