@@ -1,32 +1,32 @@
 [
   {
     "id": "act_001",
-    "name": "City Science Museum",
-    "category": "family_activity",
-    "tags": ["child_friendly", "indoor", "nearby"],
-    "source": "mock_poi_db"
+    "name": "城市科学馆",
+    "category": "亲子活动",
+    "tags": ["亲子友好", "室内", "附近"],
+    "source": "模拟地点库"
   },
   {
     "id": "res_014",
-    "name": "Green Canopy Cafe",
-    "category": "restaurant",
-    "tags": ["low_fat", "child_seat", "booking_supported"],
+    "name": "绿荫轻食餐厅",
+    "category": "餐厅",
+    "tags": ["低脂", "儿童座椅", "支持订座"],
     "availability": [{"time": "15:45", "available": true}],
-    "source": "mock_poi_db"
+    "source": "模拟地点库"
   },
   {
     "id": "res_022",
-    "name": "Light Bowl Bistro",
-    "category": "restaurant",
-    "tags": ["low_fat", "child_seat", "fallback"],
+    "name": "轻碗健康餐厅",
+    "category": "餐厅",
+    "tags": ["低脂", "儿童座椅", "备选"],
     "availability": [{"time": "16:00", "available": true}],
-    "source": "mock_poi_db"
+    "source": "模拟地点库"
   },
   {
     "id": "walk_006",
-    "name": "Riverside Low-Sugar Dessert Walk",
-    "category": "dessert_walk",
-    "tags": ["low_sugar", "walkable", "shareable"],
-    "source": "mock_poi_db"
+    "name": "河畔低糖甜品散步",
+    "category": "饭后散步",
+    "tags": ["低糖", "适合步行", "适合分享"],
+    "source": "模拟地点库"
   }
 ]

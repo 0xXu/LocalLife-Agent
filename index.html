@@ -3,102 +3,134 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>WeekendPilot Demo</title>
+    <title>周末管家演示</title>
+    <link rel="icon" href="data:,">
     <link rel="stylesheet" href="./src/styles.css">
   </head>
   <body>
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-mark">WP</div>
+        <div class="brand-mark">周</div>
         <div>
-          <strong>WeekendPilot</strong>
-          <span>本地生活执行型 Agent</span>
+          <strong>周末管家</strong>
+          <span>本地生活执行助手</span>
         </div>
       </div>
       <button class="primary-button" id="newPlanButton">+ 新计划</button>
       <nav>
-        <a class="active">首页工作台</a>
+        <a class="active">首页</a>
         <a>保存计划</a>
         <a>最近执行</a>
-        <a>偏好设置</a>
+        <a>收藏地点</a>
       </nav>
       <div class="sidebar-note">
-        <span>Demo 模式</span>
-        <strong>Mock API 可控执行</strong>
+        <span>常用活动半径</span>
+        <strong>5 公里 · 亲子友好</strong>
       </div>
     </aside>
 
-    <main class="workspace">
-      <section class="hero">
-        <div>
-          <p class="eyebrow">美团 Hackathon 06</p>
-          <h1>一句话安排半日活动，并把关键动作办完</h1>
-          <p>演示自然语言目标、约束解析、工具调用、可执行时间轴、用户确认、Mock 回执和失败恢复。</p>
-        </div>
-        <div class="tool-list" id="toolList"></div>
+    <main class="workspace planner-shell">
+      <section class="conversation">
+        <header class="topbar">
+          <label class="search-box" for="goalInput">
+            <span>⌕</span>
+            <input value="搜索地点、计划或偏好设置..." readonly>
+          </label>
+          <button class="primary-button execute-top" id="executeTopButton">执行</button>
+        </header>
+
+        <section class="prompt-card">
+          <textarea id="goalInput">今天下午是空的，想和老婆孩子出去玩几个小时，别离家太远。孩子 5 岁，老婆最近在减肥，帮我安排一下。</textarea>
+          <div class="prompt-actions">
+            <button class="primary-button" id="planButton">生成计划</button>
+            <button class="ghost-button" id="recoverButton">换一家餐厅</button>
+          </div>
+        </section>
+
+        <section class="assistant-flow">
+          <div class="flow-heading">
+            <span class="pulse-dot"></span>
+            <div>
+              <p>正在规划你的下午...</p>
+              <strong id="planTitle">亲子科学馆 + 健康轻食半日计划</strong>
+            </div>
+          </div>
+
+          <article class="constraint-card">
+            <div class="section-title">
+              <span>已理解你的需求</span>
+              <button class="text-button" id="detailsButton">查看规划过程</button>
+            </div>
+            <div class="constraints" id="constraints"></div>
+          </article>
+
+          <ol class="progress-list" id="progressList"></ol>
+
+          <article class="trace-details" id="traceDetails" hidden>
+            <div class="section-title">
+              <span>规划过程</span>
+              <small>评审模式：展示模拟工具链</small>
+            </div>
+            <ol class="trace" id="trace"></ol>
+            <div class="tool-list" id="toolList"></div>
+          </article>
+
+          <article class="timeline-card">
+            <div class="section-title">
+              <span>今日下午行程</span>
+              <small id="timelineStatus">等待确认执行</small>
+            </div>
+            <div id="timeline" class="timeline"></div>
+          </article>
+
+          <article class="recovery-card" id="recoveryCard" hidden>
+            <div class="section-title">
+              <span>方案已调整</span>
+              <small>只替换冲突节点</small>
+            </div>
+            <div id="recovery" class="recovery"></div>
+          </article>
+        </section>
       </section>
 
-      <section class="input-panel">
-        <textarea id="goalInput">今天下午是空的，想和老婆孩子出去玩几个小时，别离家太远。孩子 5 岁，老婆最近在减肥，帮我安排一下。</textarea>
-        <div class="input-actions">
-          <button class="primary-button" id="planButton">生成计划</button>
-          <button class="ghost-button" id="recoverButton">触发餐厅无位恢复</button>
-          <button class="ghost-button" id="executeButton">确认执行</button>
-        </div>
-      </section>
-
-      <section class="grid">
-        <article class="panel">
-          <div class="panel-heading">
-            <p class="eyebrow">01</p>
-            <h2>约束理解</h2>
-          </div>
-          <div class="constraints" id="constraints"></div>
-        </article>
-
-        <article class="panel">
-          <div class="panel-heading">
-            <p class="eyebrow">02</p>
-            <h2>Agent Trace</h2>
-          </div>
-          <ol class="trace" id="trace"></ol>
-        </article>
-
-        <article class="panel timeline-panel">
-          <div class="panel-heading">
-            <p class="eyebrow">03</p>
-            <h2>可执行时间轴</h2>
-          </div>
-          <div id="timeline" class="timeline"></div>
-        </article>
-
-        <article class="panel map-panel">
+      <aside class="plan-panel">
+        <section class="map-stage">
+          <div class="route-status"><span></span>正在规划路线</div>
           <div class="map-card">
+            <div class="map-river"></div>
+            <div class="map-road road-a"></div>
+            <div class="map-road road-b"></div>
             <div class="map-route"></div>
             <span class="pin pin-a">1</span>
             <span class="pin pin-b">2</span>
             <span class="pin pin-c">3</span>
           </div>
-          <div class="overview" id="overview"></div>
-        </article>
+        </section>
 
-        <article class="panel">
-          <div class="panel-heading">
-            <p class="eyebrow">04</p>
-            <h2>执行回执</h2>
-          </div>
-          <div id="receipts" class="receipts empty">等待用户确认后执行订座、预约和发送计划。</div>
-        </article>
+        <section class="overview-panel" id="overview"></section>
 
-        <article class="panel">
-          <div class="panel-heading">
-            <p class="eyebrow">05</p>
-            <h2>失败恢复 Diff</h2>
+        <section class="actions-panel">
+          <div class="section-title">
+            <span>确认后我会执行</span>
+            <small>不会自动下单</small>
           </div>
-          <div id="recovery" class="recovery empty">触发“餐厅无位”后，系统只替换冲突节点并保留其余行程。</div>
-        </article>
-      </section>
+          <div id="actionList" class="action-list"></div>
+          <button class="primary-button wide-button" id="executeButton">确认执行</button>
+        </section>
+
+        <section class="receipts-panel">
+          <div class="section-title">
+            <span>预订结果</span>
+            <small>模拟回执</small>
+          </div>
+          <div id="receipts" class="receipts empty">确认后显示活动预约、餐厅订座和计划发送结果。</div>
+        </section>
+      </aside>
     </main>
+
+    <template id="emptyTemplate">
+      <div class="empty"></div>
+    </template>
 
     <script type="module" src="./src/app.mjs"></script>
   </body>

@@ -1,31 +1,29 @@
-# WeekendPilot Local Life Agent
+# 周末管家本地生活演示
 
-WeekendPilot is a runnable hackathon demo for the Meituan local-life challenge. It demonstrates a local activity planning and execution agent: one natural-language goal becomes constraints, mock tool calls, an itinerary, confirmation receipts, and failure recovery.
+周末管家是一个可运行的美团本地生活 Hackathon 演示项目。它展示的是“执行型助手”而不是普通推荐列表：用户输入一句自然语言目标，系统理解约束、生成半日行程、展示规划过程，并在用户确认后返回活动预约、餐厅订座和计划发送回执。
 
-## Run The Demo
+## 运行方式
 
-Open [index.html](./index.html) in a browser.
+直接用浏览器打开 [index.html](./index.html)。界面不需要安装依赖。
 
-No install step is required for the UI. The automated behavior tests use Node.js:
+自动化行为测试使用 Node.js：
 
-```powershell
-npm.cmd test
+```bash
+npm test
 ```
 
-PowerShell may block `npm` because it resolves to `npm.ps1`; use `npm.cmd` on Windows.
+## 演示脚本
 
-## Demo Script
+1. 点击 **生成计划**。
+2. 展示系统识别到的人群、时长、饮食、半径和交通方式。
+3. 展示“规划过程”：理解需求、筛选活动、匹配餐厅、规划路线、确认可订时间。
+4. 展示今日下午行程和右侧计划概览。
+5. 点击 **确认执行**，展示 `TKT-*`、`RES-*`、`MSG-*` 模拟回执。
+6. 点击 **换一家餐厅**，展示餐厅无位后的局部替换方案。
 
-1. Click **生成计划**.
-2. Show the parsed constraints: family, 5-year-old child, low-fat diet, 5km radius.
-3. Show the Agent trace: parse, search, rank, route, availability.
-4. Show the itinerary and route overview.
-5. Click **确认执行** and point out `TKT-*`, `RES-*`, and `MSG-*` receipts.
-6. Click **触发餐厅无位恢复** and show the restaurant replacement diff.
+## 模拟工具
 
-## Mock Tools
-
-The demo exposes the eight P0 tools promised in the submission:
+演示保留 8 个 P0 工具能力，界面中以中文标签展示：
 
 - `parse_user_goal`
 - `search_places`
@@ -36,25 +34,18 @@ The demo exposes the eight P0 tools promised in the submission:
 - `create_reservation`
 - `send_plan_message`
 
-All tools are deterministic mocks. They are designed to show the execution chain clearly and can be replaced by real Meituan, map, booking, order, and message adapters later.
+这些工具都是确定性模拟实现，后续可以替换成真实美团、地图、订座、订单和消息适配器。
 
-## Project Map
+## 项目结构
 
-- [index.html](./index.html): static demo shell.
-- [src/agent.mjs](./src/agent.mjs): deterministic mock agent and tool contract.
-- [src/app.mjs](./src/app.mjs): browser UI wiring.
-- [src/styles.css](./src/styles.css): workbench styling.
-- [data/poi.json](./data/poi.json): seed POI examples.
-- [tests/agent.test.mjs](./tests/agent.test.mjs): behavior tests for plan generation, execution receipts, failure recovery, and tool list.
-- [design_submission.md](./design_submission.md): concise two-page submission document.
-- Existing Markdown files and images are retained as research and prototype material.
+- [index.html](./index.html)：静态演示页面。
+- [src/agent.mjs](./src/agent.mjs)：确定性模拟助手和工具契约。
+- [src/app.mjs](./src/app.mjs)：浏览器交互和渲染逻辑。
+- [src/styles.css](./src/styles.css)：中文产品化界面样式。
+- [data/poi.json](./data/poi.json)：中文种子地点数据。
+- [tests/agent.test.mjs](./tests/agent.test.mjs)：计划生成、执行回执、失败恢复和工具列表测试。
+- [design_submission.md](./design_submission.md)：精简提交文档。
 
-## Review Finding Coverage
+## 当前重点
 
-| Finding | Fix |
-|---|---|
-| Missing runnable demo code | Added static Web demo, mock agent functions, POI data, and tests. |
-| Submission doc too long | Added [design_submission.md](./design_submission.md) as the concise submission version. |
-| Over-heavy tech stack | Submission now states P0 as deterministic state machine + mock tools + trace. |
-| Prototype lacked receipts and recovery | Demo UI includes execution receipts and a restaurant-unavailable recovery diff. |
-
+当前演示已从评审调试面板改为用户可理解的对话式规划界面。普通用户默认看到的是计划、路线、确认动作和结果；评委可以展开“查看规划过程”来检查模拟工具链。
