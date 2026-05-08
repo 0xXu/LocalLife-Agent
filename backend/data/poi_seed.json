@@ -17,6 +17,23 @@
     "reason": "有“小小探索家”亲子展区，室内路线轻松，适合 5 岁孩子活动。"
   },
   {
+    "id": "act_018",
+    "name": "城市桌游咖啡馆",
+    "category": "social_activity",
+    "lat": 38.2605,
+    "lng": 140.8804,
+    "distance_km": 2.2,
+    "rating": 4.6,
+    "avg_price": 360,
+    "tags": ["social", "indoor", "group_friendly", "nearby"],
+    "duration_minutes": 120,
+    "open_hours": [{"day": "sat", "start": "11:00", "end": "23:00"}],
+    "wait_minutes": 5,
+    "booking_supported": true,
+    "availability": [{"time": "13:30", "available": true}],
+    "reason": "适合 4 人朋友小聚，有包间和轻量桌游，室内不累，离家近。"
+  },
+  {
     "id": "res_014",
     "name": "绿荫轻食餐厅",
     "category": "restaurant",

@@ -30,6 +30,19 @@ class BackendApiTest(unittest.TestCase):
         conn.close()
         return response.status, json.loads(data)
 
+    def raw_request(self, method, path, payload):
+        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+        conn.request(
+            method,
+            path,
+            body=payload.encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        response = conn.getresponse()
+        data = response.read().decode("utf-8")
+        conn.close()
+        return response.status, json.loads(data)
+
     def test_health_endpoint(self):
         status, data = self.request("GET", "/api/health")
 
@@ -62,6 +75,12 @@ class BackendApiTest(unittest.TestCase):
         )
         self.assertEqual(status, 200)
         self.assertEqual(recovered["diff"]["changed"], "restaurant")
+
+    def test_invalid_json_returns_400_response(self):
+        status, data = self.raw_request("POST", "/api/plans/build", "{bad json")
+
+        self.assertEqual(status, 400)
+        self.assertEqual(data["error"], "invalid_json")
 
 
 if __name__ == "__main__":

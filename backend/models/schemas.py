@@ -135,11 +135,13 @@ class PlanState:
         self.trace.append(trace)
 
     def plan_dict(self) -> dict[str, Any]:
+        scenario = self.constraints.scenario if self.constraints else "family"
+        is_family = scenario == "family"
         return {
             "id": self.plan_id,
             "status": self.status,
-            "title": "亲子科学馆 + 健康轻食半日计划",
-            "summary": "科学馆亲子活动、低脂轻食餐厅和饭后河畔散步。",
+            "title": "亲子科学馆 + 健康轻食半日计划" if is_family else "朋友轻松活动 + 健康聚餐半日计划",
+            "summary": "科学馆亲子活动、低脂轻食餐厅和饭后河畔散步。" if is_family else "室内朋友活动、可订位轻食餐厅和饭后河畔散步。",
             "constraints": to_dict(self.constraints),
             "itinerary": [
                 {
@@ -201,7 +203,7 @@ def progress_from_trace(trace: list[TraceStep]) -> list[dict[str, str]]:
         "IntentParserAgent": "理解出行需求",
         "ContextBuilderAgent": "补全场景上下文",
         "CandidateSearchAgent": "筛选本地供给",
-        "RankerAgent": "匹配健康餐厅",
+        "RankerAgent": "匹配餐厅和活动",
         "RouteSchedulerAgent": "规划顺路路线",
         "PlanValidatorAgent": "确认可订时间",
     }
@@ -214,4 +216,3 @@ def progress_from_trace(trace: list[TraceStep]) -> list[dict[str, str]]:
         for step in trace
         if step.agent in labels
     ]
-

@@ -16,7 +16,8 @@ class PlanValidatorAgent(BaseAgent):
     def execute(self, state: PlanState) -> PlanState:
         restaurant_step = state.itinerary[1]
         restaurant = self.repository.get(restaurant_step.place_id)
-        check = self.availability.check(restaurant, restaurant_step.start, party_size=3)
+        party_size = state.constraints.people["adults"] + len(state.constraints.people["children"])
+        check = self.availability.check(restaurant, restaurant_step.start, party_size=party_size)
         if not check["available"]:
             state.errors.append("restaurant_unavailable")
             state.status = "needs_recovery"
@@ -28,5 +29,4 @@ class PlanValidatorAgent(BaseAgent):
         return {"status": state.status, "errors": list(state.errors)}
 
     def message(self, state: PlanState) -> str:
-        return "确认主餐厅 15:45 有 3 人模拟可订席位。"
-
+        return "确认主餐厅在计划时段有模拟可订席位。"

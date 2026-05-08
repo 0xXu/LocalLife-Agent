@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+from json import JSONDecodeError
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
+from backend.llm import LLMConfig
 from backend.services import PlanningService
 
 
@@ -27,6 +29,9 @@ class WeekendPilotHandler(BaseHTTPRequestHandler):
         if path == "/api/health":
             self.respond_json({"status": "ok", "service": "weekendpilot-backend", "agents": 8})
             return
+        if path == "/api/llm/status":
+            self.respond_json(LLMConfig.from_env_file().safe_status())
+            return
         if path.startswith("/api/traces/"):
             plan_id = path.rsplit("/", 1)[-1]
             self.respond_json({"plan_id": plan_id, "trace": self.planning_service.get_trace(plan_id)})
@@ -35,8 +40,8 @@ class WeekendPilotHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path
-        body = self.read_json()
         try:
+            body = self.read_json()
             if path == "/api/plans/build":
                 self.respond_json(self.planning_service.build_plan(str(body.get("goal", ""))))
                 return
@@ -55,6 +60,9 @@ class WeekendPilotHandler(BaseHTTPRequestHandler):
         except KeyError as exc:
             self.respond_json({"error": str(exc)}, status=404)
             return
+        except ValueError as exc:
+            self.respond_json({"error": str(exc)}, status=400)
+            return
         self.respond_json({"error": "not_found"}, status=404)
 
     def read_json(self) -> dict:
@@ -62,7 +70,10 @@ class WeekendPilotHandler(BaseHTTPRequestHandler):
         if length == 0:
             return {}
         raw = self.rfile.read(length).decode("utf-8")
-        return json.loads(raw or "{}")
+        try:
+            return json.loads(raw or "{}")
+        except JSONDecodeError as exc:
+            raise ValueError("invalid_json") from exc
 
     def respond_json(self, payload: dict | list, status: int = 200) -> None:
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")

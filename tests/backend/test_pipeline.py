@@ -58,7 +58,28 @@ class PlanningPipelineTest(unittest.TestCase):
             original["itinerary"][1]["place_id"],
         )
 
+    def test_friends_goal_builds_friend_plan_for_four_adults(self):
+        result = self.service.build_plan("今天下午朋友4个人出去玩，2男2女，别太远")
+
+        self.assertEqual(result["constraints"]["scenario"], "friends")
+        self.assertEqual(result["constraints"]["people"]["adults"], 4)
+        self.assertEqual(result["constraints"]["people"]["children"], [])
+        self.assertIn("朋友", result["plan"]["title"])
+        self.assertNotIn("亲子", result["plan"]["title"])
+        self.assertEqual(result["plan"]["actions"][-1]["target"], "朋友群聊")
+
+    def test_multiple_builds_keep_independent_plan_state(self):
+        family = self.service.build_plan("今天下午想和老婆孩子出去玩几个小时，孩子5岁，老婆减脂，别太远")
+        friends = self.service.build_plan("今天下午朋友4个人出去玩，2男2女，别太远")
+
+        self.assertNotEqual(family["plan"]["id"], friends["plan"]["id"])
+
+        executed_family = self.service.execute_plan(family["plan"]["id"], confirmed=True)
+        executed_friends = self.service.execute_plan(friends["plan"]["id"], confirmed=True)
+
+        self.assertEqual(executed_family["constraints"]["scenario"], "family")
+        self.assertEqual(executed_friends["constraints"]["scenario"], "friends")
+
 
 if __name__ == "__main__":
     unittest.main()
-

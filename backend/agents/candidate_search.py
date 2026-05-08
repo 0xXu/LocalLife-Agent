@@ -14,9 +14,13 @@ class CandidateSearchAgent(BaseAgent):
 
     def execute(self, state: PlanState) -> PlanState:
         radius = state.constraints.constraints["radius_km"]
+        scenario = state.constraints.scenario
+        activity_category = "family_activity" if scenario == "family" else "social_activity"
+        activity_tags = ["child_friendly", "indoor"] if scenario == "family" else ["social", "indoor"]
+        restaurant_tags = ["low_fat", "child_seat"] if scenario == "family" else ["group_friendly", "booking_supported"]
         state.candidates = {
-            "activities": self.repository.search("family_activity", radius, ["child_friendly", "indoor"]),
-            "restaurants": self.repository.search("restaurant", radius, ["low_fat", "child_seat"]),
+            "activities": self.repository.search(activity_category, radius, activity_tags),
+            "restaurants": self.repository.search("restaurant", radius, restaurant_tags),
             "walks": self.repository.search("dessert_walk", radius, ["low_sugar", "walkable"]),
         }
         state.status = "candidates_found"
@@ -26,5 +30,4 @@ class CandidateSearchAgent(BaseAgent):
         return {key: len(value) for key, value in state.candidates.items()}
 
     def message(self, state: PlanState) -> str:
-        return "找到 5 公里内适合亲子的活动、健康餐厅和饭后散步点。"
-
+        return "找到半径内适合当前人群的活动、餐厅和饭后散步点。"
