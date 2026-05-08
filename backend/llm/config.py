@@ -15,6 +15,7 @@ class LLMConfig:
     temperature: float = 0.2
     max_tokens: int = 2048
     timeout_seconds: int = 30
+    remote_enabled: bool = False
 
     @classmethod
     def from_env_file(cls, env_path: Path | None = None) -> "LLMConfig":
@@ -30,6 +31,7 @@ class LLMConfig:
             temperature=float(merged.get("LLM_TEMPERATURE", "0.2")),
             max_tokens=int(merged.get("LLM_MAX_TOKENS", "2048")),
             timeout_seconds=int(merged.get("LLM_TIMEOUT_SECONDS", "30")),
+            remote_enabled=merged.get("LLM_REMOTE_ENABLED", "false").lower() in {"1", "true", "yes", "on"},
         )
 
     @property
@@ -44,6 +46,7 @@ class LLMConfig:
             "model": self.model,
             "api_key": "configured" if self.api_key else "missing",
             "configured": self.is_configured,
+            "remote_enabled": self.remote_enabled,
         }
 
 

@@ -41,8 +41,72 @@ class POI:
     wait_minutes: int = 0
     booking_supported: bool = False
     availability: list[dict[str, Any]] = field(default_factory=list)
-    source: str = "mock_poi_db"
+    source: str = "local_seed_catalog"
     reason: str = ""
+    risk_tags: list[str] = field(default_factory=list)
+    review_count: int = 100
+    supported_scenarios: list[str] = field(default_factory=list)
+
+    @classmethod
+    def from_dict(cls, item: dict[str, Any]) -> "POI":
+        return cls(
+            id=item["id"],
+            name=item["name"],
+            category=item["category"],
+            lat=float(item["lat"]),
+            lng=float(item["lng"]),
+            distance_km=float(item["distance_km"]),
+            rating=float(item["rating"]),
+            avg_price=int(item["avg_price"]),
+            tags=list(item["tags"]),
+            duration_minutes=int(item["duration_minutes"]),
+            open_hours=[dict(value) for value in item["open_hours"]],
+            wait_minutes=int(item.get("wait_minutes", 0)),
+            booking_supported=bool(item.get("booking_supported", False)),
+            availability=[dict(value) for value in item.get("availability", [])],
+            source=item.get("source", "local_seed_catalog"),
+            reason=item.get("reason", ""),
+            risk_tags=list(item.get("risk_tags", [])),
+            review_count=int(item.get("review_count", 100)),
+            supported_scenarios=list(item.get("supported_scenarios", [])),
+        )
+
+
+@dataclass
+class Coupon:
+    id: str
+    poi_id: str
+    title: str
+    price: int
+    face_value: int
+    rules: str
+    valid_until: str
+
+
+@dataclass
+class MenuItem:
+    id: str
+    poi_id: str
+    name: str
+    price: int
+    tags: list[str]
+
+
+@dataclass
+class AvailabilitySlot:
+    place_id: str
+    time: str
+    available: bool
+    capacity: int
+
+
+@dataclass
+class RouteLeg:
+    from_id: str
+    to_id: str
+    mode: str
+    minutes: int
+    distance_km: float
 
 
 @dataclass
@@ -55,6 +119,8 @@ class ItineraryStep:
     reason: str
     cost: str
     travel: str
+    score: int = 90
+    risk: str = ""
 
 
 @dataclass
@@ -64,6 +130,8 @@ class PlanAction:
     target: str
     detail: str
     requires_confirmation: bool = True
+    tool: str = ""
+    payload: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -73,6 +141,17 @@ class PlanOverview:
     drive_time: str
     walking_distance: str
     estimated_cost: str
+    score: int = 90
+
+
+@dataclass
+class PlanVariant:
+    kind: str
+    title: str
+    summary: str
+    score: int
+    estimated_budget: int
+    itinerary: list[ItineraryStep]
 
 
 @dataclass
@@ -84,6 +163,27 @@ class TraceStep:
     input_summary: dict[str, Any] = field(default_factory=dict)
     output_summary: dict[str, Any] = field(default_factory=dict)
     duration_ms: int = 0
+
+
+@dataclass
+class ToolCall:
+    tool: str
+    input_summary: dict[str, Any]
+    output_summary: dict[str, Any]
+    status: str
+    duration_ms: int = 0
+    side_effect: bool = False
+    error: str = ""
+
+
+@dataclass
+class ToolResult:
+    tool: str
+    output: dict[str, Any]
+    status: str = "ok"
+    duration_ms: int = 120
+    side_effect: bool = False
+    error: str = ""
 
 
 @dataclass
@@ -114,10 +214,20 @@ class RecoveryDiff:
 
 
 @dataclass
+class Checkpoint:
+    plan_id: str
+    status: str
+    trace: list[TraceStep]
+    pending_actions: list[PlanAction]
+    receipts: list[Receipt]
+    recovery_history: list[RecoveryDiff]
+
+
+@dataclass
 class PlanState:
     goal: str
     plan_id: str = ""
-    status: str = "input"
+    status: str = "input_received"
     constraints: ParsedConstraints | None = None
     context: dict[str, Any] = field(default_factory=dict)
     candidates: dict[str, list[POI]] = field(default_factory=dict)
@@ -125,52 +235,115 @@ class PlanState:
     itinerary: list[ItineraryStep] = field(default_factory=list)
     overview: PlanOverview | None = None
     actions: list[PlanAction] = field(default_factory=list)
+    pending_actions: list[PlanAction] = field(default_factory=list)
+    variants: list[PlanVariant] = field(default_factory=list)
     trace: list[TraceStep] = field(default_factory=list)
+    tool_calls: list[ToolCall] = field(default_factory=list)
     receipts: list[Receipt] = field(default_factory=list)
     diff: RecoveryDiff | None = None
+    recovery_history: list[RecoveryDiff] = field(default_factory=list)
     adjustment: dict[str, str] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
 
     def add_trace(self, trace: TraceStep) -> None:
         self.trace.append(trace)
 
+    def add_tool_result(self, result: ToolResult, input_summary: dict[str, Any] | None = None) -> None:
+        self.tool_calls.append(
+            ToolCall(
+                tool=result.tool,
+                input_summary=input_summary or {},
+                output_summary=result.output,
+                status=result.status,
+                duration_ms=result.duration_ms,
+                side_effect=result.side_effect,
+                error=result.error,
+            )
+        )
+
+    def checkpoint(self) -> Checkpoint:
+        return Checkpoint(
+            plan_id=self.plan_id,
+            status=self.status,
+            trace=list(self.trace),
+            pending_actions=list(self.pending_actions),
+            receipts=list(self.receipts),
+            recovery_history=list(self.recovery_history),
+        )
+
     def plan_dict(self) -> dict[str, Any]:
-        scenario = self.constraints.scenario if self.constraints else "family"
-        is_family = scenario == "family"
         return {
             "id": self.plan_id,
             "status": self.status,
-            "title": "亲子科学馆 + 健康轻食半日计划" if is_family else "朋友轻松活动 + 健康聚餐半日计划",
-            "summary": "科学馆亲子活动、低脂轻食餐厅和饭后河畔散步。" if is_family else "室内朋友活动、可订位轻食餐厅和饭后河畔散步。",
+            "title": plan_title(self.constraints),
+            "summary": plan_summary(self.constraints),
             "constraints": to_dict(self.constraints),
-            "itinerary": [
-                {
-                    "start": step.start,
-                    "end": step.end,
-                    "type": step.type,
-                    "title": step.title,
-                    "place_id": step.place_id,
-                    "reason": step.reason,
-                    "cost": step.cost,
-                    "travel": step.travel,
-                }
-                for step in self.itinerary
-            ],
+            "itinerary": [step_dict(step) for step in self.itinerary],
             "overview": frontend_overview(self.overview),
-            "actions": [
-                {
-                    "type": action.type,
-                    "label": action.label,
-                    "target": action.target,
-                    "detail": action.detail,
-                    "requiresConfirmation": action.requires_confirmation,
-                }
-                for action in self.actions
-            ],
+            "actions": [action_dict(action) for action in self.actions],
+            "variants": [variant_dict(variant) for variant in self.variants],
         }
 
 
-def frontend_overview(overview: PlanOverview | None) -> dict[str, str]:
+def plan_title(constraints: ParsedConstraints | None) -> str:
+    scenario = constraints.scenario if constraints else "family"
+    return {
+        "family": "亲子科学馆 + 健康轻食半日计划",
+        "friends": "朋友轻松活动 + 健康聚餐半日计划",
+        "date": "安静约会 + 氛围晚餐半日计划",
+        "rainy_indoor": "雨天室内活动 + 顺路用餐半日计划",
+    }.get(scenario, "本地生活半日执行计划")
+
+
+def plan_summary(constraints: ParsedConstraints | None) -> str:
+    scenario = constraints.scenario if constraints else "family"
+    return {
+        "family": "亲子活动、健康轻食、饭后散步和确认后执行回执。",
+        "friends": "室内活动、可拍照聊天餐厅、团购券和朋友群分享。",
+        "date": "安静活动、氛围餐厅、低排队风险和顺路散步。",
+        "rainy_indoor": "雨天优先室内点位，自动规避户外风险。",
+    }.get(scenario, "围绕当前约束生成可执行本地生活方案。")
+
+
+def step_dict(step: ItineraryStep) -> dict[str, Any]:
+    return {
+        "start": step.start,
+        "end": step.end,
+        "type": step.type,
+        "title": step.title,
+        "place_id": step.place_id,
+        "reason": step.reason,
+        "cost": step.cost,
+        "travel": step.travel,
+        "score": step.score,
+        "risk": step.risk,
+    }
+
+
+def action_dict(action: PlanAction) -> dict[str, Any]:
+    return {
+        "type": action.type,
+        "label": action.label,
+        "target": action.target,
+        "detail": action.detail,
+        "requiresConfirmation": action.requires_confirmation,
+        "tool": action.tool,
+        "payload": dict(action.payload),
+    }
+
+
+def variant_dict(variant: PlanVariant) -> dict[str, Any]:
+    return {
+        "kind": variant.kind,
+        "title": variant.title,
+        "summary": variant.summary,
+        "score": variant.score,
+        "estimated_budget": variant.estimated_budget,
+        "itinerary": [step_dict(step) for step in variant.itinerary],
+    }
+
+
+def frontend_overview(overview: PlanOverview | None) -> dict[str, Any]:
     if not overview:
         return {}
     return {
@@ -179,6 +352,7 @@ def frontend_overview(overview: PlanOverview | None) -> dict[str, str]:
         "driveTime": overview.drive_time,
         "walkingDistance": overview.walking_distance,
         "estimatedCost": overview.estimated_cost,
+        "score": overview.score,
     }
 
 
@@ -187,7 +361,9 @@ def state_response(state: PlanState) -> dict[str, Any]:
         "constraints": to_dict(state.constraints),
         "progress": progress_from_trace(state.trace),
         "trace": [to_dict(step) for step in state.trace],
+        "tool_calls": [to_dict(call) for call in state.tool_calls],
         "itinerary": state.plan_dict()["itinerary"],
+        "pending_actions": [action_dict(action) for action in state.pending_actions],
         "plan": state.plan_dict(),
     }
     if state.receipts:
@@ -203,9 +379,12 @@ def progress_from_trace(trace: list[TraceStep]) -> list[dict[str, str]]:
         "IntentParserAgent": "理解出行需求",
         "ContextBuilderAgent": "补全场景上下文",
         "CandidateSearchAgent": "筛选本地供给",
-        "RankerAgent": "匹配餐厅和活动",
-        "RouteSchedulerAgent": "规划顺路路线",
-        "PlanValidatorAgent": "确认可订时间",
+        "RankerAgent": "多目标排序",
+        "RouteSchedulerAgent": "生成时间轴和路线",
+        "PlanValidatorAgent": "校验可订性和约束",
+        "ConfirmationAgent": "等待用户确认",
+        "ExecutionAgent": "执行已确认动作",
+        "RecoveryAgent": "异常恢复",
     }
     return [
         {
@@ -214,5 +393,4 @@ def progress_from_trace(trace: list[TraceStep]) -> list[dict[str, str]]:
             "status": "done" if step.status == "ok" else step.status,
         }
         for step in trace
-        if step.agent in labels
     ]

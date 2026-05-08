@@ -57,7 +57,7 @@ class BackendApiTest(unittest.TestCase):
             {"goal": "今天下午带 5 岁孩子出门，老婆减脂，别太远"},
         )
         self.assertEqual(status, 200)
-        self.assertEqual(built["plan"]["status"], "ready_for_confirmation")
+        self.assertEqual(built["plan"]["status"], "pending_confirmation")
         plan_id = built["plan"]["id"]
 
         status, executed = self.request(
@@ -66,7 +66,7 @@ class BackendApiTest(unittest.TestCase):
             {"confirmed": True},
         )
         self.assertEqual(status, 200)
-        self.assertEqual(len(executed["receipts"]), 3)
+        self.assertEqual(len(executed["receipts"]), 6)
 
         status, recovered = self.request(
             "POST",

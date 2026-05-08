@@ -57,7 +57,12 @@ http://127.0.0.1:8787
 ```text
 GET  /api/health
 GET  /api/llm/status
+GET  /api/tool-schemas
 POST /api/plans/build
+GET  /api/plans/{plan_id}
+PATCH /api/plans/{plan_id}/constraints
+POST /api/plans/{plan_id}/alternatives
+POST /api/plans/{plan_id}/confirm
 POST /api/plans/{plan_id}/execute
 POST /api/plans/{plan_id}/recover
 GET  /api/traces/{plan_id}
