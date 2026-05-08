@@ -29,8 +29,11 @@ class LLMClientTest(unittest.TestCase):
 
         self.assertEqual(response, expected)
         command = run.call_args.args[0]
+        kwargs = run.call_args.kwargs
         self.assertIn("curl.exe", command[0])
         self.assertIn("Authorization: Bearer secret-key-value", command)
+        self.assertEqual(kwargs["encoding"], "utf-8")
+        self.assertEqual(kwargs["errors"], "replace")
 
 
 if __name__ == "__main__":

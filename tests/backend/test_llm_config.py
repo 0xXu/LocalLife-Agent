@@ -1,6 +1,8 @@
+import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from backend.llm.config import LLMConfig
 
@@ -22,7 +24,8 @@ class LLMConfigTest(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            config = LLMConfig.from_env_file(env_path)
+            with patch.dict(os.environ, {}, clear=True):
+                config = LLMConfig.from_env_file(env_path)
 
         self.assertEqual(config.provider, "mimo")
         self.assertEqual(config.protocol, "openai")
@@ -48,7 +51,8 @@ class LLMConfigTest(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            config = LLMConfig.from_env_file(env_path)
+            with patch.dict(os.environ, {}, clear=True):
+                config = LLMConfig.from_env_file(env_path)
 
         self.assertFalse(config.remote_enabled)
 

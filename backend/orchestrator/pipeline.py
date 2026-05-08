@@ -152,7 +152,22 @@ class PlanningPipeline:
             try:
                 response = self.llm.chat(
                     [
-                        {"role": "system", "content": "Return strict JSON constraints for a local-life half-day plan."},
+                        {
+                            "role": "system",
+                            "content": (
+                                "You parse a user's local-life half-day planning goal. "
+                                "Return only one strict JSON object with exactly these top-level keys: "
+                                "scenario, origin, time_window, people, preferences, constraints, required_actions. "
+                                "Use scenario as one of family, friends, date, rainy_indoor. "
+                                "Use origin={\"type\":\"current_location\",\"label\":\"home\",\"lat\":38.2601,\"lng\":140.8824} unless the user says otherwise. "
+                                "Use time_window with date, start, duration_hours, flexible. "
+                                "Use people with adults, children, relationship. "
+                                "Use preferences with distance, diet, activity, budget_level. "
+                                "Use constraints with radius_km, max_wait_minutes, avoid. "
+                                "Use required_actions as local-life action names. "
+                                "Do not recommend places. Do not include markdown."
+                            ),
+                        },
                         {"role": "user", "content": goal},
                     ]
                 )
@@ -232,15 +247,80 @@ def parse_adult_count(goal: str, child_age: int | None, scenario: str) -> int:
 
 def constraints_from_dict(data: dict) -> ParsedConstraints:
     fallback = deterministic_constraints("")
+    people = normalize_people(data.get("people", fallback.people), fallback.people)
+    time_window = normalize_time_window(data.get("time_window", fallback.time_window), fallback.time_window)
+    preferences = normalize_preferences(data.get("preferences", fallback.preferences), fallback.preferences)
+    constraints = normalize_constraints(data.get("constraints", fallback.constraints), fallback.constraints)
     return ParsedConstraints(
         scenario=data.get("scenario", fallback.scenario),
         origin=data.get("origin", fallback.origin),
-        time_window=data.get("time_window", fallback.time_window),
-        people=data.get("people", fallback.people),
-        preferences=data.get("preferences", fallback.preferences),
-        constraints=data.get("constraints", fallback.constraints),
-        required_actions=data.get("required_actions", fallback.required_actions),
+        time_window=time_window,
+        people=people,
+        preferences=preferences,
+        constraints=constraints,
+        required_actions=as_list(data.get("required_actions", fallback.required_actions)),
     )
+
+
+def normalize_people(value: dict, fallback: dict) -> dict:
+    people = {**fallback, **value} if isinstance(value, dict) else dict(fallback)
+    people["adults"] = int_or_default(people.get("adults"), int(fallback.get("adults", 2)))
+    children = people.get("children", [])
+    if children is None or children == 0:
+        people["children"] = []
+    elif isinstance(children, int):
+        people["children"] = [{"age": None} for _ in range(children)]
+    elif isinstance(children, dict):
+        people["children"] = [children]
+    elif isinstance(children, list):
+        people["children"] = children
+    else:
+        people["children"] = []
+    return people
+
+
+def normalize_time_window(value: dict, fallback: dict) -> dict:
+    time_window = {**fallback, **value} if isinstance(value, dict) else dict(fallback)
+    time_window["duration_hours"] = float_or_default(time_window.get("duration_hours"), float(fallback.get("duration_hours", 4.5)))
+    time_window["flexible"] = bool(time_window.get("flexible", fallback.get("flexible", True)))
+    return time_window
+
+
+def normalize_preferences(value: dict, fallback: dict) -> dict:
+    preferences = {**fallback, **value} if isinstance(value, dict) else dict(fallback)
+    preferences["diet"] = as_list(preferences.get("diet", fallback.get("diet", [])))
+    preferences["activity"] = as_list(preferences.get("activity", fallback.get("activity", [])))
+    return preferences
+
+
+def normalize_constraints(value: dict, fallback: dict) -> dict:
+    constraints = {**fallback, **value} if isinstance(value, dict) else dict(fallback)
+    constraints["radius_km"] = float_or_default(constraints.get("radius_km"), float(fallback.get("radius_km", 5)))
+    constraints["max_wait_minutes"] = int_or_default(constraints.get("max_wait_minutes"), int(fallback.get("max_wait_minutes", 15)))
+    constraints["avoid"] = as_list(constraints.get("avoid", fallback.get("avoid", [])))
+    return constraints
+
+
+def as_list(value) -> list:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    return [value]
+
+
+def int_or_default(value, default: int) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def float_or_default(value, default: float) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
 
 
 def apply_constraint_overrides(constraints: ParsedConstraints, overrides: dict) -> ParsedConstraints:

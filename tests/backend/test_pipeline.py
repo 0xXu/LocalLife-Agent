@@ -1,7 +1,7 @@
 import unittest
 
 from backend.llm.config import LLMConfig
-from backend.orchestrator.pipeline import PlanningPipeline
+from backend.orchestrator.pipeline import PlanningPipeline, constraints_from_dict
 from backend.services.planning_service import PlanningService
 
 
@@ -130,6 +130,22 @@ class PlanningPipelineTest(unittest.TestCase):
         self.assertEqual(len(fake_llm.calls), 1)
         intent_trace = next(step for step in result.trace if step.agent == "IntentParserAgent")
         self.assertFalse(intent_trace.output_summary["llm_fallback"])
+
+    def test_constraints_from_llm_normalizes_children_count_to_list(self):
+        constraints = constraints_from_dict(
+            {
+                "scenario": "date",
+                "people": {"adults": "2", "children": 0, "relationship": "date"},
+                "constraints": {"radius_km": "5", "max_wait_minutes": "15", "avoid": "long_queue"},
+                "time_window": {"date": "today", "start": "14:00", "duration_hours": "4.5", "flexible": True},
+            }
+        )
+
+        self.assertEqual(constraints.people["adults"], 2)
+        self.assertEqual(constraints.people["children"], [])
+        self.assertEqual(constraints.constraints["radius_km"], 5.0)
+        self.assertEqual(constraints.constraints["max_wait_minutes"], 15)
+        self.assertEqual(constraints.constraints["avoid"], ["long_queue"])
 
 
 if __name__ == "__main__":
