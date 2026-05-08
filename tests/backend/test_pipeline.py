@@ -1,6 +1,37 @@
 import unittest
 
+from backend.llm.config import LLMConfig
+from backend.orchestrator.pipeline import PlanningPipeline
 from backend.services.planning_service import PlanningService
+
+
+class FakeLLMClient:
+    def __init__(self):
+        self.calls = []
+
+    def chat(self, messages):
+        self.calls.append(messages)
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": """
+                        ```json
+                        {
+                          "scenario": "date",
+                          "origin": {"type": "current_location", "label": "home", "lat": 38.2601, "lng": 140.8824},
+                          "time_window": {"date": "today", "start": "14:00", "duration_hours": 4.5, "flexible": true},
+                          "people": {"adults": 2, "children": [], "relationship": "date"},
+                          "preferences": {"distance": "nearby", "diet": [], "activity": ["quiet", "romantic"], "budget_level": "medium"},
+                          "constraints": {"radius_km": 6, "max_wait_minutes": 15, "avoid": ["long_queue"]},
+                          "required_actions": ["restaurant_reservation", "send_plan_message"]
+                        }
+                        ```
+                        """
+                    }
+                }
+            ]
+        }
 
 
 class PlanningPipelineTest(unittest.TestCase):
@@ -79,6 +110,26 @@ class PlanningPipelineTest(unittest.TestCase):
 
         self.assertEqual(executed_family["constraints"]["scenario"], "family")
         self.assertEqual(executed_friends["constraints"]["scenario"], "friends")
+
+    def test_pipeline_uses_configured_openai_compatible_llm_for_constraints(self):
+        pipeline = PlanningPipeline(
+            llm_config=LLMConfig(
+                base_url="https://token-plan-sgp.xiaomimimo.com/v1",
+                api_key="secret-key-value",
+                model="MiMo-V2.5-Pro",
+                remote_enabled=True,
+            )
+        )
+        fake_llm = FakeLLMClient()
+        pipeline.llm = fake_llm
+
+        result = pipeline.build("下午想和对象约会，安静一点，排队少")
+
+        self.assertEqual(result.constraints.scenario, "date")
+        self.assertEqual(result.constraints.constraints["radius_km"], 6)
+        self.assertEqual(len(fake_llm.calls), 1)
+        intent_trace = next(step for step in result.trace if step.agent == "IntentParserAgent")
+        self.assertFalse(intent_trace.output_summary["llm_fallback"])
 
 
 if __name__ == "__main__":

@@ -22,16 +22,25 @@ class LLMConfig:
         root = Path(__file__).resolve().parents[2]
         values = parse_env_file(env_path or root / ".env")
         merged = {**values, **os.environ}
+        base_url = merged.get("LLM_BASE_URL", "")
+        api_key = merged.get("LLM_API_KEY", "")
+        model = merged.get("LLM_MODEL", "MiMo-V2.5-Pro")
+        remote_raw = merged.get("LLM_REMOTE_ENABLED")
+        remote_enabled = (
+            remote_raw.lower() in {"1", "true", "yes", "on"}
+            if remote_raw is not None
+            else bool(base_url and api_key and model)
+        )
         return cls(
             provider=merged.get("LLM_PROVIDER", "mimo"),
             protocol=merged.get("LLM_API_PROTOCOL", "openai"),
-            base_url=merged.get("LLM_BASE_URL", ""),
-            api_key=merged.get("LLM_API_KEY", ""),
-            model=merged.get("LLM_MODEL", "MiMo-V2.5-Pro"),
+            base_url=base_url,
+            api_key=api_key,
+            model=model,
             temperature=float(merged.get("LLM_TEMPERATURE", "0.2")),
             max_tokens=int(merged.get("LLM_MAX_TOKENS", "2048")),
             timeout_seconds=int(merged.get("LLM_TIMEOUT_SECONDS", "30")),
-            remote_enabled=merged.get("LLM_REMOTE_ENABLED", "false").lower() in {"1", "true", "yes", "on"},
+            remote_enabled=remote_enabled,
         )
 
     @property

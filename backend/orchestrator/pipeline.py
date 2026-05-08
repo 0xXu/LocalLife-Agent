@@ -157,11 +157,23 @@ class PlanningPipeline:
                     ]
                 )
                 content = response["choices"][0]["message"]["content"]
-                parsed = json.loads(content)
+                parsed = json.loads(extract_json_object(content))
                 return constraints_from_dict(parsed), False
             except Exception:
                 pass
         return deterministic_constraints(goal), True
+
+
+def extract_json_object(content: str) -> str:
+    stripped = content.strip()
+    if stripped.startswith("```"):
+        stripped = re.sub(r"^```(?:json)?\s*", "", stripped, flags=re.I)
+        stripped = re.sub(r"\s*```$", "", stripped)
+    start = stripped.find("{")
+    end = stripped.rfind("}")
+    if start == -1 or end == -1 or end < start:
+        raise ValueError("llm_json_not_found")
+    return stripped[start:end + 1]
 
 
 def deterministic_constraints(goal: str) -> ParsedConstraints:
