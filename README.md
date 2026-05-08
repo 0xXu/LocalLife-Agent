@@ -1,41 +1,19 @@
 # 周末管家本地生活演示
 
-周末管家是一个可运行的美团本地生活 Hackathon 演示项目。它展示的是“执行型助手”而不是普通推荐列表：用户输入一句自然语言目标，系统理解约束、生成半日行程、展示规划过程，并在用户确认后返回活动预约、餐厅订座和计划发送回执。
+周末管家是一个可运行的本地生活 Hackathon 演示项目。它不是普通推荐列表，而是一个执行型助手：用户输入一句自然语言目标，系统理解约束、生成半日行程、展示规划过程，并在用户确认后返回活动预约、餐厅订座和计划发送回执。
 
-## 运行方式
+## 快速运行
 
-推荐用本地静态服务运行，便于浏览器按正常页面方式加载模块。
-
-### PowerShell / Windows
-
-```powershell
-python -m http.server 4173 --bind 127.0.0.1
-```
-
-如果端口被占用，可以换成 5173：
-
-```powershell
-python -m http.server 5173 --bind 127.0.0.1
-```
-
-Windows 上如果 `python3` 执行后马上回到 `PS>`，通常是系统商店别名或环境变量问题，服务没有真正启动。正常启动时终端会停在类似 `Serving HTTP on 127.0.0.1 port 4173` 的输出，不会立刻回到命令提示符。
-
-### Bash / macOS / Linux / Git Bash
+项目使用 `uv` 管理运行环境。先安装 `uv`：
 
 ```bash
-python3 -m http.server 4173 --bind 127.0.0.1
+pip install uv
 ```
 
-如果端口被占用，可以换成 5173：
+安装完成后，在项目根目录启动静态服务：
 
 ```bash
-python3 -m http.server 5173 --bind 127.0.0.1
-```
-
-如果你的 Bash 环境没有 `python3`，可以改用：
-
-```bash
-python -m http.server 4173 --bind 127.0.0.1
+uv run python -m http.server 4173 --bind 127.0.0.1
 ```
 
 然后打开：
@@ -44,29 +22,19 @@ python -m http.server 4173 --bind 127.0.0.1
 http://127.0.0.1:4173
 ```
 
-停止服务使用 `Ctrl + C`。
+如果端口被占用，把 `4173` 换成其他端口即可。停止服务使用 `Ctrl + C`。
 
-这个演示没有前端构建步骤，也可以直接用浏览器打开 [index.html](./index.html)。
-
-自动化行为测试使用 Node.js：
-
-PowerShell / Windows：
-
-```powershell
-npm.cmd test
-```
-
-Bash：
+## 测试
 
 ```bash
-npm test
+uv run node --test tests/*.test.mjs
 ```
 
 ## 演示脚本
 
 1. 点击 **生成计划**。
 2. 展示系统识别到的人群、时长、饮食、半径和交通方式。
-3. 展示“规划过程”：理解需求、筛选活动、匹配餐厅、规划路线、确认可订时间。
+3. 点击 **查看规划过程**，展示理解需求、筛选活动、匹配餐厅、规划路线和确认可订时间。
 4. 展示今日下午行程和右侧计划概览。
 5. 点击 **确认执行**，展示 `TKT-*`、`RES-*`、`MSG-*` 模拟回执。
 6. 点击 **换一家餐厅**，展示餐厅无位后的局部替换方案。
@@ -93,9 +61,11 @@ npm test
 - [src/app.mjs](./src/app.mjs)：浏览器交互和渲染逻辑。
 - [src/styles.css](./src/styles.css)：中文产品化界面样式。
 - [data/poi.json](./data/poi.json)：中文种子地点数据。
-- [tests/agent.test.mjs](./tests/agent.test.mjs)：计划生成、执行回执、失败恢复和工具列表测试。
+- [tests/agent.test.mjs](./tests/agent.test.mjs)：行为测试。
+- [pyproject.toml](./pyproject.toml)：`uv` 项目配置。
+- [uv.lock](./uv.lock)：`uv` 锁定文件。
 - [design_submission.md](./design_submission.md)：精简提交文档。
 
-## 当前重点
+## 当前状态
 
-当前演示已从评审调试面板改为用户可理解的对话式规划界面。普通用户默认看到的是计划、路线、确认动作和结果；评委可以展开“查看规划过程”来检查模拟工具链。
+当前版本是稳定的中文产品化 Demo。普通用户默认看到计划、路线、确认动作和结果；评委可以展开“查看规划过程”检查模拟工具链。
