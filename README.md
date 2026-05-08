@@ -30,6 +30,44 @@ http://127.0.0.1:4173
 uv run node --test tests/*.test.mjs
 ```
 
+如果当前环境没有安装 `uv`，可以直接运行：
+
+```bash
+node --test tests/*.test.mjs
+```
+
+## 后端服务
+
+当前仓库额外提供了分层 Python 后端，前端静态 Demo 保持不变。后端参考多 Agent travel planner 的 `api / models / agents / tools / orchestrator / services` 分层，并按本项目详细设计文档实现本地生活规划 Pipeline。
+
+启动后端：
+
+```bash
+python -m backend.api.app
+```
+
+默认地址：
+
+```text
+http://127.0.0.1:8787
+```
+
+后端接口：
+
+```text
+GET  /api/health
+POST /api/plans/build
+POST /api/plans/{plan_id}/execute
+POST /api/plans/{plan_id}/recover
+GET  /api/traces/{plan_id}
+```
+
+后端测试：
+
+```bash
+python -m unittest discover -s tests/backend -p "test_*.py"
+```
+
 ## 演示脚本
 
 1. 点击 **生成计划**。
