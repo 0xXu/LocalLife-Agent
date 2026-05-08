@@ -96,12 +96,13 @@ Run: `npm test`
 
 Expected: all tests pass.
 
-### Task 2: Static Demo UI
+### Task 2: Next Demo UI
 
 **Files:**
-- Create: `index.html`
-- Create: `src/styles.css`
-- Create: `src/app.mjs`
+- Create: `app/page.jsx`
+- Create: `app/globals.css`
+- Create: `components/*`
+- Create: `features/planner/mockAgent.js`
 - Create: `data/poi.json`
 
 - [ ] **Step 1: Build the UI shell**
@@ -116,7 +117,7 @@ Use `buildPlan`, `executePlan`, and `recoverUnavailableRestaurant` from `src/age
 
 Run: `npm test`
 
-Expected: tests remain green. Open `index.html` in a browser to run the demo.
+Expected: tests remain green. Run `npm run dev` and open `http://127.0.0.1:4173` in a browser to run the demo.
 
 ### Task 3: Submission Documents
 
@@ -158,4 +159,3 @@ Expected: new files only, no deleted files.
 Run: `Get-ChildItem -Recurse -File | Where-Object { $_.FullName -notmatch '\\.git\\' }`
 
 Expected: README, design submission, static demo, tests, mock data, and existing docs/images.
-

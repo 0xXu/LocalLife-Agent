@@ -303,7 +303,7 @@ sequenceDiagram
 
 | 模块 | 职责 | 技术建议 |
 |---|---|---|
-| Planner Orchestrator | 调度状态机，决定下一步工具 | LangGraph / 自研状态机 |
+| Planner Orchestrator | 调度状态机，决定下一步工具 | LangGraph |
 | Intent Parser | 解析自然语言为结构化约束 | LLM structured output |
 | Context Builder | 补全位置、天气、时间、用户偏好 | 用户画像 + 本地缓存 |
 | Candidate Search | 搜索餐厅、活动、甜品、散步点 | 美团 POI schema / Google Places / 高德 / 本地种子数据 |

@@ -4,16 +4,16 @@
 
 ## 快速运行
 
-项目使用 `uv` 管理运行环境。先安装 `uv`：
+前端使用 Next.js。先安装 Node 依赖：
 
 ```bash
-pip install uv
+npm install
 ```
 
-安装完成后，在项目根目录启动静态服务：
+安装完成后，在项目根目录启动开发服务：
 
 ```bash
-uv run python -m http.server 4173 --bind 127.0.0.1
+npm run dev
 ```
 
 然后打开：
@@ -22,23 +22,23 @@ uv run python -m http.server 4173 --bind 127.0.0.1
 http://127.0.0.1:4173
 ```
 
-如果端口被占用，把 `4173` 换成其他端口即可。停止服务使用 `Ctrl + C`。
+如果端口被占用，请在 `package.json` 中调整 `dev` 脚本端口。停止服务使用 `Ctrl + C`。
 
 ## 测试
 
 ```bash
-uv run node --test tests/*.test.mjs
+npm test
 ```
 
-如果当前环境没有安装 `uv`，可以直接运行：
+后端 pytest：
 
 ```bash
-node --test tests/*.test.mjs
+uv run pytest tests/backend
 ```
 
 ## 后端服务
 
-当前仓库额外提供了分层 Python 后端，前端静态 Demo 保持不变。后端参考多 Agent travel planner 的 `api / models / agents / tools / orchestrator / services` 分层，并按本项目详细设计文档实现本地生活规划 Pipeline。
+当前仓库额外提供了分层 Python 后端。后端参考多 Agent travel planner 的 `api / models / agents / tools / orchestrator / services` 分层，并按本项目详细设计文档实现本地生活规划 Pipeline。当前前端仍使用本地 mock 数据，暂不接后端接口。
 
 启动后端：
 
@@ -76,9 +76,9 @@ python -m unittest discover -s tests/backend -p "test_*.py"
 
 ## 演示脚本
 
-1. 点击 **生成计划**。
+1. 在首页输入周末目标或选择场景卡片，然后点击 **生成计划**。
 2. 展示系统识别到的人群、时长、饮食、半径和交通方式。
-3. 点击 **查看规划过程**，展示理解需求、筛选活动、匹配餐厅、规划路线和确认可订时间。
+3. 在规划页查看理解需求、筛选活动、匹配餐厅、规划路线和确认可订时间。
 4. 展示今日下午行程和右侧计划概览。
 5. 点击 **确认执行**，展示 `TKT-*`、`RES-*`、`MSG-*` 模拟回执。
 6. 点击 **换一家餐厅**，展示餐厅无位后的局部替换方案。
@@ -100,12 +100,14 @@ python -m unittest discover -s tests/backend -p "test_*.py"
 
 ## 项目结构
 
-- [index.html](./index.html)：静态演示页面。
+- [app/page.jsx](./app/page.jsx)：Next.js 前端入口。
+- [app/globals.css](./app/globals.css)：中文产品化界面样式。
+- [components](./components)：前端页面、导航、规划、保存计划、最近执行和设置组件。
+- [features/planner/mockAgent.js](./features/planner/mockAgent.js)：前端 mock 数据适配层。
 - [src/agent.mjs](./src/agent.mjs)：确定性模拟助手和工具契约。
-- [src/app.mjs](./src/app.mjs)：浏览器交互和渲染逻辑。
-- [src/styles.css](./src/styles.css)：中文产品化界面样式。
 - [data/poi.json](./data/poi.json)：中文种子地点数据。
 - [tests/agent.test.mjs](./tests/agent.test.mjs)：行为测试。
+- [tests/backend](./tests/backend)：后端 pytest 测试。
 - [pyproject.toml](./pyproject.toml)：`uv` 项目配置。
 - [uv.lock](./uv.lock)：`uv` 锁定文件。
 - [design_submission.md](./design_submission.md)：精简提交文档。
