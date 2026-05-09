@@ -1,7 +1,12 @@
 import React from 'react';
 import { MapPin, Minus, Plus } from 'lucide-react';
+import { RouteMap } from './map/RouteMap';
 
-export function RoutePreview({ status = '正在规划路线' }) {
+export function RoutePreview({ status = '正在规划路线', route }) {
+  if (route) {
+    return <RouteMap route={route} />;
+  }
+
   return (
     <section className="route-preview" aria-label="路线预览">
       <div className="route-status">

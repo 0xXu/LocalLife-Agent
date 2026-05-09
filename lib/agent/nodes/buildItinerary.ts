@@ -27,6 +27,7 @@ export function makePlanResponse(state: Pick<PlannerState, 'constraints' | 'goal
   const actions = makeActions();
   const averageScore = Math.round([...ranked.activities, ...ranked.restaurants, ...ranked.walks].slice(0, 3).reduce((total, candidate) => total + candidate.score, 0) / 3);
   const estimatedBudget = variants[0].estimated_budget;
+  const route = makeRoute(ranked);
   const response = {
     constraints,
     progress: [
@@ -80,6 +81,7 @@ export function makePlanResponse(state: Pick<PlannerState, 'constraints' | 'goal
       requires_confirmation: true,
       payload: action.payload,
     })),
+    route,
     itinerary,
     plan: {
       id: `plan_${uuidv7().slice(0, 8)}`,
@@ -184,6 +186,29 @@ function fallbackRanked(candidates: Array<Record<string, unknown>> | undefined, 
 const fallbackActivity: RankedCandidate = { id: 'act_001', name: '城市科学馆', title: '城市科学馆', category: 'family_activity', score: 91, avg_price: 1800, tags: ['child_friendly'], reason: '有亲子探索展区，室内路线轻松。' };
 const fallbackRestaurant: RankedCandidate = { id: 'res_014', name: '绿荫轻食餐厅', title: '绿荫轻食餐厅', category: 'restaurant', score: 90, avg_price: 3000, tags: ['low_fat'], reason: '有低脂套餐和儿童座椅。' };
 const fallbackWalk: RankedCandidate = { id: 'walk_006', name: '河畔低糖甜品散步', title: '河畔低糖甜品散步', category: 'dessert_walk', score: 86, avg_price: 900, tags: ['low_sugar'], reason: '饭后短距离散步，沿路有低糖饮品选择。' };
+
+function makeRoute(ranked: RankedCandidateSet) {
+  const selected = [ranked.activities[0], ranked.restaurants[0], ranked.walks[0]];
+  const coordinates = selected.map((candidate, index) => [
+    Number(candidate.lng ?? 140.8824 + index * 0.002),
+    Number(candidate.lat ?? 38.2601 + index * 0.0015),
+  ]) as Array<[number, number]>;
+  return {
+    legs: selected.slice(0, -1).map((candidate, index) => ({
+      from: candidate.id,
+      to: selected[index + 1].id,
+      mode: index === 0 ? 'taxi' : 'walk',
+      duration_minutes: index === 0 ? 12 : 8,
+      distance_km: index === 0 ? 2.4 : 0.8,
+      route_summary: index === 0 ? '打车降低换乘风险。' : '步行收尾，距离较短。',
+    })),
+    total_travel_minutes: 20,
+    walking_distance_km: 0.8,
+    drive_time_minutes: 12,
+    polyline: { type: 'LineString' as const, coordinates },
+    provider: 'local',
+  };
+}
 
 function trace(agent: string, message: string, status: TraceSpan['status'], output_summary: Record<string, unknown> = {}) {
   return {

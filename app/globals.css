@@ -955,6 +955,49 @@ button {
     linear-gradient(135deg, #9fd2d5, #76b5be);
 }
 
+.route-map {
+  min-height: 320px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, #f8fbff, #eef5f7);
+}
+
+.route-map h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+.route-map svg {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  background:
+    linear-gradient(90deg, rgba(5, 99, 201, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(5, 99, 201, 0.08) 1px, transparent 1px),
+    #fdfefe;
+  background-size: 32px 32px;
+}
+
+.route-map dl {
+  margin: 12px 0 0;
+  display: grid;
+  gap: 8px;
+}
+
+.route-map dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mapbox-placeholder {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  background: var(--surface);
+}
+
 .route-status {
   position: absolute;
   top: 16px;

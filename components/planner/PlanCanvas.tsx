@@ -49,7 +49,7 @@ export function PlanCanvas({ response }: PlanCanvasProps) {
 
       <aside className="map-panel">
         <h2><MapPinned size={18} /> 地图与路线</h2>
-        <RoutePreview />
+        <RoutePreview route={response.route} />
       </aside>
       <div className="route-summary-mobile">地图与路线：{plan.overview?.driveTime}，步行 {plan.overview?.walkingDistance}</div>
     </section>
