@@ -58,15 +58,18 @@ class LLMClient:
             "--data-binary",
             "@-",
         ]
-        completed = subprocess.run(
-            command,
-            input=json.dumps(payload, ensure_ascii=False),
-            capture_output=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=self.config.timeout_seconds,
-            check=False,
-        )
+        try:
+            completed = subprocess.run(
+                command,
+                input=json.dumps(payload, ensure_ascii=False),
+                capture_output=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=self.config.timeout_seconds,
+                check=False,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeError(f"LLM request timed out after {exc.timeout} seconds via curl.") from exc
         if completed.returncode != 0:
             detail = "\n".join(part.strip() for part in [completed.stderr, completed.stdout] if part.strip())
             raise RuntimeError(f"LLM request failed via curl with exit {completed.returncode}: {detail}")

@@ -35,6 +35,22 @@ class LLMClientTest(unittest.TestCase):
         self.assertEqual(kwargs["encoding"], "utf-8")
         self.assertEqual(kwargs["errors"], "replace")
 
+    def test_curl_timeout_error_does_not_expose_api_key(self):
+        config = LLMConfig(
+            base_url="https://token-plan-sgp.xiaomimimo.com/v1",
+            api_key="secret-key-value",
+            model="mimo-v2.5-pro",
+            timeout_seconds=1,
+        )
+
+        with patch("urllib.request.urlopen", side_effect=urllib.error.URLError("tls failed")):
+            with patch("subprocess.run", side_effect=subprocess.TimeoutExpired(["curl.exe", "Authorization: Bearer secret-key-value"], 1)):
+                with self.assertRaises(RuntimeError) as raised:
+                    LLMClient(config).chat([{"role": "user", "content": "ping"}])
+
+        self.assertNotIn("secret-key-value", str(raised.exception))
+        self.assertIn("timed out", str(raised.exception))
+
 
 if __name__ == "__main__":
     unittest.main()
