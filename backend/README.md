@@ -1,6 +1,8 @@
 # WeekendPilot Complete Local Backend
 
-This backend implements the complete local product flow described in `detailed_design.md` without modifying the existing static frontend.
+This Python backend is retained as a legacy reference for the earlier local demo. The production demo path is the Next.js TypeScript API and LangGraph workflow.
+
+This backend implements the complete local product flow described in `detailed_design.md` as a migration reference.
 
 ## Architecture
 

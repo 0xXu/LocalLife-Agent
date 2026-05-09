@@ -11,6 +11,9 @@ export type NormalizedTraceEvent = {
   tool?: string;
   status: string;
   duration_ms?: number;
+  input_summary: Record<string, any>;
+  output_summary: Record<string, any>;
+  error?: unknown;
   input_json: string;
   output_json: string;
   error_json?: string;
@@ -29,6 +32,8 @@ function normalizeEvent(event: Record<string, any>, kind: NormalizedTraceEvent['
   const agent = String(event.agent ?? (kind === 'tool_call' ? 'Tool Executor' : 'Agent'));
   const message = String(event.message ?? event.summary ?? event.name ?? tool ?? agent);
   const sideEffectId = event.side_effect_id ?? event.idempotency_key ?? event.idempotencyKey;
+  const inputSummary = event.input_summary ?? event.input ?? {};
+  const outputSummary = event.output_summary ?? event.output ?? {};
 
   return {
     id: String(event.id ?? `${kind}_${tool ?? agent}_${index}`),
@@ -38,8 +43,11 @@ function normalizeEvent(event: Record<string, any>, kind: NormalizedTraceEvent['
     tool,
     status: String(event.status ?? 'pending'),
     duration_ms: typeof event.duration_ms === 'number' ? event.duration_ms : undefined,
-    input_json: stableJson(event.input_summary ?? event.input ?? {}),
-    output_json: stableJson(event.output_summary ?? event.output ?? {}),
+    input_summary: inputSummary,
+    output_summary: outputSummary,
+    error: event.error,
+    input_json: stableJson(inputSummary),
+    output_json: stableJson(outputSummary),
     error_json: event.error === undefined ? undefined : stableJson(event.error),
     side_effect: Boolean(event.side_effect ?? sideEffectId),
     side_effect_id: sideEffectId ? String(sideEffectId) : undefined,

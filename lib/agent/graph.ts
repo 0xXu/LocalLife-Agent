@@ -44,16 +44,21 @@ export function createPlannerGraph({ checkpointer = createTestCheckpointer() }: 
 
       const initial = createInitialState(threadId, input);
       let state = await parseConstraintsNode(initial);
+      await checkpointer.put(threadId, state);
       if (state.status === PlanStatuses.NEED_CLARIFICATION) {
-        await checkpointer.put(threadId, state);
         return state;
       }
 
       state = buildContext(state);
+      await checkpointer.put(threadId, state);
       state = await searchCandidates(state);
+      await checkpointer.put(threadId, state);
       state = rankCandidates(state);
+      await checkpointer.put(threadId, state);
       state = buildItinerary(state);
+      await checkpointer.put(threadId, state);
       state = validatePlan(state);
+      await checkpointer.put(threadId, state);
       state = waitForConfirmation(state);
 
       await checkpointer.put(threadId, state);
