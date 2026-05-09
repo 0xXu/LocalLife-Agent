@@ -1,5 +1,6 @@
 import { PlanResponseSchema } from '../contracts/schemas';
 import { createPlannerGraph, createTestCheckpointer } from '../agent/graph';
+import { applyRecoveryPolicy, isRecoveryReason } from '../recovery/recoveryPolicies';
 import type { ParsedConstraints, PlanAction, PlanResponse, Receipt, TraceSpan } from '../../types/weekendpilot';
 
 export type ServiceErrorCode = 'validation_error' | 'confirmation_required' | 'plan_not_found' | 'tool_failed';
@@ -149,63 +150,11 @@ export async function executePlan(planId: string, confirmed: boolean) {
 
 export function recoverPlan(planId: string, reason: string) {
   const current = requirePlan(planId);
-  if (reason !== 'restaurant_unavailable') {
+  if (!isRecoveryReason(reason)) {
     throw new PlanningServiceError('validation_error', `Unsupported recovery reason: ${reason}`);
   }
 
-  const itinerary = current.plan.itinerary.map((step: Record<string, any>) => (
-    step.type === 'restaurant'
-      ? {
-          ...step,
-          id: 'step_restaurant_backup',
-          place_id: 'res_022',
-          placeId: 'res_022',
-          title: '轻碗健康餐厅',
-          start: '16:05',
-          end: '17:05',
-          travel: '从科学馆步行 7 分钟',
-          reason: '原餐厅临时无位，备选餐厅仍满足低脂菜单、儿童座椅和步行距离约束。',
-        }
-      : step
-  ));
-  const diff = {
-    changed: 'restaurant',
-    reason: '绿荫轻食餐厅返回该时段无位。',
-    from: '绿荫轻食餐厅',
-    to: '轻碗健康餐厅',
-    costDelta: '+约 40 元',
-    travelDelta: '+步行 2 分钟',
-    preserved: ['城市科学馆', '河畔低糖甜品散步'],
-  };
-  const next = {
-    ...current,
-    diff,
-    adjustment: {
-      requested_by: 'agent',
-      reason: diff.reason,
-      changes: ['restaurant'],
-      requires_confirmation: true,
-      payload: {
-        headline: '餐厅临时无位，已为你换好备选',
-        message: '绿荫轻食餐厅当前时段无位，已替换为步行 7 分钟可达的轻碗健康餐厅。',
-      },
-      headline: '餐厅临时无位，已为你换好备选',
-      message: '绿荫轻食餐厅当前时段无位，已替换为步行 7 分钟可达的轻碗健康餐厅。',
-    },
-    plan: {
-      ...current.plan,
-      id: `${current.plan.id}_recovered`,
-      status: 'recovered_pending_confirmation',
-      itinerary,
-      diff,
-      adjustment: {
-        headline: '餐厅临时无位，已为你换好备选',
-        message: '绿荫轻食餐厅当前时段无位，已替换为步行 7 分钟可达的轻碗健康餐厅。',
-      },
-    },
-    itinerary,
-    trace: current.trace.concat(trace('recovery_agent', '餐厅不可用，已局部替换并保留其他节点。', 'ok')),
-  };
+  const next = applyRecoveryPolicy(current, reason);
   plans.set(planId, next);
   plans.set(next.plan.id, next);
   const threadId = planThreads.get(planId);

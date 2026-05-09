@@ -1,7 +1,8 @@
 import { PlanStatuses, type PlannerState } from '../state';
+import { isRecoveryReason } from '../../recovery/recoveryPolicies';
 
 export function recoverPlan(state: PlannerState, reason: string): PlannerState {
-  if (reason !== 'restaurant_unavailable' || !state.plan_response) {
+  if (!isRecoveryReason(reason) || !state.plan_response) {
     return {
       ...state,
       status: PlanStatuses.EXECUTION_FAILED,
