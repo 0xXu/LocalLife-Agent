@@ -1266,6 +1266,27 @@ dd,
   font-weight: 700;
 }
 
+.confirmation-dialog {
+  max-width: 420px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.confirmation-dialog h2 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.confirmation-dialog ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .recovery-card h2 {
   margin: 0 0 8px;
   color: var(--coral);

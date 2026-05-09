@@ -1,5 +1,6 @@
 import React from 'react';
 import { CalendarPlus, MessageSquareShare, ReceiptText, ShoppingBag, Ticket, Utensils } from 'lucide-react';
+import { ConfirmationDialog } from './ConfirmationDialog';
 
 type BottomExecutionBarProps = {
   actions: Array<Record<string, any>>;
@@ -39,6 +40,7 @@ export function BottomExecutionBar({ actions, onExecute }: BottomExecutionBarPro
           );
         })}
       </div>
+      <ConfirmationDialog actions={actions} />
       <button className="primary-button compact" type="button" onClick={onExecute}>确认执行</button>
     </section>
   );

@@ -1,6 +1,12 @@
 import { PlanResponseSchema } from '../../contracts/schemas';
 import { PlanStatuses, type PlannerState } from '../state';
 import { makeReceipts } from './buildItinerary';
+import { ensureConfirmationSnapshot } from '../guardrails';
+
+export async function executeActionsNode(state: PlannerState, options: { confirmed?: boolean; confirmationSnapshot?: unknown } = {}) {
+  ensureConfirmationSnapshot(options);
+  return executeActions({ ...state, confirmed: options.confirmed ?? state.confirmed });
+}
 
 export function executeActions(state: PlannerState): PlannerState {
   if (state.confirmed !== true) {
