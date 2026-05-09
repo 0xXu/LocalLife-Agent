@@ -1,3 +1,5 @@
+// Legacy deterministic mock retained for historical tests only.
+// The main product path uses Next.js API + LangGraph workflow + MCP-ready tools.
 export const demoTools = [
   'parse_user_goal',
   'search_places',

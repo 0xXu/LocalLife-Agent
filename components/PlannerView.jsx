@@ -20,7 +20,7 @@ export function PlannerView({ goal, result, receipts, recoveredPlan, onExecute, 
           <PlanCanvas response={response} />
           <RecoveryDiff diff={plan.diff} adjustment={plan.adjustment} />
           {onRecover ? (
-            <button className="secondary-button full" type="button" onClick={onRecover}>换一家餐厅</button>
+            <button className="secondary-button full" type="button" onClick={onRecover}>模拟餐厅无位</button>
           ) : null}
         </div>
       </div>

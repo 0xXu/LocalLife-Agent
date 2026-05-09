@@ -5,7 +5,7 @@ import {
   executePlan,
   recoverUnavailableRestaurant,
   demoTools
-} from '../src/agent.mjs';
+} from './fixtures/legacyMockAgent.mjs';
 
 test('buildPlan extracts family constraints and returns trace plus itinerary', () => {
   const result = buildPlan('Today afternoon is free, I want to go out with my wife and 5yo kid, not too far, wife is on a diet.');

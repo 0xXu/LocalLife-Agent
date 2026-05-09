@@ -38,7 +38,9 @@ uv run pytest tests/backend
 
 ## 后端服务
 
-当前仓库额外提供了分层 Python 后端。后端参考多 Agent travel planner 的 `api / models / agents / tools / orchestrator / services` 分层，并按本项目详细设计文档实现本地生活规划 Pipeline。当前前端仍使用本地 mock 数据，暂不接后端接口。
+当前仓库额外提供了分层 Python 后端。后端参考多 Agent travel planner 的 `api / models / agents / tools / orchestrator / services` 分层，并按本项目详细设计文档实现本地生活规划 Pipeline。
+
+主体验通过 Next.js API + LangGraph workflow + MCP-ready tools 运行。Python backend 是迁移前的参考实现，不是主演示路径。
 
 启动后端：
 
@@ -81,32 +83,44 @@ python -m unittest discover -s tests/backend -p "test_*.py"
 3. 在规划页查看理解需求、筛选活动、匹配餐厅、规划路线和确认可订时间。
 4. 展示今日下午行程和右侧计划概览。
 5. 点击 **确认执行**，展示 `TKT-*`、`RES-*`、`MSG-*` 模拟回执。
-6. 点击 **换一家餐厅**，展示餐厅无位后的局部替换方案。
+6. 点击 **模拟餐厅无位**，展示餐厅无位后的局部替换方案。
 
-## 模拟工具
+## MCP-ready 工具
 
-演示保留 8 个 P0 工具能力，界面中以中文标签展示：
+主演示路径保留详细设计定义的 15 个 MCP-ready 工具能力，界面中以中文标签展示规划、路线、优惠、订单、日历、分享和恢复过程：
 
 - `parse_user_goal`
+- `get_weather`
 - `search_places`
 - `search_restaurants`
-- `rank_candidates`
-- `optimize_route`
 - `check_availability`
+- `optimize_route`
+- `build_itinerary`
+- `validate_plan`
+- `compare_alternatives`
+- `reserve_activity`
 - `create_reservation`
+- `claim_coupon`
+- `create_order`
 - `send_plan_message`
+- `create_calendar_event`
 
-这些工具都是确定性模拟实现，后续可以替换成真实美团、地图、订座、订单和消息适配器。
+这些工具通过 TypeScript 适配器和确定性本地 Provider 运行，副作用工具必须经过确认快照后执行，后续可以替换成真实美团、地图、订座、订单和消息适配器。
 
 ## 项目结构
 
-- [app/page.jsx](./app/page.jsx)：Next.js 前端入口。
+- [app/page.tsx](./app/page.tsx)：Next.js 前端入口。
+- [app/api](./app/api)：Next.js API 主路径，连接 planner workflow、工具 Schema、执行和恢复接口。
 - [app/globals.css](./app/globals.css)：中文产品化界面样式。
 - [components](./components)：前端页面、导航、规划、保存计划、最近执行和设置组件。
-- [features/planner/mockAgent.js](./features/planner/mockAgent.js)：前端 mock 数据适配层。
-- [src/agent.mjs](./src/agent.mjs)：确定性模拟助手和工具契约。
+- [features/planner/mockAgent.js](./features/planner/mockAgent.js)：首页场景、保存计划和最近执行的展示数据，不再承载主规划 Agent。
+- [lib/agent](./lib/agent)：LangGraph 风格 workflow、状态节点、计划构建、执行和恢复编排。
+- [lib/tools](./lib/tools)：MCP-ready 工具注册、适配器、幂等回执和副作用边界。
+- [lib/data](./lib/data)：PostGIS-ready 数据模型、迁移、种子数据和 repository。
+- [src/agent.mjs](./src/agent.mjs)：迁移前确定性 mock，仅供历史测试 fixture 使用。
 - [data/poi.json](./data/poi.json)：中文种子地点数据。
 - [tests/agent.test.mjs](./tests/agent.test.mjs)：行为测试。
+- [tests/fixtures/legacyMockAgent.mjs](./tests/fixtures/legacyMockAgent.mjs)：旧 mock Agent 的历史测试入口。
 - [tests/backend](./tests/backend)：后端 pytest 测试。
 - [pyproject.toml](./pyproject.toml)：`uv` 项目配置。
 - [uv.lock](./uv.lock)：`uv` 锁定文件。
@@ -114,4 +128,4 @@ python -m unittest discover -s tests/backend -p "test_*.py"
 
 ## 当前状态
 
-当前版本是稳定的中文产品化 Demo。普通用户默认看到计划、路线、确认动作和结果；评委可以展开“查看规划过程”检查模拟工具链。
+当前版本是稳定的中文产品化 Demo。普通用户默认通过 Next.js API 触发 LangGraph workflow，看到约束、计划、路线、确认动作、商业回执和失败恢复；评委可以展开“Agent 执行轨迹”检查 MCP-ready 工具链。

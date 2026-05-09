@@ -10,7 +10,7 @@
     "test": "node --test tests/*.test.mjs",
     "test:contracts": "tsx --test tests/contracts/*.test.ts",
     "test:server": "tsx --test tests/server/*.test.ts",
-    "test:frontend": "tsx --test tests/frontend/*.test.tsx",
+    "test:frontend": "tsx --test tests/frontend/*.test.ts tests/frontend/*.test.tsx",
     "test:all": "npm test && npm run test:contracts && npm run test:server && npm run test:frontend"
   },
   "dependencies": {

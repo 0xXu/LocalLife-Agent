@@ -1,10 +1,3 @@
-export {
-  buildPlan,
-  demoTools,
-  executePlan,
-  recoverUnavailableRestaurant
-} from '@/src/agent.mjs';
-
 export const scenarioPrompts = {
   family: '今天下午是空的，想和老婆孩子出去玩几个小时，别离家太远。孩子 5 岁，老婆最近在减脂，帮我安排一下。',
   friends: '今天下午朋友 4 个人出去玩，2 男 2 女，先活动再吃饭，想拍照聊天，预算适中，路线顺一点。',
