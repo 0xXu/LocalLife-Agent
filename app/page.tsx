@@ -14,12 +14,15 @@ import {
   scenarioPrompts
 } from '@/features/planner/mockAgent';
 
+type Plan = ReturnType<typeof buildPlan>['plan'];
+type Receipt = ReturnType<typeof executePlan>[number];
+
 export default function WeekendPilotApp() {
   const [activeView, setActiveView] = useState('home');
   const [goal, setGoal] = useState(scenarioPrompts.family);
   const [planResult, setPlanResult] = useState(() => buildPlan(scenarioPrompts.family));
-  const [recoveredPlan, setRecoveredPlan] = useState(null);
-  const [receipts, setReceipts] = useState([]);
+  const [recoveredPlan, setRecoveredPlan] = useState<Plan | null>(null);
+  const [receipts, setReceipts] = useState<Receipt[]>([]);
 
   const currentPlanner = useMemo(() => ({
     goal,
@@ -65,9 +68,6 @@ export default function WeekendPilotApp() {
       {activeView === 'saved' ? <SavedPlansView onPlan={() => createPlan(scenarioPrompts.family)} /> : null}
       {activeView === 'activity' ? <ActivityView /> : null}
       {activeView === 'settings' ? <SettingsView /> : null}
-      {activeView === 'favorites' || activeView === 'help' ? (
-        <HomeView goal={goal} onGoalChange={setGoal} onPlan={createPlan} />
-      ) : null}
     </AppChrome>
   );
 }

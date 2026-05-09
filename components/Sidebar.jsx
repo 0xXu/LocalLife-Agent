@@ -2,8 +2,6 @@
 
 import {
   Bookmark,
-  Heart,
-  HelpCircle,
   History,
   Home,
   Plus,
@@ -11,10 +9,13 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  { id: 'home', label: '首页', icon: Home },
+  { id: 'home', label: '工作台', icon: Home }
+];
+
+export const workspaceTabs = [
   { id: 'saved', label: '保存计划', icon: Bookmark },
   { id: 'activity', label: '最近执行', icon: History },
-  { id: 'favorites', label: '收藏地点', icon: Heart }
+  { id: 'settings', label: '偏好设置', icon: Settings }
 ];
 
 export function Sidebar({ activeView, onNavigate, onNewPlan }) {
@@ -45,16 +46,7 @@ export function Sidebar({ activeView, onNavigate, onNewPlan }) {
       </nav>
 
       <div className="sidebar-footer">
-        <NavButton
-          item={{ id: 'settings', label: '设置', icon: Settings }}
-          active={activeView === 'settings'}
-          onNavigate={onNavigate}
-        />
-        <NavButton
-          item={{ id: 'help', label: '帮助', icon: HelpCircle }}
-          active={activeView === 'help'}
-          onNavigate={onNavigate}
-        />
+        <span className="sidebar-note">计划、执行记录和偏好已收敛到工作台顶部标签。</span>
       </div>
     </aside>
   );

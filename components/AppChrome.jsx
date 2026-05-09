@@ -1,7 +1,7 @@
 'use client';
 
 import { MoreVertical, Search } from 'lucide-react';
-import { Sidebar } from './Sidebar';
+import { Sidebar, workspaceTabs } from './Sidebar';
 
 export function AppChrome({ activeView, children, onNavigate, onNewPlan }) {
   return (
@@ -21,6 +21,22 @@ export function AppChrome({ activeView, children, onNavigate, onNewPlan }) {
             <MoreVertical size={19} />
           </button>
         </header>
+        <nav className="workspace-tabs" aria-label="工作台辅助视图">
+          {workspaceTabs.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.id}
+                className={activeView === item.id ? 'active' : ''}
+                type="button"
+                onClick={() => onNavigate(item.id)}
+              >
+                <Icon size={17} />
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
         {children}
       </main>
     </div>

@@ -147,6 +147,13 @@ button {
   border-top: 1px solid var(--line);
 }
 
+.sidebar-note {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .nav-item {
   min-height: 48px;
   padding: 0 16px;
@@ -231,6 +238,34 @@ button {
 
 .icon-button:hover {
   background: var(--surface-2);
+}
+
+.workspace-tabs {
+  min-height: 48px;
+  padding: 6px 22px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(250, 251, 255, 0.86);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.workspace-tabs button {
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #535b69;
+  background: transparent;
+  font-weight: 720;
+}
+
+.workspace-tabs button:hover,
+.workspace-tabs button.active {
+  color: var(--blue);
+  background: var(--blue-soft);
 }
 
 .home-view {
@@ -318,7 +353,7 @@ button {
 .scenario-grid {
   margin-top: 22px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 18px;
 }
 
@@ -362,6 +397,11 @@ button {
 .scenario-icon.coral {
   color: var(--coral);
   background: var(--coral-soft);
+}
+
+.scenario-icon.green {
+  color: var(--green);
+  background: var(--green-soft);
 }
 
 .scenario-card strong {

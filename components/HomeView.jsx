@@ -1,6 +1,6 @@
 'use client';
 
-import { Mic, SendHorizontal, Users, Utensils, CloudRain } from 'lucide-react';
+import { CloudRain, Heart, Mic, SendHorizontal, Users, Utensils } from 'lucide-react';
 import { scenarioPrompts } from '@/features/planner/mockAgent';
 
 const scenarios = [
@@ -17,6 +17,13 @@ const scenarios = [
     body: '活动、餐食和小酌顺路安排。',
     icon: Utensils,
     tone: 'violet'
+  },
+  {
+    id: 'date',
+    title: '约会安排',
+    body: '安静、有氛围、低排队。',
+    icon: Heart,
+    tone: 'green'
   },
   {
     id: 'rainy',
