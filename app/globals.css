@@ -1287,6 +1287,55 @@ dd,
   line-height: 1.45;
 }
 
+.commercial-actions,
+.receipt-stack-panel {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: var(--shadow-sm);
+}
+
+.commercial-actions h3,
+.receipt-stack-panel h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.commercial-action-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.commercial-action-grid article {
+  min-height: 86px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 5px;
+  background: #fbfbff;
+}
+
+.commercial-action-grid svg {
+  color: var(--blue);
+}
+
+.commercial-action-grid span,
+.receipt p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.receipt code {
+  display: block;
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
 .recovery-card h2 {
   margin: 0 0 8px;
   color: var(--coral);

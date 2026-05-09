@@ -4,6 +4,7 @@ import { BottomExecutionBar } from './planner/BottomExecutionBar';
 import { ConstraintCards } from './planner/ConstraintCards';
 import { PlanCanvas } from './planner/PlanCanvas';
 import { PromptComposer } from './planner/PromptComposer';
+import { ReceiptStack } from './planner/ReceiptStack';
 import { RecoveryDiff } from './planner/RecoveryDiff';
 
 export function PlannerView({ goal, result, receipts, recoveredPlan, onExecute, onRecover }) {
@@ -31,14 +32,7 @@ export function PlannerView({ goal, result, receipts, recoveredPlan, onExecute, 
               <span>执行回执</span>
               <small>{receipts.length} 项</small>
             </div>
-            <div className="receipt-stack">
-              {receipts.map((receipt) => (
-                <div className="receipt" key={receipt.id}>
-                  <strong>{receipt.id}</strong>
-                  <span>{receipt.detail}</span>
-                </div>
-              ))}
-            </div>
+            <ReceiptStack receipts={receipts} />
           </section>
         </aside>
       ) : null}

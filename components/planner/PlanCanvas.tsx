@@ -3,7 +3,9 @@ import { Car, FlaskConical, MapPinned, ReceiptText, Utensils } from 'lucide-reac
 
 import { RoutePreview } from '../RoutePreview';
 import { TracePanel } from '../trace/TracePanel';
+import { CommercialActions } from './CommercialActions';
 import { RejectedReasons } from './RejectedReasons';
+import { ReceiptStack } from './ReceiptStack';
 import { VariantTabs } from './VariantTabs';
 
 type PlanCanvasProps = {
@@ -44,6 +46,8 @@ export function PlanCanvas({ response }: PlanCanvasProps) {
         </section>
 
         <VariantTabs variants={plan.variants ?? []} />
+        <CommercialActions actions={plan.actions ?? []} />
+        <ReceiptStack receipts={plan.receipts ?? []} />
         <RejectedReasons rejected={rejected} />
       </div>
 
