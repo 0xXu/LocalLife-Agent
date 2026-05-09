@@ -1,4 +1,5 @@
 import { PlanResponseSchema } from '../contracts/schemas';
+import { createPlannerGraph, createTestCheckpointer } from '../agent/graph';
 import type { ParsedConstraints, PlanAction, PlanResponse, Receipt, TraceSpan } from '../../types/weekendpilot';
 
 export type ServiceErrorCode = 'validation_error' | 'confirmation_required' | 'plan_not_found' | 'tool_failed';
@@ -13,6 +14,9 @@ export class PlanningServiceError extends Error {
 }
 
 const plans = new Map<string, Record<string, any>>();
+const planThreads = new Map<string, string>();
+const plannerCheckpointer = createTestCheckpointer();
+const plannerGraph = createPlannerGraph({ checkpointer: plannerCheckpointer });
 
 const defaultGoal = '今天下午想和家人出去玩几个小时，别离家太远，吃得健康一点。';
 
@@ -53,9 +57,20 @@ export function getToolSchemas() {
   };
 }
 
-export function buildPlan(goal = defaultGoal) {
-  const response = makePlanResponse(goal);
+export async function buildPlan(goal = defaultGoal) {
+  const threadId = `service_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const state = await plannerGraph.invoke(
+    { goal },
+    { configurable: { thread_id: threadId } },
+  );
+
+  if (!state.plan_response) {
+    throw new PlanningServiceError('validation_error', state.clarifying_questions.join(' ') || 'Plan needs clarification.');
+  }
+
+  const response = state.plan_response;
   plans.set(response.plan.id, response);
+  planThreads.set(response.plan.id, threadId);
   return response;
 }
 
@@ -108,22 +123,26 @@ export function confirmPlan(planId: string, confirmed: boolean) {
   return updatePlan(planId, { status: 'confirmed' });
 }
 
-export function executePlan(planId: string, confirmed: boolean) {
+export async function executePlan(planId: string, confirmed: boolean) {
   if (!confirmed) {
     throw new PlanningServiceError('confirmation_required', 'Plan confirmation is required before execution.');
   }
   const current = requirePlan(planId);
-  const receipts = makeReceipts(current);
-  const next = {
-    ...current,
-    receipts,
-    plan: {
-      ...current.plan,
-      status: 'completed',
-      receipts,
-    },
-    trace: current.trace.concat(trace('execution_agent', '6 个确认动作已执行并返回回执。', 'ok')),
-  };
+  const threadId = planThreads.get(planId);
+  if (!threadId) {
+    throw new PlanningServiceError('plan_not_found', `Plan thread not found: ${planId}`);
+  }
+
+  const state = await plannerGraph.invoke(
+    { confirmed: true, plan_response: current as PlanResponse },
+    { configurable: { thread_id: threadId } },
+  );
+
+  if (!state.plan_response) {
+    throw new PlanningServiceError('tool_failed', state.error ?? 'Plan execution failed.');
+  }
+
+  const next = state.plan_response;
   plans.set(planId, next);
   return next;
 }
@@ -189,6 +208,10 @@ export function recoverPlan(planId: string, reason: string) {
   };
   plans.set(planId, next);
   plans.set(next.plan.id, next);
+  const threadId = planThreads.get(planId);
+  if (threadId) {
+    planThreads.set(next.plan.id, threadId);
+  }
   return next;
 }
 
