@@ -1,15 +1,9 @@
 import { PlanStatuses, type PlannerState } from '../state';
 import { rankExplanationAgentName } from '../agents';
+import { hardFilterCandidates, type FilterablePoi } from '../../planning/filtering';
+import { rankCandidate, type RankFactors } from '../../planning/ranking';
 
-export type RankFactors = {
-  distance_score: number;
-  rating_score: number;
-  constraint_fit_score: number;
-  availability_score: number;
-  route_efficiency_score: number;
-  budget_score: number;
-  novelty_or_vibe_score: number;
-};
+export type { RankFactors };
 
 export type RankedPoiExplanationInput = {
   name: string;
@@ -26,19 +20,46 @@ export type RankedPoiExplanation = {
 };
 
 export function rankCandidates(state: PlannerState): PlannerState {
+  const constraints = state.constraints;
+  if (!constraints) {
+    throw new Error('Cannot rank candidates before constraints are parsed.');
+  }
+
+  const filterInput = {
+    date: constraints.time_window.date,
+    time: constraints.time_window.start,
+    radiusKm: constraints.constraints.radius_km,
+    childAges: constraints.people.children.map((child) => child.age),
+    partySize: constraints.people.adults + constraints.people.children.length,
+    maxWaitMinutes: constraints.constraints.max_wait_minutes,
+  };
+  const activities = hardFilterCandidates(asFilterable(state.candidates?.activities), filterInput);
+  const restaurants = hardFilterCandidates(asFilterable(state.candidates?.restaurants), filterInput);
+  const walks = hardFilterCandidates(asFilterable(state.candidates?.walks), filterInput);
+
   return {
     ...state,
     status: PlanStatuses.RANK_AND_FILTER,
+    filtered_candidates: {
+      activities,
+      restaurants,
+      walks,
+    },
+    rejected_candidates: [...activities.rejected, ...restaurants.rejected, ...walks.rejected],
     ranked_candidates: {
-      activities: [...(state.candidates?.activities ?? [])].sort(byScore),
-      restaurants: [...(state.candidates?.restaurants ?? [])].sort(byScore),
-      walks: [...(state.candidates?.walks ?? [])].sort(byScore),
+      activities: activities.map((candidate) => rankCandidate(candidate, constraints)).sort(byScore),
+      restaurants: restaurants.map((candidate) => rankCandidate(candidate, constraints)).sort(byScore),
+      walks: walks.map((candidate) => rankCandidate(candidate, constraints)).sort(byScore),
     },
   };
 }
 
 function byScore(left: Record<string, unknown>, right: Record<string, unknown>) {
   return Number(right.score ?? 0) - Number(left.score ?? 0);
+}
+
+function asFilterable(candidates: Array<Record<string, unknown>> = []) {
+  return candidates as Array<Record<string, unknown> & FilterablePoi>;
 }
 
 export async function explainRankedPoi(input: RankedPoiExplanationInput): Promise<RankedPoiExplanation> {

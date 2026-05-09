@@ -1,21 +1,38 @@
 import { PlanStatuses, type PlannerState } from '../state';
+import { loadSeedPois } from '../../data/repositories/poiRepository';
 
-export function searchCandidates(state: PlannerState): PlannerState {
+export async function searchCandidates(state: PlannerState): Promise<PlannerState> {
+  const constraints = state.constraints;
+  if (!constraints) {
+    throw new Error('Cannot search candidates before constraints are parsed.');
+  }
+
+  const pois = await loadSeedPois();
+  const radiusKm = Number(constraints.constraints.radius_km ?? 5);
+  const scenario = constraints.scenario;
+  const requestedTags = [...constraints.preferences.activity, ...constraints.preferences.diet];
+  const inScope = pois
+    .filter((poi) => poi.distance_km <= radiusKm)
+    .filter((poi) => poi.supported_scenarios.includes(scenario))
+    .map((poi) => ({ ...poi, title: poi.name }));
+
   return {
     ...state,
     status: PlanStatuses.SEARCH_CANDIDATES,
     candidates: {
-      activities: [
-        { id: 'act_001', title: '城市科学馆', score: 0.94, tags: ['child_friendly', 'indoor'] },
-        { id: 'act_018', title: '儿童书店手作角', score: 0.82, tags: ['child_friendly', 'rainy_indoor'] },
-      ],
-      restaurants: [
-        { id: 'res_014', title: '绿荫轻食餐厅', score: 0.92, tags: ['low_fat', 'child_seat'] },
-        { id: 'res_022', title: '轻碗健康餐厅', score: 0.86, tags: ['low_fat', 'quiet'] },
-      ],
-      walks: [
-        { id: 'walk_006', title: '河畔低糖甜品散步', score: 0.88, tags: ['short_walk', 'low_sugar'] },
-      ],
+      activities: prioritize(inScope.filter((poi) => ['family_activity', 'social_activity', 'date_activity', 'indoor_activity'].includes(poi.category)), requestedTags),
+      restaurants: prioritize(inScope.filter((poi) => poi.category === 'restaurant'), constraints.preferences.diet),
+      walks: prioritize(inScope.filter((poi) => poi.category === 'dessert_walk' || poi.category === 'citywalk'), requestedTags),
     },
   };
+}
+
+function prioritize(candidates: Array<Record<string, unknown> & { tags: string[]; rating: number; distance_km: number }>, tags: string[]) {
+  return candidates
+    .sort((left, right) => tagScore(right.tags, tags) - tagScore(left.tags, tags) || right.rating - left.rating || left.distance_km - right.distance_km)
+    .slice(0, 12);
+}
+
+function tagScore(candidateTags: string[], requestedTags: string[]) {
+  return requestedTags.filter((tag) => candidateTags.includes(tag)).length;
 }

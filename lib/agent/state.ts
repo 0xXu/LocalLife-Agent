@@ -1,4 +1,5 @@
 import type { ParsedConstraints, PlanResponse, Receipt } from '../../types/weekendpilot';
+import type { RejectedCandidate } from '../planning/filtering';
 
 export const PlanStatuses = {
   INPUT: 'INPUT',
@@ -33,6 +34,8 @@ export type PlannerState = {
   constraints?: ParsedConstraints & Record<string, unknown>;
   context?: Record<string, unknown>;
   candidates?: CandidateSet;
+  filtered_candidates?: CandidateSet;
+  rejected_candidates?: RejectedCandidate[];
   ranked_candidates?: CandidateSet;
   plan_response?: PlanResponse;
   receipts: Receipt[];

@@ -50,7 +50,7 @@ export function createPlannerGraph({ checkpointer = createTestCheckpointer() }: 
       }
 
       state = buildContext(state);
-      state = searchCandidates(state);
+      state = await searchCandidates(state);
       state = rankCandidates(state);
       state = buildItinerary(state);
       state = validatePlan(state);

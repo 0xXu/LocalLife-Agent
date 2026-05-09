@@ -3,6 +3,7 @@ import { v7 as uuidv7 } from 'uuid';
 import { PlanResponseSchema } from '../../contracts/schemas';
 import type { PlanAction, PlanResponse, Receipt, TraceSpan } from '../../../types/weekendpilot';
 import { PlanStatuses, type PlannerState, sideEffectTools } from '../state';
+import { buildVariants, type RankedCandidate, type RankedCandidateSet } from '../../planning/ranking';
 
 export function buildItinerary(state: PlannerState): PlannerState {
   const plan_response = makePlanResponse(state);
@@ -14,57 +15,18 @@ export function buildItinerary(state: PlannerState): PlannerState {
   };
 }
 
-export function makePlanResponse(state: Pick<PlannerState, 'constraints' | 'goal' | 'thread_id'>): PlanResponse {
+export function makePlanResponse(state: Pick<PlannerState, 'constraints' | 'goal' | 'thread_id' | 'ranked_candidates' | 'rejected_candidates'>): PlanResponse {
   const constraints = state.constraints;
   if (!constraints) {
     throw new Error('Cannot build itinerary before constraints are parsed.');
   }
 
-  const itinerary = [
-    {
-      id: 'step_activity',
-      place_id: 'act_001',
-      placeId: 'act_001',
-      type: 'family_activity',
-      category: 'family_activity',
-      title: '城市科学馆',
-      start: '14:00',
-      end: '15:40',
-      cost: '约 320 元',
-      travel: '打车 12 分钟',
-      risk: ['weekend_queue'],
-      reason: '有亲子探索展区，室内路线轻松，适合 5 岁孩子活动。',
-    },
-    {
-      id: 'step_restaurant',
-      place_id: 'res_014',
-      placeId: 'res_014',
-      type: 'restaurant',
-      category: 'restaurant',
-      title: '绿荫轻食餐厅',
-      start: '15:55',
-      end: '16:55',
-      cost: '约 300 元',
-      travel: '从科学馆步行 5 分钟',
-      risk: ['limited_tables'],
-      reason: '有低脂套餐、儿童座椅和低糖饮品，当前等待时间低于 15 分钟。',
-    },
-    {
-      id: 'step_walk',
-      place_id: 'walk_006',
-      placeId: 'walk_006',
-      type: 'dessert_walk',
-      category: 'dessert_walk',
-      title: '河畔低糖甜品散步',
-      start: '17:10',
-      end: '17:40',
-      cost: '约 130 元',
-      travel: '轻松步行 1.2 公里',
-      risk: [],
-      reason: '饭后短距离散步，沿路有低糖饮品选择，也方便直接回家。',
-    },
-  ];
+  const ranked = normalizeRankedCandidates(state.ranked_candidates);
+  const variants = buildVariants(ranked, constraints);
+  const itinerary = variants[0].itinerary;
   const actions = makeActions();
+  const averageScore = Math.round([...ranked.activities, ...ranked.restaurants, ...ranked.walks].slice(0, 3).reduce((total, candidate) => total + candidate.score, 0) / 3);
+  const estimatedBudget = variants[0].estimated_budget;
   const response = {
     constraints,
     progress: [
@@ -78,7 +40,14 @@ export function makePlanResponse(state: Pick<PlannerState, 'constraints' | 'goal
       trace('parse_user_goal', '解析出家庭、饮食、距离和半日时长约束。', 'ok'),
       trace('search_local_activities', '找到 5 公里内适合亲子的活动地点。', 'ok'),
       trace('search_restaurants', '匹配附近带低脂菜单标识的餐厅。', 'ok'),
-      trace('rank_candidates', '按距离、儿童友好、饮食匹配、等待时间和预算排序。', 'ok'),
+      trace('rank_candidates', `按详细设计权重排序，筛除 ${state.rejected_candidates?.length ?? 0} 个不满足硬约束的候选。`, 'ok', {
+        rejected: state.rejected_candidates ?? [],
+        top_scores: [
+          ranked.activities[0]?.score,
+          ranked.restaurants[0]?.score,
+          ranked.walks[0]?.score,
+        ].filter((score) => score !== undefined),
+      }),
       trace('optimize_route', '生成科学馆 -> 轻食餐厅 -> 河畔散步路线。', 'ok'),
       trace('check_availability', '绿荫轻食餐厅 15:55 有 3 人模拟可订席位。', 'ok'),
     ],
@@ -86,7 +55,14 @@ export function makePlanResponse(state: Pick<PlannerState, 'constraints' | 'goal
       toolCall('parse_user_goal'),
       toolCall('search_local_activities'),
       toolCall('search_restaurants'),
-      toolCall('rank_candidates'),
+      toolCall('rank_candidates', 'ok', {
+        rejected_reasons: state.rejected_candidates ?? [],
+        factor_scores: {
+          activity: ranked.activities[0]?.factors,
+          restaurant: ranked.restaurants[0]?.factors,
+          walk: ranked.walks[0]?.factors,
+        },
+      }),
       toolCall('optimize_route'),
       toolCall('check_availability'),
       toolCall('reserve_activity', 'pending'),
@@ -117,27 +93,17 @@ export function makePlanResponse(state: Pick<PlannerState, 'constraints' | 'goal
         totalDuration: '4.5 小时',
         driveTime: '约 25 分钟',
         walkingDistance: '1.2 公里',
-        estimatedCost: '约 750 - 900 元',
-        score: 91,
-        estimated_budget_value: 850,
+        estimatedCost: `约 ${estimatedBudget} 円`,
+        score: averageScore,
+        estimated_budget_value: estimatedBudget,
       },
       actions,
-      variants: [
-        {
-          id: 'variant_rainy',
-          kind: 'rainy_indoor',
-          title: '雨天室内备选',
-          summary: '把河畔散步替换为商场室内甜品和儿童书店。',
-          constraint_fit: { distance: 0.9, child_friendly: 1, diet: 0.82, time: 0.9, budget: 0.84 },
-          itinerary: [],
-          actions: [],
-        },
-      ],
+      variants,
       receipts: [],
       badges: ['5 公里内', '儿童友好', '低脂菜单', '可执行'],
     },
     actions,
-    variants: [],
+    variants,
     receipts: [],
   };
 
@@ -193,25 +159,52 @@ function receipt(type: string, toolName: string, id: string, detail: string): Re
   };
 }
 
-function trace(agent: string, message: string, status: TraceSpan['status']) {
+function normalizeRankedCandidates(candidates: PlannerState['ranked_candidates']): RankedCandidateSet {
+  return {
+    activities: fallbackRanked(candidates?.activities, fallbackActivity),
+    restaurants: fallbackRanked(candidates?.restaurants, fallbackRestaurant),
+    walks: fallbackRanked(candidates?.walks, fallbackWalk),
+  };
+}
+
+function fallbackRanked(candidates: Array<Record<string, unknown>> | undefined, fallback: RankedCandidate): RankedCandidate[] {
+  const normalized = (candidates ?? []).map((candidate) => ({
+    ...candidate,
+    id: String(candidate.id),
+    category: String(candidate.category ?? candidate.type ?? 'activity'),
+    name: String(candidate.name ?? candidate.title ?? candidate.id),
+    title: String(candidate.title ?? candidate.name ?? candidate.id),
+    score: Number(candidate.score ?? 75),
+    avg_price: Number(candidate.avg_price ?? 1000),
+    tags: Array.isArray(candidate.tags) ? candidate.tags.map(String) : [],
+  })) as RankedCandidate[];
+  return normalized.length > 0 ? normalized : [fallback];
+}
+
+const fallbackActivity: RankedCandidate = { id: 'act_001', name: '城市科学馆', title: '城市科学馆', category: 'family_activity', score: 91, avg_price: 1800, tags: ['child_friendly'], reason: '有亲子探索展区，室内路线轻松。' };
+const fallbackRestaurant: RankedCandidate = { id: 'res_014', name: '绿荫轻食餐厅', title: '绿荫轻食餐厅', category: 'restaurant', score: 90, avg_price: 3000, tags: ['low_fat'], reason: '有低脂套餐和儿童座椅。' };
+const fallbackWalk: RankedCandidate = { id: 'walk_006', name: '河畔低糖甜品散步', title: '河畔低糖甜品散步', category: 'dessert_walk', score: 86, avg_price: 900, tags: ['low_sugar'], reason: '饭后短距离散步，沿路有低糖饮品选择。' };
+
+function trace(agent: string, message: string, status: TraceSpan['status'], output_summary: Record<string, unknown> = {}) {
   return {
     id: `${agent}_${Date.now().toString(36)}`,
     agent,
     tool: agent,
     message,
     input_summary: {},
+    output_summary,
     status,
     duration_ms: agent === 'parse_user_goal' ? 120 : 260,
     metadata: {},
   };
 }
 
-function toolCall(toolName: string, status: 'ok' | 'pending' = 'ok') {
+function toolCall(toolName: string, status: 'ok' | 'pending' = 'ok', outputSummary?: Record<string, unknown>) {
   return {
     id: `call_${toolName}`,
     tool: toolName,
     input_summary: {},
-    output_summary: status === 'ok' ? { ok: true } : undefined,
+    output_summary: status === 'ok' ? { ok: true, ...outputSummary } : undefined,
     status,
     duration_ms: 180,
     side_effect: sideEffectTools.has(toolName),
