@@ -1,7 +1,8 @@
 import React from 'react';
-import { Car, Check, FlaskConical, MapPinned, ReceiptText, Utensils } from 'lucide-react';
+import { Car, FlaskConical, MapPinned, ReceiptText, Utensils } from 'lucide-react';
 
 import { RoutePreview } from '../RoutePreview';
+import { TracePanel } from '../trace/TracePanel';
 import { RejectedReasons } from './RejectedReasons';
 import { VariantTabs } from './VariantTabs';
 
@@ -16,17 +17,7 @@ export function PlanCanvas({ response }: PlanCanvasProps) {
   return (
     <section className="plan-canvas">
       <div className="plan-main-column">
-        <section className="trace-panel">
-          <h2>Agent 执行轨迹</h2>
-          <ol className="agent-steps">
-            {(response.trace ?? []).map((step: Record<string, any>, index: number) => (
-              <li key={step.id ?? step.tool ?? index} className={step.status === 'ok' ? 'done' : 'running'}>
-                <span>{step.status === 'ok' ? <Check size={15} /> : null}</span>
-                {step.message ?? step.tool}
-              </li>
-            ))}
-          </ol>
-        </section>
+        <TracePanel trace={response.trace ?? []} toolCalls={response.tool_calls ?? []} />
 
         <section className="itinerary-section">
           <h2>主方案</h2>
