@@ -1,0 +1,15 @@
+CREATE INDEX IF NOT EXISTS pois_location_gix ON pois USING gist (location);
+CREATE INDEX IF NOT EXISTS pois_embedding_hnsw ON pois USING hnsw (embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS pois_category_idx ON pois (category);
+CREATE INDEX IF NOT EXISTS pois_supported_scenarios_gin ON pois USING gin (supported_scenarios);
+CREATE INDEX IF NOT EXISTS pois_tags_gin ON pois USING gin (tags);
+CREATE INDEX IF NOT EXISTS coupons_poi_id_idx ON coupons (poi_id);
+CREATE INDEX IF NOT EXISTS menus_poi_id_idx ON menus (poi_id);
+CREATE INDEX IF NOT EXISTS menus_tags_gin ON menus USING gin (tags);
+CREATE INDEX IF NOT EXISTS route_legs_pair_idx ON route_legs (from_poi_id, to_poi_id);
+CREATE INDEX IF NOT EXISTS plans_thread_id_idx ON plans (thread_id);
+CREATE INDEX IF NOT EXISTS plans_status_idx ON plans (status);
+CREATE INDEX IF NOT EXISTS traces_plan_id_idx ON traces (plan_id);
+CREATE INDEX IF NOT EXISTS traces_span_id_idx ON traces (span_id);
+CREATE INDEX IF NOT EXISTS executions_plan_id_idx ON executions (plan_id);
+CREATE INDEX IF NOT EXISTS idempotency_keys_expiry_idx ON idempotency_keys (expires_at);

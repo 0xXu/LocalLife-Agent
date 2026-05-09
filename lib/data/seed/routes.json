@@ -1,0 +1,272 @@
+[
+  {
+    "from": "poi_family-activity_001",
+    "to": "poi_restaurant_001",
+    "mode": "walk",
+    "duration_minutes": 7,
+    "distance_km": 0.45,
+    "polyline": "sendai_01_001_001",
+    "route_summary": "步行路段短，适合半日计划内的轻量移动。"
+  },
+  {
+    "from": "poi_family-activity_002",
+    "to": "poi_restaurant_002",
+    "mode": "taxi",
+    "duration_minutes": 14,
+    "distance_km": 0.83,
+    "polyline": "sendai_02_002_002",
+    "route_summary": "打车可降低换乘风险，适合带儿童或赶预约。"
+  },
+  {
+    "from": "poi_social-activity_001",
+    "to": "poi_restaurant_004",
+    "mode": "walk",
+    "duration_minutes": 13,
+    "distance_km": 1.21,
+    "polyline": "sendai_03_001_004",
+    "route_summary": "步行路段短，适合半日计划内的轻量移动。"
+  },
+  {
+    "from": "poi_social-activity_003",
+    "to": "poi_dessert-walk_003",
+    "mode": "walk",
+    "duration_minutes": 16,
+    "distance_km": 1.59,
+    "polyline": "sendai_04_003_003",
+    "route_summary": "步行路段短，适合半日计划内的轻量移动。"
+  },
+  {
+    "from": "poi_date-activity_001",
+    "to": "poi_restaurant_009",
+    "mode": "walk",
+    "duration_minutes": 19,
+    "distance_km": 1.97,
+    "polyline": "sendai_05_001_009",
+    "route_summary": "步行路段短，适合半日计划内的轻量移动。"
+  },
+  {
+    "from": "poi_date-activity_004",
+    "to": "poi_dessert-walk_010",
+    "mode": "walk",
+    "duration_minutes": 22,
+    "distance_km": 2.35,
+    "polyline": "sendai_06_004_010",
+    "route_summary": "步行路段短，适合半日计划内的轻量移动。"
+  },
+  {
+    "from": "poi_indoor-activity_001",
+    "to": "poi_restaurant_012",
+    "mode": "subway",
+    "duration_minutes": 19,
+    "distance_km": 2.73,
+    "polyline": "sendai_07_001_012",
+    "route_summary": "公共交通班次稳定，雨天也可控。"
+  },
+  {
+    "from": "poi_indoor-activity_004",
+    "to": "poi_restaurant_028",
+    "mode": "taxi",
+    "duration_minutes": 14,
+    "distance_km": 3.11,
+    "polyline": "sendai_08_004_028",
+    "route_summary": "打车可降低换乘风险，适合带儿童或赶预约。"
+  },
+  {
+    "from": "poi_restaurant_001",
+    "to": "poi_dessert-walk_001",
+    "mode": "walk",
+    "duration_minutes": 7,
+    "distance_km": 3.49,
+    "polyline": "sendai_09_001_001",
+    "route_summary": "步行路段短，适合半日计划内的轻量移动。"
+  },
+  {
+    "from": "poi_restaurant_009",
+    "to": "poi_dessert-walk_006",
+    "mode": "walk",
+    "duration_minutes": 10,
+    "distance_km": 3.87,
+    "polyline": "sendai_10_009_006",
+    "route_summary": "步行路段短，适合半日计划内的轻量移动。"
+  },
+  {
+    "from": "poi_restaurant_022",
+    "to": "poi_family-activity_007",
+    "mode": "taxi",
+    "duration_minutes": 26,
+    "distance_km": 4.25,
+    "polyline": "sendai_11_022_007",
+    "route_summary": "打车可降低换乘风险，适合带儿童或赶预约。"
+  },
+  {
+    "from": "poi_restaurant_023",
+    "to": "poi_social-activity_012",
+    "mode": "taxi",
+    "duration_minutes": 30,
+    "distance_km": 0.45,
+    "polyline": "sendai_12_023_012",
+    "route_summary": "打车可降低换乘风险，适合带儿童或赶预约。"
+  },
+  {
+    "from": "poi_family-activity_011",
+    "to": "poi_dessert-walk_009",
+    "mode": "bus",
+    "duration_minutes": 24,
+    "distance_km": 0.83,
+    "polyline": "sendai_13_011_009",
+    "route_summary": "公共交通班次稳定，雨天也可控。"
+  },
+  {
+    "from": "poi_social-activity_014",
+    "to": "poi_restaurant_019",
+    "mode": "walk",
+    "duration_minutes": 22,
+    "distance_km": 1.21,
+    "polyline": "sendai_14_014_019",
+    "route_summary": "步行路段短，适合半日计划内的轻量移动。"
+  },
+  {
+    "from": "poi_date-activity_012",
+    "to": "poi_restaurant_010",
+    "mode": "walk",
+    "duration_minutes": 25,
+    "distance_km": 1.59,
+    "polyline": "sendai_15_012_010",
+    "route_summary": "步行路段短，适合半日计划内的轻量移动。"
+  },
+  {
+    "from": "poi_indoor-activity_010",
+    "to": "poi_family-activity_005",
+    "mode": "walk",
+    "duration_minutes": 28,
+    "distance_km": 1.97,
+    "polyline": "sendai_16_010_005",
+    "route_summary": "步行路段短，适合半日计划内的轻量移动。"
+  },
+  {
+    "from": "poi_restaurant_015",
+    "to": "poi_dessert-walk_008",
+    "mode": "walk",
+    "duration_minutes": 7,
+    "distance_km": 2.35,
+    "polyline": "sendai_17_015_008",
+    "route_summary": "步行路段短，适合半日计划内的轻量移动。"
+  },
+  {
+    "from": "poi_restaurant_026",
+    "to": "poi_indoor-activity_006",
+    "mode": "subway",
+    "duration_minutes": 24,
+    "distance_km": 2.73,
+    "polyline": "sendai_18_026_006",
+    "route_summary": "公共交通班次稳定，雨天也可控。"
+  },
+  {
+    "from": "poi_social-activity_016",
+    "to": "poi_dessert-walk_004",
+    "mode": "walk",
+    "duration_minutes": 13,
+    "distance_km": 3.11,
+    "polyline": "sendai_19_016_004",
+    "route_summary": "步行路段短，适合半日计划内的轻量移动。"
+  },
+  {
+    "from": "poi_date-activity_006",
+    "to": "poi_restaurant_018",
+    "mode": "taxi",
+    "duration_minutes": 14,
+    "distance_km": 3.49,
+    "polyline": "sendai_20_006_018",
+    "route_summary": "打车可降低换乘风险，适合带儿童或赶预约。"
+  },
+  {
+    "from": "poi_family-activity_016",
+    "to": "poi_restaurant_013",
+    "mode": "bus",
+    "duration_minutes": 14,
+    "distance_km": 3.87,
+    "polyline": "sendai_21_016_013",
+    "route_summary": "公共交通班次稳定，雨天也可控。"
+  },
+  {
+    "from": "poi_indoor-activity_012",
+    "to": "poi_dessert-walk_012",
+    "mode": "walk",
+    "duration_minutes": 22,
+    "distance_km": 4.25,
+    "polyline": "sendai_22_012_012",
+    "route_summary": "步行路段短，适合半日计划内的轻量移动。"
+  },
+  {
+    "from": "poi_restaurant_005",
+    "to": "poi_social-activity_007",
+    "mode": "walk",
+    "duration_minutes": 25,
+    "distance_km": 0.45,
+    "polyline": "sendai_23_005_007",
+    "route_summary": "步行路段短，适合半日计划内的轻量移动。"
+  },
+  {
+    "from": "poi_restaurant_020",
+    "to": "poi_date-activity_009",
+    "mode": "taxi",
+    "duration_minutes": 30,
+    "distance_km": 0.83,
+    "polyline": "sendai_24_020_009",
+    "route_summary": "打车可降低换乘风险，适合带儿童或赶预约。"
+  },
+  {
+    "from": "poi_dessert-walk_002",
+    "to": "poi_social-activity_011",
+    "mode": "walk",
+    "duration_minutes": 7,
+    "distance_km": 1.21,
+    "polyline": "sendai_25_002_011",
+    "route_summary": "步行路段短，适合半日计划内的轻量移动。"
+  },
+  {
+    "from": "poi_dessert-walk_011",
+    "to": "poi_indoor-activity_007",
+    "mode": "bus",
+    "duration_minutes": 14,
+    "distance_km": 1.59,
+    "polyline": "sendai_26_011_007",
+    "route_summary": "公共交通班次稳定，雨天也可控。"
+  },
+  {
+    "from": "poi_restaurant_006",
+    "to": "poi_family-activity_006",
+    "mode": "walk",
+    "duration_minutes": 13,
+    "distance_km": 1.97,
+    "polyline": "sendai_27_006_006",
+    "route_summary": "步行路段短，适合半日计划内的轻量移动。"
+  },
+  {
+    "from": "poi_restaurant_024",
+    "to": "poi_date-activity_005",
+    "mode": "taxi",
+    "duration_minutes": 22,
+    "distance_km": 2.35,
+    "polyline": "sendai_28_024_005",
+    "route_summary": "打车可降低换乘风险，适合带儿童或赶预约。"
+  },
+  {
+    "from": "poi_family-activity_010",
+    "to": "poi_indoor-activity_003",
+    "mode": "subway",
+    "duration_minutes": 29,
+    "distance_km": 2.73,
+    "polyline": "sendai_29_010_003",
+    "route_summary": "公共交通班次稳定，雨天也可控。"
+  },
+  {
+    "from": "poi_social-activity_010",
+    "to": "poi_restaurant_003",
+    "mode": "walk",
+    "duration_minutes": 22,
+    "distance_km": 3.11,
+    "polyline": "sendai_30_010_003",
+    "route_summary": "步行路段短，适合半日计划内的轻量移动。"
+  }
+]

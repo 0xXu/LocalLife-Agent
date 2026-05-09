@@ -1,0 +1,1598 @@
+[
+  {
+    "id": "menu_001_01",
+    "poi_id": "poi_restaurant_001",
+    "name": "青叶低脂食堂柚香低脂鸡胸定食",
+    "price": 580,
+    "tags": [
+      "low_fat",
+      "low_sugar"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_001_02",
+    "poi_id": "poi_restaurant_001",
+    "name": "青叶低脂食堂低糖豆乳布丁杯",
+    "price": 840,
+    "tags": [
+      "low_fat",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_001_03",
+    "poi_id": "poi_restaurant_001",
+    "name": "青叶低脂食堂儿童蔬菜咖喱饭",
+    "price": 1100,
+    "tags": [
+      "low_fat",
+      "low_sugar",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_001_04",
+    "poi_id": "poi_restaurant_001",
+    "name": "青叶低脂食堂盐烤季节鱼套餐",
+    "price": 1360,
+    "tags": [
+      "low_fat",
+      "low_sugar"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_002_01",
+    "poi_id": "poi_restaurant_002",
+    "name": "榉树畔家庭餐厅柚香低脂鸡胸定食",
+    "price": 670,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_002_02",
+    "poi_id": "poi_restaurant_002",
+    "name": "榉树畔家庭餐厅低糖豆乳布丁杯",
+    "price": 930,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_002_03",
+    "poi_id": "poi_restaurant_002",
+    "name": "榉树畔家庭餐厅儿童蔬菜咖喱饭",
+    "price": 1190,
+    "tags": [
+      "balanced",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_002_04",
+    "poi_id": "poi_restaurant_002",
+    "name": "榉树畔家庭餐厅盐烤季节鱼套餐",
+    "price": 1450,
+    "tags": [
+      "balanced",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_003_01",
+    "poi_id": "poi_restaurant_003",
+    "name": "仙台站前蔬食厨房柚香低脂鸡胸定食",
+    "price": 760,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_003_02",
+    "poi_id": "poi_restaurant_003",
+    "name": "仙台站前蔬食厨房低糖豆乳布丁杯",
+    "price": 1020,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_003_03",
+    "poi_id": "poi_restaurant_003",
+    "name": "仙台站前蔬食厨房儿童蔬菜咖喱饭",
+    "price": 1280,
+    "tags": [
+      "balanced",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_003_04",
+    "poi_id": "poi_restaurant_003",
+    "name": "仙台站前蔬食厨房盐烤季节鱼套餐",
+    "price": 1540,
+    "tags": [
+      "balanced",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_004_01",
+    "poi_id": "poi_restaurant_004",
+    "name": "国分町炭火小馆柚香低脂鸡胸定食",
+    "price": 850,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_004_02",
+    "poi_id": "poi_restaurant_004",
+    "name": "国分町炭火小馆低糖豆乳布丁杯",
+    "price": 1110,
+    "tags": [
+      "low_fat",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_004_03",
+    "poi_id": "poi_restaurant_004",
+    "name": "国分町炭火小馆儿童蔬菜咖喱饭",
+    "price": 1370,
+    "tags": [
+      "low_fat",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_004_04",
+    "poi_id": "poi_restaurant_004",
+    "name": "国分町炭火小馆盐烤季节鱼套餐",
+    "price": 1630,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_005_01",
+    "poi_id": "poi_restaurant_005",
+    "name": "一番町发酵定食屋柚香低脂鸡胸定食",
+    "price": 940,
+    "tags": [
+      "low_fat",
+      "low_sugar"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_005_02",
+    "poi_id": "poi_restaurant_005",
+    "name": "一番町发酵定食屋低糖豆乳布丁杯",
+    "price": 1200,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_005_03",
+    "poi_id": "poi_restaurant_005",
+    "name": "一番町发酵定食屋儿童蔬菜咖喱饭",
+    "price": 1460,
+    "tags": [
+      "balanced",
+      "low_sugar",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_005_04",
+    "poi_id": "poi_restaurant_005",
+    "name": "一番町发酵定食屋盐烤季节鱼套餐",
+    "price": 1720,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_006_01",
+    "poi_id": "poi_restaurant_006",
+    "name": "长町亲子咖喱房柚香低脂鸡胸定食",
+    "price": 580,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_006_02",
+    "poi_id": "poi_restaurant_006",
+    "name": "长町亲子咖喱房低糖豆乳布丁杯",
+    "price": 840,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_006_03",
+    "poi_id": "poi_restaurant_006",
+    "name": "长町亲子咖喱房儿童蔬菜咖喱饭",
+    "price": 1100,
+    "tags": [
+      "balanced",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_006_04",
+    "poi_id": "poi_restaurant_006",
+    "name": "长町亲子咖喱房盐烤季节鱼套餐",
+    "price": 1360,
+    "tags": [
+      "balanced",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_007_01",
+    "poi_id": "poi_restaurant_007",
+    "name": "泉中央鱼菜小路柚香低脂鸡胸定食",
+    "price": 670,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_007_02",
+    "poi_id": "poi_restaurant_007",
+    "name": "泉中央鱼菜小路低糖豆乳布丁杯",
+    "price": 930,
+    "tags": [
+      "low_fat",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_007_03",
+    "poi_id": "poi_restaurant_007",
+    "name": "泉中央鱼菜小路儿童蔬菜咖喱饭",
+    "price": 1190,
+    "tags": [
+      "low_fat",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_007_04",
+    "poi_id": "poi_restaurant_007",
+    "name": "泉中央鱼菜小路盐烤季节鱼套餐",
+    "price": 1450,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_008_01",
+    "poi_id": "poi_restaurant_008",
+    "name": "宫城野米饭研究所柚香低脂鸡胸定食",
+    "price": 760,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_008_02",
+    "poi_id": "poi_restaurant_008",
+    "name": "宫城野米饭研究所低糖豆乳布丁杯",
+    "price": 1020,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_008_03",
+    "poi_id": "poi_restaurant_008",
+    "name": "宫城野米饭研究所儿童蔬菜咖喱饭",
+    "price": 1280,
+    "tags": [
+      "balanced",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_008_04",
+    "poi_id": "poi_restaurant_008",
+    "name": "宫城野米饭研究所盐烤季节鱼套餐",
+    "price": 1540,
+    "tags": [
+      "balanced",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_009_01",
+    "poi_id": "poi_restaurant_009",
+    "name": "定禅寺低糖甜餐厅柚香低脂鸡胸定食",
+    "price": 850,
+    "tags": [
+      "low_fat",
+      "low_sugar"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_009_02",
+    "poi_id": "poi_restaurant_009",
+    "name": "定禅寺低糖甜餐厅低糖豆乳布丁杯",
+    "price": 1110,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_009_03",
+    "poi_id": "poi_restaurant_009",
+    "name": "定禅寺低糖甜餐厅儿童蔬菜咖喱饭",
+    "price": 1370,
+    "tags": [
+      "balanced",
+      "low_sugar",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_009_04",
+    "poi_id": "poi_restaurant_009",
+    "name": "定禅寺低糖甜餐厅盐烤季节鱼套餐",
+    "price": 1630,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_010_01",
+    "poi_id": "poi_restaurant_010",
+    "name": "片平安静意面馆柚香低脂鸡胸定食",
+    "price": 940,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_010_02",
+    "poi_id": "poi_restaurant_010",
+    "name": "片平安静意面馆低糖豆乳布丁杯",
+    "price": 1200,
+    "tags": [
+      "low_fat",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_010_03",
+    "poi_id": "poi_restaurant_010",
+    "name": "片平安静意面馆儿童蔬菜咖喱饭",
+    "price": 1460,
+    "tags": [
+      "low_fat",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_010_04",
+    "poi_id": "poi_restaurant_010",
+    "name": "片平安静意面馆盐烤季节鱼套餐",
+    "price": 1720,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_011_01",
+    "poi_id": "poi_restaurant_011",
+    "name": "花京院汤咖喱屋柚香低脂鸡胸定食",
+    "price": 580,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_011_02",
+    "poi_id": "poi_restaurant_011",
+    "name": "花京院汤咖喱屋低糖豆乳布丁杯",
+    "price": 840,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_011_03",
+    "poi_id": "poi_restaurant_011",
+    "name": "花京院汤咖喱屋儿童蔬菜咖喱饭",
+    "price": 1100,
+    "tags": [
+      "balanced",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_011_04",
+    "poi_id": "poi_restaurant_011",
+    "name": "花京院汤咖喱屋盐烤季节鱼套餐",
+    "price": 1360,
+    "tags": [
+      "balanced",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_012_01",
+    "poi_id": "poi_restaurant_012",
+    "name": "五桥鸡胸沙拉吧柚香低脂鸡胸定食",
+    "price": 670,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_012_02",
+    "poi_id": "poi_restaurant_012",
+    "name": "五桥鸡胸沙拉吧低糖豆乳布丁杯",
+    "price": 930,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_012_03",
+    "poi_id": "poi_restaurant_012",
+    "name": "五桥鸡胸沙拉吧儿童蔬菜咖喱饭",
+    "price": 1190,
+    "tags": [
+      "balanced",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_012_04",
+    "poi_id": "poi_restaurant_012",
+    "name": "五桥鸡胸沙拉吧盐烤季节鱼套餐",
+    "price": 1450,
+    "tags": [
+      "balanced",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_013_01",
+    "poi_id": "poi_restaurant_013",
+    "name": "卸町海鲜便当堂柚香低脂鸡胸定食",
+    "price": 760,
+    "tags": [
+      "low_fat",
+      "low_sugar"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_013_02",
+    "poi_id": "poi_restaurant_013",
+    "name": "卸町海鲜便当堂低糖豆乳布丁杯",
+    "price": 1020,
+    "tags": [
+      "low_fat",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_013_03",
+    "poi_id": "poi_restaurant_013",
+    "name": "卸町海鲜便当堂儿童蔬菜咖喱饭",
+    "price": 1280,
+    "tags": [
+      "low_fat",
+      "low_sugar",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_013_04",
+    "poi_id": "poi_restaurant_013",
+    "name": "卸町海鲜便当堂盐烤季节鱼套餐",
+    "price": 1540,
+    "tags": [
+      "low_fat",
+      "low_sugar"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_014_01",
+    "poi_id": "poi_restaurant_014",
+    "name": "北四番丁豆腐料理店柚香低脂鸡胸定食",
+    "price": 850,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_014_02",
+    "poi_id": "poi_restaurant_014",
+    "name": "北四番丁豆腐料理店低糖豆乳布丁杯",
+    "price": 1110,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_014_03",
+    "poi_id": "poi_restaurant_014",
+    "name": "北四番丁豆腐料理店儿童蔬菜咖喱饭",
+    "price": 1370,
+    "tags": [
+      "balanced",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_014_04",
+    "poi_id": "poi_restaurant_014",
+    "name": "北四番丁豆腐料理店盐烤季节鱼套餐",
+    "price": 1630,
+    "tags": [
+      "balanced",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_015_01",
+    "poi_id": "poi_restaurant_015",
+    "name": "河原町荞麦小院柚香低脂鸡胸定食",
+    "price": 940,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_015_02",
+    "poi_id": "poi_restaurant_015",
+    "name": "河原町荞麦小院低糖豆乳布丁杯",
+    "price": 1200,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_015_03",
+    "poi_id": "poi_restaurant_015",
+    "name": "河原町荞麦小院儿童蔬菜咖喱饭",
+    "price": 1460,
+    "tags": [
+      "balanced",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_015_04",
+    "poi_id": "poi_restaurant_015",
+    "name": "河原町荞麦小院盐烤季节鱼套餐",
+    "price": 1720,
+    "tags": [
+      "balanced",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_016_01",
+    "poi_id": "poi_restaurant_016",
+    "name": "荒町蒸菜餐桌柚香低脂鸡胸定食",
+    "price": 580,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_016_02",
+    "poi_id": "poi_restaurant_016",
+    "name": "荒町蒸菜餐桌低糖豆乳布丁杯",
+    "price": 840,
+    "tags": [
+      "low_fat",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_016_03",
+    "poi_id": "poi_restaurant_016",
+    "name": "荒町蒸菜餐桌儿童蔬菜咖喱饭",
+    "price": 1100,
+    "tags": [
+      "low_fat",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_016_04",
+    "poi_id": "poi_restaurant_016",
+    "name": "荒町蒸菜餐桌盐烤季节鱼套餐",
+    "price": 1360,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_017_01",
+    "poi_id": "poi_restaurant_017",
+    "name": "台原家庭寿司铺柚香低脂鸡胸定食",
+    "price": 670,
+    "tags": [
+      "low_fat",
+      "low_sugar"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_017_02",
+    "poi_id": "poi_restaurant_017",
+    "name": "台原家庭寿司铺低糖豆乳布丁杯",
+    "price": 930,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_017_03",
+    "poi_id": "poi_restaurant_017",
+    "name": "台原家庭寿司铺儿童蔬菜咖喱饭",
+    "price": 1190,
+    "tags": [
+      "balanced",
+      "low_sugar",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_017_04",
+    "poi_id": "poi_restaurant_017",
+    "name": "台原家庭寿司铺盐烤季节鱼套餐",
+    "price": 1450,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_018_01",
+    "poi_id": "poi_restaurant_018",
+    "name": "上杉味噌汤饭屋柚香低脂鸡胸定食",
+    "price": 760,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_018_02",
+    "poi_id": "poi_restaurant_018",
+    "name": "上杉味噌汤饭屋低糖豆乳布丁杯",
+    "price": 1020,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_018_03",
+    "poi_id": "poi_restaurant_018",
+    "name": "上杉味噌汤饭屋儿童蔬菜咖喱饭",
+    "price": 1280,
+    "tags": [
+      "balanced",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_018_04",
+    "poi_id": "poi_restaurant_018",
+    "name": "上杉味噌汤饭屋盐烤季节鱼套餐",
+    "price": 1540,
+    "tags": [
+      "balanced",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_019_01",
+    "poi_id": "poi_restaurant_019",
+    "name": "木町通轻食酒馆柚香低脂鸡胸定食",
+    "price": 850,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_019_02",
+    "poi_id": "poi_restaurant_019",
+    "name": "木町通轻食酒馆低糖豆乳布丁杯",
+    "price": 1110,
+    "tags": [
+      "low_fat",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_019_03",
+    "poi_id": "poi_restaurant_019",
+    "name": "木町通轻食酒馆儿童蔬菜咖喱饭",
+    "price": 1370,
+    "tags": [
+      "low_fat",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_019_04",
+    "poi_id": "poi_restaurant_019",
+    "name": "木町通轻食酒馆盐烤季节鱼套餐",
+    "price": 1630,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_020_01",
+    "poi_id": "poi_restaurant_020",
+    "name": "新寺烤蔬餐厅柚香低脂鸡胸定食",
+    "price": 940,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_020_02",
+    "poi_id": "poi_restaurant_020",
+    "name": "新寺烤蔬餐厅低糖豆乳布丁杯",
+    "price": 1200,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_020_03",
+    "poi_id": "poi_restaurant_020",
+    "name": "新寺烤蔬餐厅儿童蔬菜咖喱饭",
+    "price": 1460,
+    "tags": [
+      "balanced",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_020_04",
+    "poi_id": "poi_restaurant_020",
+    "name": "新寺烤蔬餐厅盐烤季节鱼套餐",
+    "price": 1720,
+    "tags": [
+      "balanced",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_021_01",
+    "poi_id": "poi_restaurant_021",
+    "name": "仙台朝市海胆饭铺柚香低脂鸡胸定食",
+    "price": 580,
+    "tags": [
+      "low_fat",
+      "low_sugar"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_021_02",
+    "poi_id": "poi_restaurant_021",
+    "name": "仙台朝市海胆饭铺低糖豆乳布丁杯",
+    "price": 840,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_021_03",
+    "poi_id": "poi_restaurant_021",
+    "name": "仙台朝市海胆饭铺儿童蔬菜咖喱饭",
+    "price": 1100,
+    "tags": [
+      "balanced",
+      "low_sugar",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_021_04",
+    "poi_id": "poi_restaurant_021",
+    "name": "仙台朝市海胆饭铺盐烤季节鱼套餐",
+    "price": 1360,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_022_01",
+    "poi_id": "poi_restaurant_022",
+    "name": "八乙女儿童友好餐厅柚香低脂鸡胸定食",
+    "price": 670,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_022_02",
+    "poi_id": "poi_restaurant_022",
+    "name": "八乙女儿童友好餐厅低糖豆乳布丁杯",
+    "price": 930,
+    "tags": [
+      "low_fat",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_022_03",
+    "poi_id": "poi_restaurant_022",
+    "name": "八乙女儿童友好餐厅儿童蔬菜咖喱饭",
+    "price": 1190,
+    "tags": [
+      "low_fat",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_022_04",
+    "poi_id": "poi_restaurant_022",
+    "name": "八乙女儿童友好餐厅盐烤季节鱼套餐",
+    "price": 1450,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_023_01",
+    "poi_id": "poi_restaurant_023",
+    "name": "六丁の目团体火锅屋柚香低脂鸡胸定食",
+    "price": 760,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_023_02",
+    "poi_id": "poi_restaurant_023",
+    "name": "六丁の目团体火锅屋低糖豆乳布丁杯",
+    "price": 1020,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_023_03",
+    "poi_id": "poi_restaurant_023",
+    "name": "六丁の目团体火锅屋儿童蔬菜咖喱饭",
+    "price": 1280,
+    "tags": [
+      "balanced",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_023_04",
+    "poi_id": "poi_restaurant_023",
+    "name": "六丁の目团体火锅屋盐烤季节鱼套餐",
+    "price": 1540,
+    "tags": [
+      "balanced",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_024_01",
+    "poi_id": "poi_restaurant_024",
+    "name": "大町西公园茶泡饭店柚香低脂鸡胸定食",
+    "price": 850,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_024_02",
+    "poi_id": "poi_restaurant_024",
+    "name": "大町西公园茶泡饭店低糖豆乳布丁杯",
+    "price": 1110,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_024_03",
+    "poi_id": "poi_restaurant_024",
+    "name": "大町西公园茶泡饭店儿童蔬菜咖喱饭",
+    "price": 1370,
+    "tags": [
+      "balanced",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_024_04",
+    "poi_id": "poi_restaurant_024",
+    "name": "大町西公园茶泡饭店盐烤季节鱼套餐",
+    "price": 1630,
+    "tags": [
+      "balanced",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_025_01",
+    "poi_id": "poi_restaurant_025",
+    "name": "南町通低糖烘焙餐吧柚香低脂鸡胸定食",
+    "price": 940,
+    "tags": [
+      "low_fat",
+      "low_sugar"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_025_02",
+    "poi_id": "poi_restaurant_025",
+    "name": "南町通低糖烘焙餐吧低糖豆乳布丁杯",
+    "price": 1200,
+    "tags": [
+      "low_fat",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_025_03",
+    "poi_id": "poi_restaurant_025",
+    "name": "南町通低糖烘焙餐吧儿童蔬菜咖喱饭",
+    "price": 1460,
+    "tags": [
+      "low_fat",
+      "low_sugar",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_025_04",
+    "poi_id": "poi_restaurant_025",
+    "name": "南町通低糖烘焙餐吧盐烤季节鱼套餐",
+    "price": 1720,
+    "tags": [
+      "low_fat",
+      "low_sugar"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_026_01",
+    "poi_id": "poi_restaurant_026",
+    "name": "北目町素食拉面所柚香低脂鸡胸定食",
+    "price": 580,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_026_02",
+    "poi_id": "poi_restaurant_026",
+    "name": "北目町素食拉面所低糖豆乳布丁杯",
+    "price": 840,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_026_03",
+    "poi_id": "poi_restaurant_026",
+    "name": "北目町素食拉面所儿童蔬菜咖喱饭",
+    "price": 1100,
+    "tags": [
+      "balanced",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_026_04",
+    "poi_id": "poi_restaurant_026",
+    "name": "北目町素食拉面所盐烤季节鱼套餐",
+    "price": 1360,
+    "tags": [
+      "balanced",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_027_01",
+    "poi_id": "poi_restaurant_027",
+    "name": "榴冈药膳小锅柚香低脂鸡胸定食",
+    "price": 670,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_027_02",
+    "poi_id": "poi_restaurant_027",
+    "name": "榴冈药膳小锅低糖豆乳布丁杯",
+    "price": 930,
+    "tags": [
+      "balanced",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_027_03",
+    "poi_id": "poi_restaurant_027",
+    "name": "榴冈药膳小锅儿童蔬菜咖喱饭",
+    "price": 1190,
+    "tags": [
+      "balanced",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_027_04",
+    "poi_id": "poi_restaurant_027",
+    "name": "榴冈药膳小锅盐烤季节鱼套餐",
+    "price": 1450,
+    "tags": [
+      "balanced",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_028_01",
+    "poi_id": "poi_restaurant_028",
+    "name": "广濑通预约制洋食屋柚香低脂鸡胸定食",
+    "price": 760,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "小麦"
+    ],
+    "nutrition_note": "蛋白质充足，油脂控制较低。"
+  },
+  {
+    "id": "menu_028_02",
+    "poi_id": "poi_restaurant_028",
+    "name": "广濑通预约制洋食屋低糖豆乳布丁杯",
+    "price": 1020,
+    "tags": [
+      "low_fat",
+      "low_sugar"
+    ],
+    "allergens": [
+      "大豆"
+    ],
+    "nutrition_note": "甜度降低，适合控糖甜品需求。"
+  },
+  {
+    "id": "menu_028_03",
+    "poi_id": "poi_restaurant_028",
+    "name": "广濑通预约制洋食屋儿童蔬菜咖喱饭",
+    "price": 1280,
+    "tags": [
+      "low_fat",
+      "seasonal",
+      "child_friendly"
+    ],
+    "allergens": [
+      "乳制品"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  },
+  {
+    "id": "menu_028_04",
+    "poi_id": "poi_restaurant_028",
+    "name": "广濑通预约制洋食屋盐烤季节鱼套餐",
+    "price": 1540,
+    "tags": [
+      "low_fat",
+      "seasonal"
+    ],
+    "allergens": [
+      "鱼类"
+    ],
+    "nutrition_note": "份量适中，适合半日行程补能。"
+  }
+]

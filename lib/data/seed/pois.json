@@ -1,0 +1,7335 @@
+[
+  {
+    "id": "poi_family-activity_001",
+    "name": "青叶亲子科学工坊",
+    "category": "family_activity",
+    "lat": 38.2481,
+    "lng": 140.8377,
+    "distance_km": 0.89,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.74,
+    "review_count": 169,
+    "avg_price": 900,
+    "tags": [
+      "child_friendly",
+      "hands_on",
+      "educational",
+      "fair_weather",
+      "casual",
+      "nearby"
+    ],
+    "wait_minutes": 3,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "动线短、互动强，适合作为半日亲子活动主节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family"
+    ],
+    "audience": [
+      "亲子家庭",
+      "低龄儿童",
+      "家长陪同"
+    ],
+    "district": "宫城野区",
+    "menu_summary": "儿童点心、温水和简餐可补给",
+    "review_summary": "家长评价工作人员耐心，活动节奏稳定，孩子能持续投入。",
+    "capacity": 10,
+    "min_child_age": 3,
+    "max_party_size": 5,
+    "duration_minutes": 95
+  },
+  {
+    "id": "poi_family-activity_002",
+    "name": "榉树儿童陶艺教室",
+    "category": "family_activity",
+    "lat": 38.2516,
+    "lng": 140.8407,
+    "distance_km": 1.08,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.66,
+    "review_count": 192,
+    "avg_price": 1060,
+    "tags": [
+      "child_friendly",
+      "hands_on",
+      "educational",
+      "rain_safe",
+      "casual",
+      "nearby"
+    ],
+    "wait_minutes": 6,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "动线短、互动强，适合作为半日亲子活动主节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "亲子家庭",
+      "低龄儿童",
+      "家长陪同"
+    ],
+    "district": "若林区",
+    "menu_summary": "儿童点心、温水和简餐可补给",
+    "review_summary": "家长评价工作人员耐心，活动节奏稳定，孩子能持续投入。",
+    "capacity": 13,
+    "min_child_age": 3,
+    "max_party_size": 6,
+    "duration_minutes": 95
+  },
+  {
+    "id": "poi_family-activity_003",
+    "name": "北四番丁积木实验室",
+    "category": "family_activity",
+    "lat": 38.2551,
+    "lng": 140.8437,
+    "distance_km": 1.27,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.58,
+    "review_count": 215,
+    "avg_price": 1220,
+    "tags": [
+      "child_friendly",
+      "hands_on",
+      "educational",
+      "fair_weather",
+      "casual",
+      "nearby"
+    ],
+    "wait_minutes": 9,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "动线短、互动强，适合作为半日亲子活动主节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "friends"
+    ],
+    "audience": [
+      "亲子家庭",
+      "低龄儿童",
+      "家长陪同"
+    ],
+    "district": "太白区",
+    "menu_summary": "儿童点心、温水和简餐可补给",
+    "review_summary": "家长评价工作人员耐心，活动节奏稳定，孩子能持续投入。",
+    "capacity": 16,
+    "min_child_age": 3,
+    "max_party_size": 7,
+    "duration_minutes": 95
+  },
+  {
+    "id": "poi_family-activity_004",
+    "name": "定禅寺自然观察站",
+    "category": "family_activity",
+    "lat": 38.2574,
+    "lng": 140.8467,
+    "distance_km": 1.46,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.5,
+    "review_count": 238,
+    "avg_price": 1380,
+    "tags": [
+      "child_friendly",
+      "hands_on",
+      "educational",
+      "rain_safe",
+      "casual",
+      "nearby"
+    ],
+    "wait_minutes": 12,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "动线短、互动强，适合作为半日亲子活动主节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "亲子家庭",
+      "低龄儿童",
+      "家长陪同"
+    ],
+    "district": "泉区",
+    "menu_summary": "儿童点心、温水和简餐可补给",
+    "review_summary": "家长评价工作人员耐心，活动节奏稳定，孩子能持续投入。",
+    "capacity": 19,
+    "min_child_age": 3,
+    "max_party_size": 8,
+    "duration_minutes": 95
+  },
+  {
+    "id": "poi_family-activity_005",
+    "name": "榴冈小小厨师课堂",
+    "category": "family_activity",
+    "lat": 38.2609,
+    "lng": 140.8485,
+    "distance_km": 1.65,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.42,
+    "review_count": 261,
+    "avg_price": 1540,
+    "tags": [
+      "child_friendly",
+      "hands_on",
+      "educational",
+      "fair_weather",
+      "casual",
+      "nearby"
+    ],
+    "wait_minutes": 15,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "动线短、互动强，适合作为半日亲子活动主节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family"
+    ],
+    "audience": [
+      "亲子家庭",
+      "低龄儿童",
+      "家长陪同"
+    ],
+    "district": "青叶区",
+    "menu_summary": "儿童点心、温水和简餐可补给",
+    "review_summary": "家长评价工作人员耐心，活动节奏稳定，孩子能持续投入。",
+    "capacity": 22,
+    "min_child_age": 3,
+    "max_party_size": 5,
+    "duration_minutes": 95
+  },
+  {
+    "id": "poi_family-activity_006",
+    "name": "河原町儿童运动馆",
+    "category": "family_activity",
+    "lat": 38.2644,
+    "lng": 140.8515,
+    "distance_km": 1.84,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.34,
+    "review_count": 284,
+    "avg_price": 1700,
+    "tags": [
+      "child_friendly",
+      "hands_on",
+      "educational",
+      "rain_safe",
+      "casual",
+      "nearby"
+    ],
+    "wait_minutes": 18,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 2
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "动线短、互动强，适合作为半日亲子活动主节点。",
+    "risk_tags": [
+      "weekend_queue"
+    ],
+    "supported_scenarios": [
+      "family",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "亲子家庭",
+      "低龄儿童",
+      "家长陪同"
+    ],
+    "district": "宫城野区",
+    "menu_summary": "儿童点心、温水和简餐可补给",
+    "review_summary": "家长评价工作人员耐心，活动节奏稳定，孩子能持续投入。",
+    "capacity": 10,
+    "min_child_age": 3,
+    "max_party_size": 6,
+    "duration_minutes": 95
+  },
+  {
+    "id": "poi_family-activity_007",
+    "name": "泉中央绘本剧场",
+    "category": "family_activity",
+    "lat": 38.2667,
+    "lng": 140.8545,
+    "distance_km": 2.03,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.26,
+    "review_count": 307,
+    "avg_price": 1860,
+    "tags": [
+      "child_friendly",
+      "hands_on",
+      "educational",
+      "fair_weather",
+      "casual",
+      "nearby"
+    ],
+    "wait_minutes": 21,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "动线短、互动强，适合作为半日亲子活动主节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "friends"
+    ],
+    "audience": [
+      "亲子家庭",
+      "低龄儿童",
+      "家长陪同"
+    ],
+    "district": "若林区",
+    "menu_summary": "儿童点心、温水和简餐可补给",
+    "review_summary": "家长评价工作人员耐心，活动节奏稳定，孩子能持续投入。",
+    "capacity": 13,
+    "min_child_age": 3,
+    "max_party_size": 7,
+    "duration_minutes": 95
+  },
+  {
+    "id": "poi_family-activity_008",
+    "name": "荒町亲子木作间",
+    "category": "family_activity",
+    "lat": 38.2702,
+    "lng": 140.8575,
+    "distance_km": 2.22,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.18,
+    "review_count": 330,
+    "avg_price": 900,
+    "tags": [
+      "child_friendly",
+      "hands_on",
+      "educational",
+      "rain_safe",
+      "casual",
+      "nearby"
+    ],
+    "wait_minutes": 24,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "动线短、互动强，适合作为半日亲子活动主节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "亲子家庭",
+      "低龄儿童",
+      "家长陪同"
+    ],
+    "district": "太白区",
+    "menu_summary": "儿童点心、温水和简餐可补给",
+    "review_summary": "家长评价工作人员耐心，活动节奏稳定，孩子能持续投入。",
+    "capacity": 16,
+    "min_child_age": 3,
+    "max_party_size": 8,
+    "duration_minutes": 95
+  },
+  {
+    "id": "poi_family-activity_009",
+    "name": "台原森林昆虫教室",
+    "category": "family_activity",
+    "lat": 38.2737,
+    "lng": 140.8593,
+    "distance_km": 2.41,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.74,
+    "review_count": 353,
+    "avg_price": 1060,
+    "tags": [
+      "child_friendly",
+      "hands_on",
+      "educational",
+      "fair_weather",
+      "casual",
+      "nearby"
+    ],
+    "wait_minutes": 27,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "18:00",
+          "available": false,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "动线短、互动强，适合作为半日亲子活动主节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family"
+    ],
+    "audience": [
+      "亲子家庭",
+      "低龄儿童",
+      "家长陪同"
+    ],
+    "district": "泉区",
+    "menu_summary": "儿童点心、温水和简餐可补给",
+    "review_summary": "家长评价工作人员耐心，活动节奏稳定，孩子能持续投入。",
+    "capacity": 19,
+    "min_child_age": 3,
+    "max_party_size": 5,
+    "duration_minutes": 95
+  },
+  {
+    "id": "poi_family-activity_010",
+    "name": "长町未来航天角",
+    "category": "family_activity",
+    "lat": 38.276,
+    "lng": 140.8623,
+    "distance_km": 2.6,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.66,
+    "review_count": 376,
+    "avg_price": 1220,
+    "tags": [
+      "child_friendly",
+      "hands_on",
+      "educational",
+      "rain_safe",
+      "casual",
+      "nearby"
+    ],
+    "wait_minutes": 2,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "动线短、互动强，适合作为半日亲子活动主节点。",
+    "risk_tags": [
+      "limited_seats"
+    ],
+    "supported_scenarios": [
+      "family",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "亲子家庭",
+      "低龄儿童",
+      "家长陪同"
+    ],
+    "district": "青叶区",
+    "menu_summary": "儿童点心、温水和简餐可补给",
+    "review_summary": "家长评价工作人员耐心，活动节奏稳定，孩子能持续投入。",
+    "capacity": 22,
+    "min_child_age": 3,
+    "max_party_size": 6,
+    "duration_minutes": 95
+  },
+  {
+    "id": "poi_family-activity_011",
+    "name": "八木山动物朋友课堂",
+    "category": "family_activity",
+    "lat": 38.2795,
+    "lng": 140.8653,
+    "distance_km": 2.79,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.58,
+    "review_count": 399,
+    "avg_price": 1380,
+    "tags": [
+      "child_friendly",
+      "hands_on",
+      "educational",
+      "fair_weather",
+      "casual",
+      "nearby"
+    ],
+    "wait_minutes": 5,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": false,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "动线短、互动强，适合作为半日亲子活动主节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "friends"
+    ],
+    "audience": [
+      "亲子家庭",
+      "低龄儿童",
+      "家长陪同"
+    ],
+    "district": "宫城野区",
+    "menu_summary": "儿童点心、温水和简餐可补给",
+    "review_summary": "家长评价工作人员耐心，活动节奏稳定，孩子能持续投入。",
+    "capacity": 10,
+    "min_child_age": 3,
+    "max_party_size": 7,
+    "duration_minutes": 95
+  },
+  {
+    "id": "poi_family-activity_012",
+    "name": "宫城野亲子音乐房",
+    "category": "family_activity",
+    "lat": 38.283,
+    "lng": 140.8683,
+    "distance_km": 2.98,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.5,
+    "review_count": 422,
+    "avg_price": 1540,
+    "tags": [
+      "child_friendly",
+      "hands_on",
+      "educational",
+      "rain_safe",
+      "casual",
+      "nearby"
+    ],
+    "wait_minutes": 8,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 2
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "动线短、互动强，适合作为半日亲子活动主节点。",
+    "risk_tags": [
+      "weekend_queue"
+    ],
+    "supported_scenarios": [
+      "family",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "亲子家庭",
+      "低龄儿童",
+      "家长陪同"
+    ],
+    "district": "若林区",
+    "menu_summary": "儿童点心、温水和简餐可补给",
+    "review_summary": "家长评价工作人员耐心，活动节奏稳定，孩子能持续投入。",
+    "capacity": 13,
+    "min_child_age": 3,
+    "max_party_size": 8,
+    "duration_minutes": 95
+  },
+  {
+    "id": "poi_family-activity_013",
+    "name": "上杉安全骑行练习场",
+    "category": "family_activity",
+    "lat": 38.2853,
+    "lng": 140.8701,
+    "distance_km": 3.17,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.42,
+    "review_count": 445,
+    "avg_price": 1700,
+    "tags": [
+      "child_friendly",
+      "hands_on",
+      "educational",
+      "fair_weather",
+      "casual",
+      "nearby"
+    ],
+    "wait_minutes": 11,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "动线短、互动强，适合作为半日亲子活动主节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family"
+    ],
+    "audience": [
+      "亲子家庭",
+      "低龄儿童",
+      "家长陪同"
+    ],
+    "district": "太白区",
+    "menu_summary": "儿童点心、温水和简餐可补给",
+    "review_summary": "家长评价工作人员耐心，活动节奏稳定，孩子能持续投入。",
+    "capacity": 16,
+    "min_child_age": 3,
+    "max_party_size": 5,
+    "duration_minutes": 95
+  },
+  {
+    "id": "poi_family-activity_014",
+    "name": "五桥儿童影像馆",
+    "category": "family_activity",
+    "lat": 38.2888,
+    "lng": 140.8731,
+    "distance_km": 3.36,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.34,
+    "review_count": 468,
+    "avg_price": 1860,
+    "tags": [
+      "child_friendly",
+      "hands_on",
+      "educational",
+      "rain_safe",
+      "casual",
+      "nearby"
+    ],
+    "wait_minutes": 14,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "动线短、互动强，适合作为半日亲子活动主节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "亲子家庭",
+      "低龄儿童",
+      "家长陪同"
+    ],
+    "district": "泉区",
+    "menu_summary": "儿童点心、温水和简餐可补给",
+    "review_summary": "家长评价工作人员耐心，活动节奏稳定，孩子能持续投入。",
+    "capacity": 19,
+    "min_child_age": 3,
+    "max_party_size": 6,
+    "duration_minutes": 95
+  },
+  {
+    "id": "poi_family-activity_015",
+    "name": "广濑通水彩亲子屋",
+    "category": "family_activity",
+    "lat": 38.2923,
+    "lng": 140.8761,
+    "distance_km": 3.55,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.26,
+    "review_count": 491,
+    "avg_price": 900,
+    "tags": [
+      "child_friendly",
+      "hands_on",
+      "educational",
+      "fair_weather",
+      "casual",
+      "nearby"
+    ],
+    "wait_minutes": 17,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "动线短、互动强，适合作为半日亲子活动主节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "friends"
+    ],
+    "audience": [
+      "亲子家庭",
+      "低龄儿童",
+      "家长陪同"
+    ],
+    "district": "青叶区",
+    "menu_summary": "儿童点心、温水和简餐可补给",
+    "review_summary": "家长评价工作人员耐心，活动节奏稳定，孩子能持续投入。",
+    "capacity": 22,
+    "min_child_age": 3,
+    "max_party_size": 7,
+    "duration_minutes": 95
+  },
+  {
+    "id": "poi_family-activity_016",
+    "name": "卸町小小建筑师馆",
+    "category": "family_activity",
+    "lat": 38.2946,
+    "lng": 140.8791,
+    "distance_km": 3.74,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.18,
+    "review_count": 514,
+    "avg_price": 1060,
+    "tags": [
+      "child_friendly",
+      "hands_on",
+      "educational",
+      "rain_safe",
+      "casual",
+      "nearby"
+    ],
+    "wait_minutes": 20,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "动线短、互动强，适合作为半日亲子活动主节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "亲子家庭",
+      "低龄儿童",
+      "家长陪同"
+    ],
+    "district": "宫城野区",
+    "menu_summary": "儿童点心、温水和简餐可补给",
+    "review_summary": "家长评价工作人员耐心，活动节奏稳定，孩子能持续投入。",
+    "capacity": 10,
+    "min_child_age": 3,
+    "max_party_size": 8,
+    "duration_minutes": 95
+  },
+  {
+    "id": "poi_social-activity_001",
+    "name": "一番町桌游茶社",
+    "category": "social_activity",
+    "lat": 38.2977,
+    "lng": 140.8809,
+    "distance_km": 3.93,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.74,
+    "review_count": 537,
+    "avg_price": 900,
+    "tags": [
+      "group_friendly",
+      "social",
+      "conversation",
+      "fair_weather",
+      "casual",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 23,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "适合多人互动，预算可控，能承接聊天和轻体验。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "friends"
+    ],
+    "audience": [
+      "朋友小聚",
+      "同事周末",
+      "轻社交人群"
+    ],
+    "district": "若林区",
+    "menu_summary": "软饮、小食和多人分享盘",
+    "review_summary": "评论提到座位间距舒服，朋友聊天不会被频繁打断。",
+    "capacity": 10,
+    "min_child_age": 12,
+    "max_party_size": 5,
+    "duration_minutes": 110
+  },
+  {
+    "id": "poi_social-activity_002",
+    "name": "国分町复古写真馆",
+    "category": "social_activity",
+    "lat": 38.3012,
+    "lng": 140.8839,
+    "distance_km": 4.12,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.66,
+    "review_count": 560,
+    "avg_price": 1060,
+    "tags": [
+      "group_friendly",
+      "social",
+      "conversation",
+      "fair_weather",
+      "romantic",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 26,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 2
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "18:00",
+          "available": false,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "适合多人互动，预算可控，能承接聊天和轻体验。",
+    "risk_tags": [
+      "weekend_queue"
+    ],
+    "supported_scenarios": [
+      "friends",
+      "date"
+    ],
+    "audience": [
+      "朋友小聚",
+      "同事周末",
+      "轻社交人群"
+    ],
+    "district": "太白区",
+    "menu_summary": "软饮、小食和多人分享盘",
+    "review_summary": "评论提到座位间距舒服，朋友聊天不会被频繁打断。",
+    "capacity": 13,
+    "min_child_age": 12,
+    "max_party_size": 6,
+    "duration_minutes": 110
+  },
+  {
+    "id": "poi_social-activity_003",
+    "name": "仙台站东口陶杯吧",
+    "category": "social_activity",
+    "lat": 38.3047,
+    "lng": 140.8869,
+    "distance_km": 4.31,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.58,
+    "review_count": 583,
+    "avg_price": 1220,
+    "tags": [
+      "group_friendly",
+      "social",
+      "conversation",
+      "rain_safe",
+      "casual",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 1,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "适合多人互动，预算可控，能承接聊天和轻体验。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "friends",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "朋友小聚",
+      "同事周末",
+      "轻社交人群"
+    ],
+    "district": "泉区",
+    "menu_summary": "软饮、小食和多人分享盘",
+    "review_summary": "评论提到座位间距舒服，朋友聊天不会被频繁打断。",
+    "capacity": 16,
+    "min_child_age": 12,
+    "max_party_size": 7,
+    "duration_minutes": 110
+  },
+  {
+    "id": "poi_social-activity_004",
+    "name": "花京院轻运动社",
+    "category": "social_activity",
+    "lat": 38.307,
+    "lng": 140.8899,
+    "distance_km": 4.5,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.5,
+    "review_count": 606,
+    "avg_price": 1380,
+    "tags": [
+      "group_friendly",
+      "social",
+      "conversation",
+      "fair_weather",
+      "casual",
+      "child_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 4,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "适合多人互动，预算可控，能承接聊天和轻体验。",
+    "risk_tags": [
+      "limited_seats"
+    ],
+    "supported_scenarios": [
+      "friends",
+      "family"
+    ],
+    "audience": [
+      "朋友小聚",
+      "同事周末",
+      "轻社交人群"
+    ],
+    "district": "青叶区",
+    "menu_summary": "软饮、小食和多人分享盘",
+    "review_summary": "评论提到座位间距舒服，朋友聊天不会被频繁打断。",
+    "capacity": 19,
+    "min_child_age": 12,
+    "max_party_size": 8,
+    "duration_minutes": 110
+  },
+  {
+    "id": "poi_social-activity_005",
+    "name": "勾当台公园夜谈席",
+    "category": "social_activity",
+    "lat": 38.3105,
+    "lng": 140.8917,
+    "distance_km": 4.69,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.42,
+    "review_count": 629,
+    "avg_price": 1540,
+    "tags": [
+      "group_friendly",
+      "social",
+      "conversation",
+      "fair_weather",
+      "casual",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 7,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "适合多人互动，预算可控，能承接聊天和轻体验。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "friends"
+    ],
+    "audience": [
+      "朋友小聚",
+      "同事周末",
+      "轻社交人群"
+    ],
+    "district": "宫城野区",
+    "menu_summary": "软饮、小食和多人分享盘",
+    "review_summary": "评论提到座位间距舒服，朋友聊天不会被频繁打断。",
+    "capacity": 22,
+    "min_child_age": 12,
+    "max_party_size": 5,
+    "duration_minutes": 110
+  },
+  {
+    "id": "poi_social-activity_006",
+    "name": "木町通黑胶试听室",
+    "category": "social_activity",
+    "lat": 38.314,
+    "lng": 140.8947,
+    "distance_km": 4.88,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.34,
+    "review_count": 652,
+    "avg_price": 1700,
+    "tags": [
+      "group_friendly",
+      "social",
+      "conversation",
+      "fair_weather",
+      "romantic",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 10,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": false,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "适合多人互动，预算可控，能承接聊天和轻体验。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "friends",
+      "date"
+    ],
+    "audience": [
+      "朋友小聚",
+      "同事周末",
+      "轻社交人群"
+    ],
+    "district": "若林区",
+    "menu_summary": "软饮、小食和多人分享盘",
+    "review_summary": "评论提到座位间距舒服，朋友聊天不会被频繁打断。",
+    "capacity": 10,
+    "min_child_age": 12,
+    "max_party_size": 6,
+    "duration_minutes": 110
+  },
+  {
+    "id": "poi_social-activity_007",
+    "name": "南町通剧本推理屋",
+    "category": "social_activity",
+    "lat": 38.245,
+    "lng": 140.8977,
+    "distance_km": 5.07,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.26,
+    "review_count": 675,
+    "avg_price": 1860,
+    "tags": [
+      "group_friendly",
+      "social",
+      "conversation",
+      "rain_safe",
+      "casual",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 13,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "适合多人互动，预算可控，能承接聊天和轻体验。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "friends",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "朋友小聚",
+      "同事周末",
+      "轻社交人群"
+    ],
+    "district": "太白区",
+    "menu_summary": "软饮、小食和多人分享盘",
+    "review_summary": "评论提到座位间距舒服，朋友聊天不会被频繁打断。",
+    "capacity": 13,
+    "min_child_age": 12,
+    "max_party_size": 7,
+    "duration_minutes": 110
+  },
+  {
+    "id": "poi_social-activity_008",
+    "name": "北目町街角飞镖馆",
+    "category": "social_activity",
+    "lat": 38.2485,
+    "lng": 140.9007,
+    "distance_km": 5.26,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.18,
+    "review_count": 698,
+    "avg_price": 900,
+    "tags": [
+      "group_friendly",
+      "social",
+      "conversation",
+      "fair_weather",
+      "casual",
+      "child_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 16,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 2
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "适合多人互动，预算可控，能承接聊天和轻体验。",
+    "risk_tags": [
+      "weekend_queue"
+    ],
+    "supported_scenarios": [
+      "friends",
+      "family"
+    ],
+    "audience": [
+      "朋友小聚",
+      "同事周末",
+      "轻社交人群"
+    ],
+    "district": "泉区",
+    "menu_summary": "软饮、小食和多人分享盘",
+    "review_summary": "评论提到座位间距舒服，朋友聊天不会被频繁打断。",
+    "capacity": 16,
+    "min_child_age": 12,
+    "max_party_size": 8,
+    "duration_minutes": 110
+  },
+  {
+    "id": "poi_social-activity_009",
+    "name": "连坊小剧场排练间",
+    "category": "social_activity",
+    "lat": 38.252,
+    "lng": 140.9025,
+    "distance_km": 5.45,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.74,
+    "review_count": 721,
+    "avg_price": 1060,
+    "tags": [
+      "group_friendly",
+      "social",
+      "conversation",
+      "fair_weather",
+      "casual",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 19,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "适合多人互动，预算可控，能承接聊天和轻体验。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "friends"
+    ],
+    "audience": [
+      "朋友小聚",
+      "同事周末",
+      "轻社交人群"
+    ],
+    "district": "青叶区",
+    "menu_summary": "软饮、小食和多人分享盘",
+    "review_summary": "评论提到座位间距舒服，朋友聊天不会被频繁打断。",
+    "capacity": 19,
+    "min_child_age": 12,
+    "max_party_size": 5,
+    "duration_minutes": 110
+  },
+  {
+    "id": "poi_social-activity_010",
+    "name": "新寺咖啡拼图屋",
+    "category": "social_activity",
+    "lat": 38.2543,
+    "lng": 140.9055,
+    "distance_km": 5.64,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.66,
+    "review_count": 744,
+    "avg_price": 1220,
+    "tags": [
+      "group_friendly",
+      "social",
+      "conversation",
+      "fair_weather",
+      "romantic",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 22,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "适合多人互动，预算可控，能承接聊天和轻体验。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "friends",
+      "date"
+    ],
+    "audience": [
+      "朋友小聚",
+      "同事周末",
+      "轻社交人群"
+    ],
+    "district": "宫城野区",
+    "menu_summary": "软饮、小食和多人分享盘",
+    "review_summary": "评论提到座位间距舒服，朋友聊天不会被频繁打断。",
+    "capacity": 22,
+    "min_child_age": 12,
+    "max_party_size": 6,
+    "duration_minutes": 110
+  },
+  {
+    "id": "poi_social-activity_011",
+    "name": "河畔露台烧烤庭",
+    "category": "social_activity",
+    "lat": 38.2578,
+    "lng": 140.9085,
+    "distance_km": 5.83,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.58,
+    "review_count": 767,
+    "avg_price": 1380,
+    "tags": [
+      "group_friendly",
+      "social",
+      "conversation",
+      "rain_safe",
+      "casual",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 25,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "18:00",
+          "available": false,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "适合多人互动，预算可控，能承接聊天和轻体验。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "friends",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "朋友小聚",
+      "同事周末",
+      "轻社交人群"
+    ],
+    "district": "若林区",
+    "menu_summary": "软饮、小食和多人分享盘",
+    "review_summary": "评论提到座位间距舒服，朋友聊天不会被频繁打断。",
+    "capacity": 10,
+    "min_child_age": 12,
+    "max_party_size": 7,
+    "duration_minutes": 110
+  },
+  {
+    "id": "poi_social-activity_012",
+    "name": "六丁の目保龄球会",
+    "category": "social_activity",
+    "lat": 38.2613,
+    "lng": 140.9115,
+    "distance_km": 6.02,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.5,
+    "review_count": 790,
+    "avg_price": 1540,
+    "tags": [
+      "group_friendly",
+      "social",
+      "conversation",
+      "fair_weather",
+      "casual",
+      "child_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 0,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "适合多人互动，预算可控，能承接聊天和轻体验。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "friends",
+      "family"
+    ],
+    "audience": [
+      "朋友小聚",
+      "同事周末",
+      "轻社交人群"
+    ],
+    "district": "太白区",
+    "menu_summary": "软饮、小食和多人分享盘",
+    "review_summary": "评论提到座位间距舒服，朋友聊天不会被频繁打断。",
+    "capacity": 13,
+    "min_child_age": 12,
+    "max_party_size": 8,
+    "duration_minutes": 110
+  },
+  {
+    "id": "poi_social-activity_013",
+    "name": "中央通共享厨房",
+    "category": "social_activity",
+    "lat": 38.2636,
+    "lng": 140.835,
+    "distance_km": 6.21,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.42,
+    "review_count": 813,
+    "avg_price": 1700,
+    "tags": [
+      "group_friendly",
+      "social",
+      "conversation",
+      "fair_weather",
+      "casual",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 3,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "适合多人互动，预算可控，能承接聊天和轻体验。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "friends"
+    ],
+    "audience": [
+      "朋友小聚",
+      "同事周末",
+      "轻社交人群"
+    ],
+    "district": "泉区",
+    "menu_summary": "软饮、小食和多人分享盘",
+    "review_summary": "评论提到座位间距舒服，朋友聊天不会被频繁打断。",
+    "capacity": 16,
+    "min_child_age": 12,
+    "max_party_size": 5,
+    "duration_minutes": 110
+  },
+  {
+    "id": "poi_social-activity_014",
+    "name": "宫町手冲咖啡课",
+    "category": "social_activity",
+    "lat": 38.2671,
+    "lng": 140.838,
+    "distance_km": 6.4,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.34,
+    "review_count": 836,
+    "avg_price": 1860,
+    "tags": [
+      "group_friendly",
+      "social",
+      "conversation",
+      "fair_weather",
+      "romantic",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 6,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 2
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "适合多人互动，预算可控，能承接聊天和轻体验。",
+    "risk_tags": [
+      "weekend_queue",
+      "limited_seats"
+    ],
+    "supported_scenarios": [
+      "friends",
+      "date"
+    ],
+    "audience": [
+      "朋友小聚",
+      "同事周末",
+      "轻社交人群"
+    ],
+    "district": "青叶区",
+    "menu_summary": "软饮、小食和多人分享盘",
+    "review_summary": "评论提到座位间距舒服，朋友聊天不会被频繁打断。",
+    "capacity": 19,
+    "min_child_age": 12,
+    "max_party_size": 6,
+    "duration_minutes": 110
+  },
+  {
+    "id": "poi_social-activity_015",
+    "name": "八乙女卡拉OK小厅",
+    "category": "social_activity",
+    "lat": 38.2706,
+    "lng": 140.841,
+    "distance_km": 6.59,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.26,
+    "review_count": 859,
+    "avg_price": 900,
+    "tags": [
+      "group_friendly",
+      "social",
+      "conversation",
+      "rain_safe",
+      "casual",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 9,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "适合多人互动，预算可控，能承接聊天和轻体验。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "friends",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "朋友小聚",
+      "同事周末",
+      "轻社交人群"
+    ],
+    "district": "宫城野区",
+    "menu_summary": "软饮、小食和多人分享盘",
+    "review_summary": "评论提到座位间距舒服，朋友聊天不会被频繁打断。",
+    "capacity": 22,
+    "min_child_age": 12,
+    "max_party_size": 7,
+    "duration_minutes": 110
+  },
+  {
+    "id": "poi_social-activity_016",
+    "name": "本町城市摄影课",
+    "category": "social_activity",
+    "lat": 38.2729,
+    "lng": 140.844,
+    "distance_km": 6.78,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.18,
+    "review_count": 882,
+    "avg_price": 1060,
+    "tags": [
+      "group_friendly",
+      "social",
+      "conversation",
+      "fair_weather",
+      "casual",
+      "child_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 12,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "适合多人互动，预算可控，能承接聊天和轻体验。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "friends",
+      "family"
+    ],
+    "audience": [
+      "朋友小聚",
+      "同事周末",
+      "轻社交人群"
+    ],
+    "district": "若林区",
+    "menu_summary": "软饮、小食和多人分享盘",
+    "review_summary": "评论提到座位间距舒服，朋友聊天不会被频繁打断。",
+    "capacity": 10,
+    "min_child_age": 12,
+    "max_party_size": 8,
+    "duration_minutes": 110
+  },
+  {
+    "id": "poi_date-activity_001",
+    "name": "定禅寺烛光艺术廊",
+    "category": "date_activity",
+    "lat": 38.276,
+    "lng": 140.8458,
+    "distance_km": 6.97,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "22:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.74,
+    "review_count": 905,
+    "avg_price": 900,
+    "tags": [
+      "romantic",
+      "quiet",
+      "photo_spot",
+      "fair_weather",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 15,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": false,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "氛围明确、噪音低，适合约会场景里的慢节奏停留。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "date"
+    ],
+    "audience": [
+      "情侣约会",
+      "纪念日",
+      "安静体验偏好"
+    ],
+    "district": "太白区",
+    "menu_summary": "茶饮、甜点和轻酒精选择",
+    "review_summary": "用户反馈灯光和座位私密性好，拍照出片率较高。",
+    "capacity": 10,
+    "min_child_age": 16,
+    "max_party_size": 5,
+    "duration_minutes": 90
+  },
+  {
+    "id": "poi_date-activity_002",
+    "name": "片平玻璃花房",
+    "category": "date_activity",
+    "lat": 38.2795,
+    "lng": 140.8488,
+    "distance_km": 0.7,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "22:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.66,
+    "review_count": 928,
+    "avg_price": 1060,
+    "tags": [
+      "romantic",
+      "quiet",
+      "photo_spot",
+      "rain_safe",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 18,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "氛围明确、噪音低，适合约会场景里的慢节奏停留。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "date",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "情侣约会",
+      "纪念日",
+      "安静体验偏好"
+    ],
+    "district": "泉区",
+    "menu_summary": "茶饮、甜点和轻酒精选择",
+    "review_summary": "用户反馈灯光和座位私密性好，拍照出片率较高。",
+    "capacity": 13,
+    "min_child_age": 16,
+    "max_party_size": 6,
+    "duration_minutes": 90
+  },
+  {
+    "id": "poi_date-activity_003",
+    "name": "广濑川夕景茶亭",
+    "category": "date_activity",
+    "lat": 38.283,
+    "lng": 140.8518,
+    "distance_km": 0.89,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "22:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.58,
+    "review_count": 951,
+    "avg_price": 1220,
+    "tags": [
+      "romantic",
+      "quiet",
+      "photo_spot",
+      "fair_weather",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 21,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "氛围明确、噪音低，适合约会场景里的慢节奏停留。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "date",
+      "friends"
+    ],
+    "audience": [
+      "情侣约会",
+      "纪念日",
+      "安静体验偏好"
+    ],
+    "district": "青叶区",
+    "menu_summary": "茶饮、甜点和轻酒精选择",
+    "review_summary": "用户反馈灯光和座位私密性好，拍照出片率较高。",
+    "capacity": 16,
+    "min_child_age": 16,
+    "max_party_size": 7,
+    "duration_minutes": 90
+  },
+  {
+    "id": "poi_date-activity_004",
+    "name": "一番町香氛调制室",
+    "category": "date_activity",
+    "lat": 38.2853,
+    "lng": 140.8548,
+    "distance_km": 1.08,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "22:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.5,
+    "review_count": 974,
+    "avg_price": 1380,
+    "tags": [
+      "romantic",
+      "quiet",
+      "photo_spot",
+      "rain_safe",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 24,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 2
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "18:00",
+          "available": false,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "氛围明确、噪音低，适合约会场景里的慢节奏停留。",
+    "risk_tags": [
+      "weekend_queue"
+    ],
+    "supported_scenarios": [
+      "date",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "情侣约会",
+      "纪念日",
+      "安静体验偏好"
+    ],
+    "district": "宫城野区",
+    "menu_summary": "茶饮、甜点和轻酒精选择",
+    "review_summary": "用户反馈灯光和座位私密性好，拍照出片率较高。",
+    "capacity": 19,
+    "min_child_age": 16,
+    "max_party_size": 8,
+    "duration_minutes": 90
+  },
+  {
+    "id": "poi_date-activity_005",
+    "name": "青叶城下夜景平台",
+    "category": "date_activity",
+    "lat": 38.2888,
+    "lng": 140.8566,
+    "distance_km": 1.27,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "22:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.42,
+    "review_count": 997,
+    "avg_price": 1540,
+    "tags": [
+      "romantic",
+      "quiet",
+      "photo_spot",
+      "fair_weather",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 27,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "氛围明确、噪音低，适合约会场景里的慢节奏停留。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "date"
+    ],
+    "audience": [
+      "情侣约会",
+      "纪念日",
+      "安静体验偏好"
+    ],
+    "district": "若林区",
+    "menu_summary": "茶饮、甜点和轻酒精选择",
+    "review_summary": "用户反馈灯光和座位私密性好，拍照出片率较高。",
+    "capacity": 22,
+    "min_child_age": 16,
+    "max_party_size": 5,
+    "duration_minutes": 90
+  },
+  {
+    "id": "poi_date-activity_006",
+    "name": "榉树大道小型音乐厅",
+    "category": "date_activity",
+    "lat": 38.2923,
+    "lng": 140.8596,
+    "distance_km": 1.46,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "22:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.34,
+    "review_count": 1020,
+    "avg_price": 1700,
+    "tags": [
+      "romantic",
+      "quiet",
+      "photo_spot",
+      "rain_safe",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 2,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "氛围明确、噪音低，适合约会场景里的慢节奏停留。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "date",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "情侣约会",
+      "纪念日",
+      "安静体验偏好"
+    ],
+    "district": "太白区",
+    "menu_summary": "茶饮、甜点和轻酒精选择",
+    "review_summary": "用户反馈灯光和座位私密性好，拍照出片率较高。",
+    "capacity": 10,
+    "min_child_age": 16,
+    "max_party_size": 6,
+    "duration_minutes": 90
+  },
+  {
+    "id": "poi_date-activity_007",
+    "name": "上杉和纸灯笼工房",
+    "category": "date_activity",
+    "lat": 38.2946,
+    "lng": 140.8626,
+    "distance_km": 1.65,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "22:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.26,
+    "review_count": 1043,
+    "avg_price": 1860,
+    "tags": [
+      "romantic",
+      "quiet",
+      "photo_spot",
+      "fair_weather",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 5,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "氛围明确、噪音低，适合约会场景里的慢节奏停留。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "date",
+      "friends"
+    ],
+    "audience": [
+      "情侣约会",
+      "纪念日",
+      "安静体验偏好"
+    ],
+    "district": "泉区",
+    "menu_summary": "茶饮、甜点和轻酒精选择",
+    "review_summary": "用户反馈灯光和座位私密性好，拍照出片率较高。",
+    "capacity": 13,
+    "min_child_age": 16,
+    "max_party_size": 7,
+    "duration_minutes": 90
+  },
+  {
+    "id": "poi_date-activity_008",
+    "name": "花京院静音书吧",
+    "category": "date_activity",
+    "lat": 38.2981,
+    "lng": 140.8656,
+    "distance_km": 1.84,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "22:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.18,
+    "review_count": 1066,
+    "avg_price": 900,
+    "tags": [
+      "romantic",
+      "quiet",
+      "photo_spot",
+      "rain_safe",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 8,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "氛围明确、噪音低，适合约会场景里的慢节奏停留。",
+    "risk_tags": [
+      "limited_seats"
+    ],
+    "supported_scenarios": [
+      "date",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "情侣约会",
+      "纪念日",
+      "安静体验偏好"
+    ],
+    "district": "青叶区",
+    "menu_summary": "茶饮、甜点和轻酒精选择",
+    "review_summary": "用户反馈灯光和座位私密性好，拍照出片率较高。",
+    "capacity": 16,
+    "min_child_age": 16,
+    "max_party_size": 8,
+    "duration_minutes": 90
+  },
+  {
+    "id": "poi_date-activity_009",
+    "name": "大町西公园陶瓷廊",
+    "category": "date_activity",
+    "lat": 38.3016,
+    "lng": 140.8674,
+    "distance_km": 2.03,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "22:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.74,
+    "review_count": 1089,
+    "avg_price": 1060,
+    "tags": [
+      "romantic",
+      "quiet",
+      "photo_spot",
+      "fair_weather",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 11,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "氛围明确、噪音低，适合约会场景里的慢节奏停留。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "date"
+    ],
+    "audience": [
+      "情侣约会",
+      "纪念日",
+      "安静体验偏好"
+    ],
+    "district": "宫城野区",
+    "menu_summary": "茶饮、甜点和轻酒精选择",
+    "review_summary": "用户反馈灯光和座位私密性好，拍照出片率较高。",
+    "capacity": 19,
+    "min_child_age": 16,
+    "max_party_size": 5,
+    "duration_minutes": 90
+  },
+  {
+    "id": "poi_date-activity_010",
+    "name": "仙台朝市小酒馆",
+    "category": "date_activity",
+    "lat": 38.3039,
+    "lng": 140.8704,
+    "distance_km": 2.22,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "22:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.66,
+    "review_count": 1112,
+    "avg_price": 1220,
+    "tags": [
+      "romantic",
+      "quiet",
+      "photo_spot",
+      "rain_safe",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 14,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 2
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "氛围明确、噪音低，适合约会场景里的慢节奏停留。",
+    "risk_tags": [
+      "weekend_queue"
+    ],
+    "supported_scenarios": [
+      "date",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "情侣约会",
+      "纪念日",
+      "安静体验偏好"
+    ],
+    "district": "若林区",
+    "menu_summary": "茶饮、甜点和轻酒精选择",
+    "review_summary": "用户反馈灯光和座位私密性好，拍照出片率较高。",
+    "capacity": 22,
+    "min_child_age": 16,
+    "max_party_size": 6,
+    "duration_minutes": 90
+  },
+  {
+    "id": "poi_date-activity_011",
+    "name": "霖雨桥室内花园",
+    "category": "date_activity",
+    "lat": 38.3074,
+    "lng": 140.8734,
+    "distance_km": 2.41,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "22:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.58,
+    "review_count": 1135,
+    "avg_price": 1380,
+    "tags": [
+      "romantic",
+      "quiet",
+      "photo_spot",
+      "fair_weather",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 17,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "氛围明确、噪音低，适合约会场景里的慢节奏停留。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "date",
+      "friends"
+    ],
+    "audience": [
+      "情侣约会",
+      "纪念日",
+      "安静体验偏好"
+    ],
+    "district": "太白区",
+    "menu_summary": "茶饮、甜点和轻酒精选择",
+    "review_summary": "用户反馈灯光和座位私密性好，拍照出片率较高。",
+    "capacity": 10,
+    "min_child_age": 16,
+    "max_party_size": 7,
+    "duration_minutes": 90
+  },
+  {
+    "id": "poi_date-activity_012",
+    "name": "五桥手作戒指室",
+    "category": "date_activity",
+    "lat": 38.3109,
+    "lng": 140.8764,
+    "distance_km": 2.6,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "22:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "22:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.5,
+    "review_count": 1158,
+    "avg_price": 1540,
+    "tags": [
+      "romantic",
+      "quiet",
+      "photo_spot",
+      "rain_safe",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 20,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": false,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "氛围明确、噪音低，适合约会场景里的慢节奏停留。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "date",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "情侣约会",
+      "纪念日",
+      "安静体验偏好"
+    ],
+    "district": "泉区",
+    "menu_summary": "茶饮、甜点和轻酒精选择",
+    "review_summary": "用户反馈灯光和座位私密性好，拍照出片率较高。",
+    "capacity": 13,
+    "min_child_age": 16,
+    "max_party_size": 8,
+    "duration_minutes": 90
+  },
+  {
+    "id": "poi_indoor-activity_001",
+    "name": "仙台媒体互动馆",
+    "category": "indoor_activity",
+    "lat": 38.3132,
+    "lng": 140.8782,
+    "distance_km": 2.79,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.42,
+    "review_count": 1181,
+    "avg_price": 900,
+    "tags": [
+      "indoor",
+      "rain_safe",
+      "weather_proof",
+      "casual",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 23,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "18:00",
+          "available": false,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "不受天气影响，适合作为雨天或高温时的稳定替代。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "rainy_indoor"
+    ],
+    "audience": [
+      "雨天出行",
+      "临时改期",
+      "室内活动偏好"
+    ],
+    "district": "青叶区",
+    "menu_summary": "热饮、能量棒和简单轻食",
+    "review_summary": "评价集中在设施维护好，雨天排队仍可控，工作人员指引清楚。",
+    "capacity": 10,
+    "min_child_age": 6,
+    "max_party_size": 5,
+    "duration_minutes": 100
+  },
+  {
+    "id": "poi_indoor-activity_002",
+    "name": "泉中央室内攀岩舱",
+    "category": "indoor_activity",
+    "lat": 38.2454,
+    "lng": 140.8812,
+    "distance_km": 2.98,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.34,
+    "review_count": 1204,
+    "avg_price": 1060,
+    "tags": [
+      "indoor",
+      "rain_safe",
+      "weather_proof",
+      "casual",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 26,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "不受天气影响，适合作为雨天或高温时的稳定替代。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "rainy_indoor",
+      "friends"
+    ],
+    "audience": [
+      "雨天出行",
+      "临时改期",
+      "室内活动偏好"
+    ],
+    "district": "宫城野区",
+    "menu_summary": "热饮、能量棒和简单轻食",
+    "review_summary": "评价集中在设施维护好，雨天排队仍可控，工作人员指引清楚。",
+    "capacity": 13,
+    "min_child_age": 6,
+    "max_party_size": 6,
+    "duration_minutes": 100
+  },
+  {
+    "id": "poi_indoor-activity_003",
+    "name": "长町室内温浴书屋",
+    "category": "indoor_activity",
+    "lat": 38.2489,
+    "lng": 140.8842,
+    "distance_km": 3.17,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.26,
+    "review_count": 1227,
+    "avg_price": 1220,
+    "tags": [
+      "indoor",
+      "rain_safe",
+      "weather_proof",
+      "casual",
+      "child_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 1,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "不受天气影响，适合作为雨天或高温时的稳定替代。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "rainy_indoor",
+      "family"
+    ],
+    "audience": [
+      "雨天出行",
+      "临时改期",
+      "室内活动偏好"
+    ],
+    "district": "若林区",
+    "menu_summary": "热饮、能量棒和简单轻食",
+    "review_summary": "评价集中在设施维护好，雨天排队仍可控，工作人员指引清楚。",
+    "capacity": 16,
+    "min_child_age": 6,
+    "max_party_size": 7,
+    "duration_minutes": 100
+  },
+  {
+    "id": "poi_indoor-activity_004",
+    "name": "卸町VR体验室",
+    "category": "indoor_activity",
+    "lat": 38.2512,
+    "lng": 140.8872,
+    "distance_km": 3.36,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.18,
+    "review_count": 1250,
+    "avg_price": 1380,
+    "tags": [
+      "indoor",
+      "rain_safe",
+      "weather_proof",
+      "romantic",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 4,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 2
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "不受天气影响，适合作为雨天或高温时的稳定替代。",
+    "risk_tags": [
+      "weekend_queue"
+    ],
+    "supported_scenarios": [
+      "rainy_indoor",
+      "date"
+    ],
+    "audience": [
+      "雨天出行",
+      "临时改期",
+      "室内活动偏好"
+    ],
+    "district": "太白区",
+    "menu_summary": "热饮、能量棒和简单轻食",
+    "review_summary": "评价集中在设施维护好，雨天排队仍可控，工作人员指引清楚。",
+    "capacity": 19,
+    "min_child_age": 6,
+    "max_party_size": 8,
+    "duration_minutes": 100
+  },
+  {
+    "id": "poi_indoor-activity_005",
+    "name": "台原雨天运动馆",
+    "category": "indoor_activity",
+    "lat": 38.2547,
+    "lng": 140.889,
+    "distance_km": 3.55,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.74,
+    "review_count": 1273,
+    "avg_price": 1540,
+    "tags": [
+      "indoor",
+      "rain_safe",
+      "weather_proof",
+      "casual",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 7,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "不受天气影响，适合作为雨天或高温时的稳定替代。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "rainy_indoor"
+    ],
+    "audience": [
+      "雨天出行",
+      "临时改期",
+      "室内活动偏好"
+    ],
+    "district": "泉区",
+    "menu_summary": "热饮、能量棒和简单轻食",
+    "review_summary": "评价集中在设施维护好，雨天排队仍可控，工作人员指引清楚。",
+    "capacity": 22,
+    "min_child_age": 6,
+    "max_party_size": 5,
+    "duration_minutes": 100
+  },
+  {
+    "id": "poi_indoor-activity_006",
+    "name": "青叶通共享自习咖啡",
+    "category": "indoor_activity",
+    "lat": 38.2582,
+    "lng": 140.892,
+    "distance_km": 3.74,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.66,
+    "review_count": 1296,
+    "avg_price": 1700,
+    "tags": [
+      "indoor",
+      "rain_safe",
+      "weather_proof",
+      "casual",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 10,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "不受天气影响，适合作为雨天或高温时的稳定替代。",
+    "risk_tags": [
+      "limited_seats"
+    ],
+    "supported_scenarios": [
+      "rainy_indoor",
+      "friends"
+    ],
+    "audience": [
+      "雨天出行",
+      "临时改期",
+      "室内活动偏好"
+    ],
+    "district": "青叶区",
+    "menu_summary": "热饮、能量棒和简单轻食",
+    "review_summary": "评价集中在设施维护好，雨天排队仍可控，工作人员指引清楚。",
+    "capacity": 10,
+    "min_child_age": 6,
+    "max_party_size": 6,
+    "duration_minutes": 100
+  },
+  {
+    "id": "poi_indoor-activity_007",
+    "name": "宫城野室内迷你高尔夫",
+    "category": "indoor_activity",
+    "lat": 38.2605,
+    "lng": 140.895,
+    "distance_km": 3.93,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.58,
+    "review_count": 1319,
+    "avg_price": 1860,
+    "tags": [
+      "indoor",
+      "rain_safe",
+      "weather_proof",
+      "casual",
+      "child_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 13,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "不受天气影响，适合作为雨天或高温时的稳定替代。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "rainy_indoor",
+      "family"
+    ],
+    "audience": [
+      "雨天出行",
+      "临时改期",
+      "室内活动偏好"
+    ],
+    "district": "宫城野区",
+    "menu_summary": "热饮、能量棒和简单轻食",
+    "review_summary": "评价集中在设施维护好，雨天排队仍可控，工作人员指引清楚。",
+    "capacity": 13,
+    "min_child_age": 6,
+    "max_party_size": 7,
+    "duration_minutes": 100
+  },
+  {
+    "id": "poi_indoor-activity_008",
+    "name": "北仙台全天候展览厅",
+    "category": "indoor_activity",
+    "lat": 38.264,
+    "lng": 140.898,
+    "distance_km": 4.12,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.5,
+    "review_count": 1342,
+    "avg_price": 900,
+    "tags": [
+      "indoor",
+      "rain_safe",
+      "weather_proof",
+      "romantic",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 16,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "不受天气影响，适合作为雨天或高温时的稳定替代。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "rainy_indoor",
+      "date"
+    ],
+    "audience": [
+      "雨天出行",
+      "临时改期",
+      "室内活动偏好"
+    ],
+    "district": "若林区",
+    "menu_summary": "热饮、能量棒和简单轻食",
+    "review_summary": "评价集中在设施维护好，雨天排队仍可控，工作人员指引清楚。",
+    "capacity": 16,
+    "min_child_age": 6,
+    "max_party_size": 8,
+    "duration_minutes": 100
+  },
+  {
+    "id": "poi_indoor-activity_009",
+    "name": "荒井手作皮具教室",
+    "category": "indoor_activity",
+    "lat": 38.2675,
+    "lng": 140.8998,
+    "distance_km": 4.31,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.42,
+    "review_count": 1365,
+    "avg_price": 1060,
+    "tags": [
+      "indoor",
+      "rain_safe",
+      "weather_proof",
+      "casual",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 19,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "不受天气影响，适合作为雨天或高温时的稳定替代。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "rainy_indoor"
+    ],
+    "audience": [
+      "雨天出行",
+      "临时改期",
+      "室内活动偏好"
+    ],
+    "district": "太白区",
+    "menu_summary": "热饮、能量棒和简单轻食",
+    "review_summary": "评价集中在设施维护好，雨天排队仍可控，工作人员指引清楚。",
+    "capacity": 19,
+    "min_child_age": 6,
+    "max_party_size": 5,
+    "duration_minutes": 100
+  },
+  {
+    "id": "poi_indoor-activity_010",
+    "name": "榴冈雨天儿童影厅",
+    "category": "indoor_activity",
+    "lat": 38.2698,
+    "lng": 140.9028,
+    "distance_km": 4.5,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.34,
+    "review_count": 1388,
+    "avg_price": 1220,
+    "tags": [
+      "indoor",
+      "rain_safe",
+      "weather_proof",
+      "casual",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 22,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 2
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "18:00",
+          "available": false,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "不受天气影响，适合作为雨天或高温时的稳定替代。",
+    "risk_tags": [
+      "weekend_queue"
+    ],
+    "supported_scenarios": [
+      "rainy_indoor",
+      "friends"
+    ],
+    "audience": [
+      "雨天出行",
+      "临时改期",
+      "室内活动偏好"
+    ],
+    "district": "泉区",
+    "menu_summary": "热饮、能量棒和简单轻食",
+    "review_summary": "评价集中在设施维护好，雨天排队仍可控，工作人员指引清楚。",
+    "capacity": 22,
+    "min_child_age": 6,
+    "max_party_size": 6,
+    "duration_minutes": 100
+  },
+  {
+    "id": "poi_indoor-activity_011",
+    "name": "旭丘桌面足球馆",
+    "category": "indoor_activity",
+    "lat": 38.2733,
+    "lng": 140.9058,
+    "distance_km": 4.69,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.26,
+    "review_count": 1411,
+    "avg_price": 1380,
+    "tags": [
+      "indoor",
+      "rain_safe",
+      "weather_proof",
+      "casual",
+      "child_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 25,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": false,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "不受天气影响，适合作为雨天或高温时的稳定替代。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "rainy_indoor",
+      "family"
+    ],
+    "audience": [
+      "雨天出行",
+      "临时改期",
+      "室内活动偏好"
+    ],
+    "district": "青叶区",
+    "menu_summary": "热饮、能量棒和简单轻食",
+    "review_summary": "评价集中在设施维护好，雨天排队仍可控，工作人员指引清楚。",
+    "capacity": 10,
+    "min_child_age": 6,
+    "max_party_size": 7,
+    "duration_minutes": 100
+  },
+  {
+    "id": "poi_indoor-activity_012",
+    "name": "连坊茶道体验室",
+    "category": "indoor_activity",
+    "lat": 38.2768,
+    "lng": 140.9088,
+    "distance_km": 4.88,
+    "open_hours": {
+      "weekday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "10:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.18,
+    "review_count": 1434,
+    "avg_price": 1540,
+    "tags": [
+      "indoor",
+      "rain_safe",
+      "weather_proof",
+      "romantic",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 0,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "不受天气影响，适合作为雨天或高温时的稳定替代。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "rainy_indoor",
+      "date"
+    ],
+    "audience": [
+      "雨天出行",
+      "临时改期",
+      "室内活动偏好"
+    ],
+    "district": "宫城野区",
+    "menu_summary": "热饮、能量棒和简单轻食",
+    "review_summary": "评价集中在设施维护好，雨天排队仍可控，工作人员指引清楚。",
+    "capacity": 13,
+    "min_child_age": 6,
+    "max_party_size": 8,
+    "duration_minutes": 100
+  },
+  {
+    "id": "poi_restaurant_001",
+    "name": "青叶低脂食堂",
+    "category": "restaurant",
+    "lat": 38.2791,
+    "lng": 140.9106,
+    "distance_km": 5.07,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.74,
+    "review_count": 1457,
+    "avg_price": 1450,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "casual",
+      "child_friendly",
+      "low_fat",
+      "low_sugar",
+      "nearby"
+    ],
+    "wait_minutes": 3,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "friends",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "若林区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 18,
+    "min_child_age": 0,
+    "max_party_size": 8,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_002",
+    "name": "榉树畔家庭餐厅",
+    "category": "restaurant",
+    "lat": 38.2826,
+    "lng": 140.8353,
+    "distance_km": 5.26,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.66,
+    "review_count": 1480,
+    "avg_price": 1630,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "fair_weather",
+      "romantic",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 6,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "friends",
+      "date"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "太白区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 22,
+    "min_child_age": 0,
+    "max_party_size": 10,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_003",
+    "name": "仙台站前蔬食厨房",
+    "category": "restaurant",
+    "lat": 38.2861,
+    "lng": 140.8383,
+    "distance_km": 5.45,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.58,
+    "review_count": 1503,
+    "avg_price": 1810,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "casual",
+      "child_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 9,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "泉区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 26,
+    "min_child_age": 0,
+    "max_party_size": 12,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_004",
+    "name": "国分町炭火小馆",
+    "category": "restaurant",
+    "lat": 38.2884,
+    "lng": 140.8413,
+    "distance_km": 5.64,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.5,
+    "review_count": 1526,
+    "avg_price": 1990,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "romantic",
+      "adult_friendly",
+      "low_fat",
+      "nearby"
+    ],
+    "wait_minutes": 12,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 2
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [
+      "weekend_queue",
+      "limited_seats"
+    ],
+    "supported_scenarios": [
+      "date",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "青叶区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 30,
+    "min_child_age": 0,
+    "max_party_size": 8,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_005",
+    "name": "一番町发酵定食屋",
+    "category": "restaurant",
+    "lat": 38.2919,
+    "lng": 140.8431,
+    "distance_km": 5.83,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.42,
+    "review_count": 1549,
+    "avg_price": 2170,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "casual",
+      "child_friendly",
+      "low_sugar",
+      "nearby"
+    ],
+    "wait_minutes": 15,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "friends",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "宫城野区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 34,
+    "min_child_age": 0,
+    "max_party_size": 10,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_006",
+    "name": "长町亲子咖喱房",
+    "category": "restaurant",
+    "lat": 38.2954,
+    "lng": 140.8461,
+    "distance_km": 6.02,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.34,
+    "review_count": 1572,
+    "avg_price": 2350,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "fair_weather",
+      "romantic",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 18,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "friends",
+      "date"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "若林区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 38,
+    "min_child_age": 0,
+    "max_party_size": 12,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_007",
+    "name": "泉中央鱼菜小路",
+    "category": "restaurant",
+    "lat": 38.2977,
+    "lng": 140.8491,
+    "distance_km": 6.21,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.26,
+    "review_count": 1595,
+    "avg_price": 2530,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "casual",
+      "child_friendly",
+      "low_fat",
+      "nearby"
+    ],
+    "wait_minutes": 21,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "18:00",
+          "available": false,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "太白区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 18,
+    "min_child_age": 0,
+    "max_party_size": 8,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_008",
+    "name": "宫城野米饭研究所",
+    "category": "restaurant",
+    "lat": 38.3012,
+    "lng": 140.8521,
+    "distance_km": 6.4,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.18,
+    "review_count": 1618,
+    "avg_price": 2710,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "romantic",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 24,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "date",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "泉区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 22,
+    "min_child_age": 0,
+    "max_party_size": 10,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_009",
+    "name": "定禅寺低糖甜餐厅",
+    "category": "restaurant",
+    "lat": 38.3047,
+    "lng": 140.8539,
+    "distance_km": 6.59,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.74,
+    "review_count": 1641,
+    "avg_price": 2890,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "casual",
+      "child_friendly",
+      "low_sugar",
+      "nearby"
+    ],
+    "wait_minutes": 27,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "friends",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "青叶区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 26,
+    "min_child_age": 0,
+    "max_party_size": 12,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_010",
+    "name": "片平安静意面馆",
+    "category": "restaurant",
+    "lat": 38.307,
+    "lng": 140.8569,
+    "distance_km": 6.78,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.66,
+    "review_count": 1664,
+    "avg_price": 1450,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "fair_weather",
+      "romantic",
+      "adult_friendly",
+      "low_fat",
+      "nearby"
+    ],
+    "wait_minutes": 2,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": false,
+          "remaining_capacity": 2
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [
+      "weekend_queue"
+    ],
+    "supported_scenarios": [
+      "friends",
+      "date"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "宫城野区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 30,
+    "min_child_age": 0,
+    "max_party_size": 8,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_011",
+    "name": "花京院汤咖喱屋",
+    "category": "restaurant",
+    "lat": 38.3105,
+    "lng": 140.8599,
+    "distance_km": 6.97,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.58,
+    "review_count": 1687,
+    "avg_price": 1630,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "casual",
+      "child_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 5,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "若林区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 34,
+    "min_child_age": 0,
+    "max_party_size": 10,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_012",
+    "name": "五桥鸡胸沙拉吧",
+    "category": "restaurant",
+    "lat": 38.314,
+    "lng": 140.8629,
+    "distance_km": 0.7,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.5,
+    "review_count": 1710,
+    "avg_price": 1810,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "romantic",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 8,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "date",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "太白区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 38,
+    "min_child_age": 0,
+    "max_party_size": 12,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_013",
+    "name": "卸町海鲜便当堂",
+    "category": "restaurant",
+    "lat": 38.245,
+    "lng": 140.8647,
+    "distance_km": 0.89,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.42,
+    "review_count": 1733,
+    "avg_price": 1990,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "casual",
+      "child_friendly",
+      "low_fat",
+      "low_sugar",
+      "nearby"
+    ],
+    "wait_minutes": 11,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "friends",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "泉区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 18,
+    "min_child_age": 0,
+    "max_party_size": 8,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_014",
+    "name": "北四番丁豆腐料理店",
+    "category": "restaurant",
+    "lat": 38.2485,
+    "lng": 140.8677,
+    "distance_km": 1.08,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.34,
+    "review_count": 1756,
+    "avg_price": 2170,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "fair_weather",
+      "romantic",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 14,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "18:00",
+          "available": false,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [
+      "limited_seats"
+    ],
+    "supported_scenarios": [
+      "friends",
+      "date"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "青叶区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 22,
+    "min_child_age": 0,
+    "max_party_size": 10,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_015",
+    "name": "河原町荞麦小院",
+    "category": "restaurant",
+    "lat": 38.252,
+    "lng": 140.8707,
+    "distance_km": 1.27,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.26,
+    "review_count": 1779,
+    "avg_price": 2350,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "casual",
+      "child_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 17,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "宫城野区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 26,
+    "min_child_age": 0,
+    "max_party_size": 12,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_016",
+    "name": "荒町蒸菜餐桌",
+    "category": "restaurant",
+    "lat": 38.2543,
+    "lng": 140.8737,
+    "distance_km": 1.46,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.18,
+    "review_count": 1802,
+    "avg_price": 2530,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "romantic",
+      "adult_friendly",
+      "low_fat",
+      "nearby"
+    ],
+    "wait_minutes": 20,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 2
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [
+      "weekend_queue"
+    ],
+    "supported_scenarios": [
+      "date",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "若林区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 30,
+    "min_child_age": 0,
+    "max_party_size": 8,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_017",
+    "name": "台原家庭寿司铺",
+    "category": "restaurant",
+    "lat": 38.2578,
+    "lng": 140.8755,
+    "distance_km": 1.65,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.74,
+    "review_count": 1825,
+    "avg_price": 2710,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "casual",
+      "child_friendly",
+      "low_sugar",
+      "nearby"
+    ],
+    "wait_minutes": 23,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "friends",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "太白区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 34,
+    "min_child_age": 0,
+    "max_party_size": 10,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_018",
+    "name": "上杉味噌汤饭屋",
+    "category": "restaurant",
+    "lat": 38.2613,
+    "lng": 140.8785,
+    "distance_km": 1.84,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.66,
+    "review_count": 1848,
+    "avg_price": 2890,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "fair_weather",
+      "romantic",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 26,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "friends",
+      "date"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "泉区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 38,
+    "min_child_age": 0,
+    "max_party_size": 12,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_019",
+    "name": "木町通轻食酒馆",
+    "category": "restaurant",
+    "lat": 38.2636,
+    "lng": 140.8815,
+    "distance_km": 2.03,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.58,
+    "review_count": 1871,
+    "avg_price": 1450,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "casual",
+      "child_friendly",
+      "low_fat",
+      "nearby"
+    ],
+    "wait_minutes": 1,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "青叶区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 18,
+    "min_child_age": 0,
+    "max_party_size": 8,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_020",
+    "name": "新寺烤蔬餐厅",
+    "category": "restaurant",
+    "lat": 38.2671,
+    "lng": 140.8845,
+    "distance_km": 2.22,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.5,
+    "review_count": 1894,
+    "avg_price": 1630,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "romantic",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 4,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "date",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "宫城野区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 22,
+    "min_child_age": 0,
+    "max_party_size": 10,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_021",
+    "name": "仙台朝市海胆饭铺",
+    "category": "restaurant",
+    "lat": 38.2706,
+    "lng": 140.8863,
+    "distance_km": 2.41,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.42,
+    "review_count": 1917,
+    "avg_price": 1810,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "casual",
+      "child_friendly",
+      "low_sugar",
+      "nearby"
+    ],
+    "wait_minutes": 7,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": false,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "18:00",
+          "available": false,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "friends",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "若林区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 26,
+    "min_child_age": 0,
+    "max_party_size": 12,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_022",
+    "name": "八乙女儿童友好餐厅",
+    "category": "restaurant",
+    "lat": 38.2729,
+    "lng": 140.8893,
+    "distance_km": 2.6,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.34,
+    "review_count": 1940,
+    "avg_price": 1990,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "fair_weather",
+      "romantic",
+      "adult_friendly",
+      "low_fat",
+      "nearby"
+    ],
+    "wait_minutes": 10,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 2
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [
+      "weekend_queue"
+    ],
+    "supported_scenarios": [
+      "friends",
+      "date"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "太白区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 30,
+    "min_child_age": 0,
+    "max_party_size": 8,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_023",
+    "name": "六丁の目团体火锅屋",
+    "category": "restaurant",
+    "lat": 38.2764,
+    "lng": 140.8923,
+    "distance_km": 2.79,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.26,
+    "review_count": 1963,
+    "avg_price": 2170,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "casual",
+      "child_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 13,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "泉区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 34,
+    "min_child_age": 0,
+    "max_party_size": 10,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_024",
+    "name": "大町西公园茶泡饭店",
+    "category": "restaurant",
+    "lat": 38.2799,
+    "lng": 140.8953,
+    "distance_km": 2.98,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.18,
+    "review_count": 1986,
+    "avg_price": 2350,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "romantic",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 16,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [
+      "limited_seats"
+    ],
+    "supported_scenarios": [
+      "date",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "青叶区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 38,
+    "min_child_age": 0,
+    "max_party_size": 12,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_025",
+    "name": "南町通低糖烘焙餐吧",
+    "category": "restaurant",
+    "lat": 38.2822,
+    "lng": 140.8971,
+    "distance_km": 3.17,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.74,
+    "review_count": 2009,
+    "avg_price": 2530,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "casual",
+      "child_friendly",
+      "low_fat",
+      "low_sugar",
+      "nearby"
+    ],
+    "wait_minutes": 19,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "friends",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "宫城野区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 18,
+    "min_child_age": 0,
+    "max_party_size": 8,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_026",
+    "name": "北目町素食拉面所",
+    "category": "restaurant",
+    "lat": 38.2857,
+    "lng": 140.9001,
+    "distance_km": 3.36,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.66,
+    "review_count": 2032,
+    "avg_price": 2710,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "fair_weather",
+      "romantic",
+      "adult_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 22,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "friends",
+      "date"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "若林区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 22,
+    "min_child_age": 0,
+    "max_party_size": 10,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_027",
+    "name": "榴冈药膳小锅",
+    "category": "restaurant",
+    "lat": 38.2892,
+    "lng": 140.9031,
+    "distance_km": 3.55,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.58,
+    "review_count": 2055,
+    "avg_price": 2890,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "casual",
+      "child_friendly",
+      "nearby"
+    ],
+    "wait_minutes": 25,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "太白区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 26,
+    "min_child_age": 0,
+    "max_party_size": 12,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_restaurant_028",
+    "name": "广濑通预约制洋食屋",
+    "category": "restaurant",
+    "lat": 38.2915,
+    "lng": 140.9061,
+    "distance_km": 3.74,
+    "open_hours": {
+      "weekday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "saturday": {
+        "start": "11:30",
+        "end": "21:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "21:30"
+      },
+      "last_entry": "20:45"
+    },
+    "rating": 4.5,
+    "review_count": 2078,
+    "avg_price": 1450,
+    "tags": [
+      "meal",
+      "booking_supported",
+      "local_favorite",
+      "rain_safe",
+      "romantic",
+      "adult_friendly",
+      "low_fat",
+      "nearby"
+    ],
+    "wait_minutes": 0,
+    "booking_supported": true,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 2
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "18:00",
+          "available": false,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "菜单结构清楚，可订座，适合作为活动前后的正餐节点。",
+    "risk_tags": [
+      "weekend_queue"
+    ],
+    "supported_scenarios": [
+      "date",
+      "rainy_indoor"
+    ],
+    "audience": [
+      "正餐需求",
+      "家庭和朋友",
+      "健康饮食偏好"
+    ],
+    "district": "泉区",
+    "menu_summary": "低脂主菜、低糖饮品和儿童餐",
+    "review_summary": "食客评价出餐稳定，低油选项明确，周末预约体验较好。",
+    "capacity": 30,
+    "min_child_age": 0,
+    "max_party_size": 8,
+    "duration_minutes": 70
+  },
+  {
+    "id": "poi_dessert-walk_001",
+    "name": "定禅寺低糖甜品散步",
+    "category": "dessert_walk",
+    "lat": 38.2946,
+    "lng": 140.9079,
+    "distance_km": 3.93,
+    "open_hours": {
+      "weekday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.42,
+    "review_count": 2101,
+    "avg_price": 650,
+    "tags": [
+      "walkable",
+      "low_sugar",
+      "dessert",
+      "fair_weather",
+      "casual",
+      "child_friendly",
+      "photo_spot",
+      "nearby"
+    ],
+    "wait_minutes": 3,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "距离短、停留灵活，适合作为半日计划的收尾或缓冲。",
+    "risk_tags": [
+      "weather_sensitive"
+    ],
+    "supported_scenarios": [
+      "family",
+      "friends"
+    ],
+    "audience": [
+      "饭后散步",
+      "轻甜品偏好",
+      "拍照打卡"
+    ],
+    "district": "青叶区",
+    "menu_summary": "低糖甜品、咖啡和季节水果",
+    "review_summary": "评论认为步行节奏轻松，甜品份量适中，适合饭后聊天。",
+    "capacity": 10,
+    "min_child_age": 0,
+    "max_party_size": 6,
+    "duration_minutes": 40
+  },
+  {
+    "id": "poi_dessert-walk_002",
+    "name": "广濑川河畔布丁小径",
+    "category": "dessert_walk",
+    "lat": 38.2981,
+    "lng": 140.9109,
+    "distance_km": 4.12,
+    "open_hours": {
+      "weekday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.34,
+    "review_count": 2124,
+    "avg_price": 770,
+    "tags": [
+      "walkable",
+      "low_sugar",
+      "dessert",
+      "fair_weather",
+      "romantic",
+      "adult_friendly",
+      "photo_spot",
+      "nearby"
+    ],
+    "wait_minutes": 6,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "距离短、停留灵活，适合作为半日计划的收尾或缓冲。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "date",
+      "friends"
+    ],
+    "audience": [
+      "饭后散步",
+      "轻甜品偏好",
+      "拍照打卡"
+    ],
+    "district": "宫城野区",
+    "menu_summary": "低糖甜品、咖啡和季节水果",
+    "review_summary": "评论认为步行节奏轻松，甜品份量适中，适合饭后聊天。",
+    "capacity": 13,
+    "min_child_age": 0,
+    "max_party_size": 6,
+    "duration_minutes": 40
+  },
+  {
+    "id": "poi_dessert-walk_003",
+    "name": "一番町豆乳冰淇淋站",
+    "category": "dessert_walk",
+    "lat": 38.3016,
+    "lng": 140.8356,
+    "distance_km": 4.31,
+    "open_hours": {
+      "weekday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.26,
+    "review_count": 2147,
+    "avg_price": 890,
+    "tags": [
+      "walkable",
+      "low_sugar",
+      "dessert",
+      "fair_weather",
+      "romantic",
+      "child_friendly",
+      "photo_spot",
+      "nearby"
+    ],
+    "wait_minutes": 9,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "距离短、停留灵活，适合作为半日计划的收尾或缓冲。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "date"
+    ],
+    "audience": [
+      "饭后散步",
+      "轻甜品偏好",
+      "拍照打卡"
+    ],
+    "district": "若林区",
+    "menu_summary": "低糖甜品、咖啡和季节水果",
+    "review_summary": "评论认为步行节奏轻松，甜品份量适中，适合饭后聊天。",
+    "capacity": 16,
+    "min_child_age": 0,
+    "max_party_size": 6,
+    "duration_minutes": 40
+  },
+  {
+    "id": "poi_dessert-walk_004",
+    "name": "青叶通可丽饼街角",
+    "category": "dessert_walk",
+    "lat": 38.3039,
+    "lng": 140.8386,
+    "distance_km": 4.5,
+    "open_hours": {
+      "weekday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.18,
+    "review_count": 2170,
+    "avg_price": 1010,
+    "tags": [
+      "walkable",
+      "low_sugar",
+      "dessert",
+      "fair_weather",
+      "romantic",
+      "child_friendly",
+      "photo_spot",
+      "nearby"
+    ],
+    "wait_minutes": 12,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": false,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "距离短、停留灵活，适合作为半日计划的收尾或缓冲。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "friends",
+      "date"
+    ],
+    "audience": [
+      "饭后散步",
+      "轻甜品偏好",
+      "拍照打卡"
+    ],
+    "district": "太白区",
+    "menu_summary": "低糖甜品、咖啡和季节水果",
+    "review_summary": "评论认为步行节奏轻松，甜品份量适中，适合饭后聊天。",
+    "capacity": 19,
+    "min_child_age": 0,
+    "max_party_size": 6,
+    "duration_minutes": 40
+  },
+  {
+    "id": "poi_dessert-walk_005",
+    "name": "仙台朝市果物小路",
+    "category": "dessert_walk",
+    "lat": 38.3074,
+    "lng": 140.8404,
+    "distance_km": 4.69,
+    "open_hours": {
+      "weekday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.74,
+    "review_count": 2193,
+    "avg_price": 1130,
+    "tags": [
+      "walkable",
+      "low_sugar",
+      "dessert",
+      "fair_weather",
+      "casual",
+      "child_friendly",
+      "photo_spot",
+      "nearby"
+    ],
+    "wait_minutes": 15,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "距离短、停留灵活，适合作为半日计划的收尾或缓冲。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "friends"
+    ],
+    "audience": [
+      "饭后散步",
+      "轻甜品偏好",
+      "拍照打卡"
+    ],
+    "district": "泉区",
+    "menu_summary": "低糖甜品、咖啡和季节水果",
+    "review_summary": "评论认为步行节奏轻松，甜品份量适中，适合饭后聊天。",
+    "capacity": 22,
+    "min_child_age": 0,
+    "max_party_size": 6,
+    "duration_minutes": 40
+  },
+  {
+    "id": "poi_dessert-walk_006",
+    "name": "西公园樱花甜点线",
+    "category": "dessert_walk",
+    "lat": 38.3109,
+    "lng": 140.8434,
+    "distance_km": 4.88,
+    "open_hours": {
+      "weekday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.66,
+    "review_count": 2216,
+    "avg_price": 650,
+    "tags": [
+      "walkable",
+      "low_sugar",
+      "dessert",
+      "fair_weather",
+      "romantic",
+      "adult_friendly",
+      "photo_spot",
+      "nearby"
+    ],
+    "wait_minutes": 18,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 2
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "18:00",
+          "available": false,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "距离短、停留灵活，适合作为半日计划的收尾或缓冲。",
+    "risk_tags": [
+      "weekend_queue",
+      "limited_seats",
+      "weather_sensitive"
+    ],
+    "supported_scenarios": [
+      "date",
+      "friends"
+    ],
+    "audience": [
+      "饭后散步",
+      "轻甜品偏好",
+      "拍照打卡"
+    ],
+    "district": "青叶区",
+    "menu_summary": "低糖甜品、咖啡和季节水果",
+    "review_summary": "评论认为步行节奏轻松，甜品份量适中，适合饭后聊天。",
+    "capacity": 10,
+    "min_child_age": 0,
+    "max_party_size": 6,
+    "duration_minutes": 40
+  },
+  {
+    "id": "poi_dessert-walk_007",
+    "name": "榴冈蜂蜜吐司步道",
+    "category": "dessert_walk",
+    "lat": 38.3132,
+    "lng": 140.8464,
+    "distance_km": 5.07,
+    "open_hours": {
+      "weekday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.58,
+    "review_count": 2239,
+    "avg_price": 770,
+    "tags": [
+      "walkable",
+      "low_sugar",
+      "dessert",
+      "fair_weather",
+      "romantic",
+      "child_friendly",
+      "photo_spot",
+      "nearby"
+    ],
+    "wait_minutes": 21,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "距离短、停留灵活，适合作为半日计划的收尾或缓冲。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "date"
+    ],
+    "audience": [
+      "饭后散步",
+      "轻甜品偏好",
+      "拍照打卡"
+    ],
+    "district": "宫城野区",
+    "menu_summary": "低糖甜品、咖啡和季节水果",
+    "review_summary": "评论认为步行节奏轻松，甜品份量适中，适合饭后聊天。",
+    "capacity": 13,
+    "min_child_age": 0,
+    "max_party_size": 6,
+    "duration_minutes": 40
+  },
+  {
+    "id": "poi_dessert-walk_008",
+    "name": "长町抹茶散策巷",
+    "category": "dessert_walk",
+    "lat": 38.2454,
+    "lng": 140.8494,
+    "distance_km": 5.26,
+    "open_hours": {
+      "weekday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.5,
+    "review_count": 2262,
+    "avg_price": 890,
+    "tags": [
+      "walkable",
+      "low_sugar",
+      "dessert",
+      "fair_weather",
+      "romantic",
+      "child_friendly",
+      "photo_spot",
+      "nearby"
+    ],
+    "wait_minutes": 24,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "距离短、停留灵活，适合作为半日计划的收尾或缓冲。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "friends",
+      "date"
+    ],
+    "audience": [
+      "饭后散步",
+      "轻甜品偏好",
+      "拍照打卡"
+    ],
+    "district": "若林区",
+    "menu_summary": "低糖甜品、咖啡和季节水果",
+    "review_summary": "评论认为步行节奏轻松，甜品份量适中，适合饭后聊天。",
+    "capacity": 16,
+    "min_child_age": 0,
+    "max_party_size": 6,
+    "duration_minutes": 40
+  },
+  {
+    "id": "poi_dessert-walk_009",
+    "name": "泉中央亲子甜甜圈路",
+    "category": "dessert_walk",
+    "lat": 38.2489,
+    "lng": 140.8512,
+    "distance_km": 5.45,
+    "open_hours": {
+      "weekday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.42,
+    "review_count": 2285,
+    "avg_price": 1010,
+    "tags": [
+      "walkable",
+      "low_sugar",
+      "dessert",
+      "fair_weather",
+      "casual",
+      "child_friendly",
+      "photo_spot",
+      "nearby"
+    ],
+    "wait_minutes": 27,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 5
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 3
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "距离短、停留灵活，适合作为半日计划的收尾或缓冲。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "family",
+      "friends"
+    ],
+    "audience": [
+      "饭后散步",
+      "轻甜品偏好",
+      "拍照打卡"
+    ],
+    "district": "太白区",
+    "menu_summary": "低糖甜品、咖啡和季节水果",
+    "review_summary": "评论认为步行节奏轻松，甜品份量适中，适合饭后聊天。",
+    "capacity": 19,
+    "min_child_age": 0,
+    "max_party_size": 6,
+    "duration_minutes": 40
+  },
+  {
+    "id": "poi_dessert-walk_010",
+    "name": "花京院夜风咖啡步道",
+    "category": "dessert_walk",
+    "lat": 38.2512,
+    "lng": 140.8542,
+    "distance_km": 5.64,
+    "open_hours": {
+      "weekday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.34,
+    "review_count": 2308,
+    "avg_price": 1130,
+    "tags": [
+      "walkable",
+      "low_sugar",
+      "dessert",
+      "fair_weather",
+      "romantic",
+      "adult_friendly",
+      "photo_spot",
+      "nearby"
+    ],
+    "wait_minutes": 2,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 6
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 4
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "local_partner_seed",
+    "reason": "距离短、停留灵活，适合作为半日计划的收尾或缓冲。",
+    "risk_tags": [],
+    "supported_scenarios": [
+      "date",
+      "friends"
+    ],
+    "audience": [
+      "饭后散步",
+      "轻甜品偏好",
+      "拍照打卡"
+    ],
+    "district": "泉区",
+    "menu_summary": "低糖甜品、咖啡和季节水果",
+    "review_summary": "评论认为步行节奏轻松，甜品份量适中，适合饭后聊天。",
+    "capacity": 22,
+    "min_child_age": 0,
+    "max_party_size": 6,
+    "duration_minutes": 40
+  },
+  {
+    "id": "poi_dessert-walk_011",
+    "name": "宫城野米粉蛋糕散步",
+    "category": "dessert_walk",
+    "lat": 38.2547,
+    "lng": 140.8572,
+    "distance_km": 5.83,
+    "open_hours": {
+      "weekday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.26,
+    "review_count": 2331,
+    "avg_price": 650,
+    "tags": [
+      "walkable",
+      "low_sugar",
+      "dessert",
+      "fair_weather",
+      "romantic",
+      "child_friendly",
+      "photo_spot",
+      "nearby"
+    ],
+    "wait_minutes": 5,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 7
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 3
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 5
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "editorial_seed_verified",
+    "reason": "距离短、停留灵活，适合作为半日计划的收尾或缓冲。",
+    "risk_tags": [
+      "weather_sensitive"
+    ],
+    "supported_scenarios": [
+      "family",
+      "date"
+    ],
+    "audience": [
+      "饭后散步",
+      "轻甜品偏好",
+      "拍照打卡"
+    ],
+    "district": "青叶区",
+    "menu_summary": "低糖甜品、咖啡和季节水果",
+    "review_summary": "评论认为步行节奏轻松，甜品份量适中，适合饭后聊天。",
+    "capacity": 10,
+    "min_child_age": 0,
+    "max_party_size": 6,
+    "duration_minutes": 40
+  },
+  {
+    "id": "poi_dessert-walk_012",
+    "name": "北仙台焦糖苹果小径",
+    "category": "dessert_walk",
+    "lat": 38.2582,
+    "lng": 140.8602,
+    "distance_km": 6.02,
+    "open_hours": {
+      "weekday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "saturday": {
+        "start": "11:00",
+        "end": "20:30"
+      },
+      "sunday": {
+        "start": "10:30",
+        "end": "20:30"
+      },
+      "last_entry": "19:45"
+    },
+    "rating": 4.18,
+    "review_count": 2354,
+    "avg_price": 770,
+    "tags": [
+      "walkable",
+      "low_sugar",
+      "dessert",
+      "fair_weather",
+      "romantic",
+      "child_friendly",
+      "photo_spot",
+      "nearby"
+    ],
+    "wait_minutes": 8,
+    "booking_supported": false,
+    "availability": {
+      "slots": [
+        {
+          "time": "13:00",
+          "available": true,
+          "remaining_capacity": 2
+        },
+        {
+          "time": "15:30",
+          "available": true,
+          "remaining_capacity": 4
+        },
+        {
+          "time": "18:00",
+          "available": true,
+          "remaining_capacity": 2
+        }
+      ],
+      "updated_at": "2026-05-09T09:00:00+09:00"
+    },
+    "source": "seed_verified",
+    "reason": "距离短、停留灵活，适合作为半日计划的收尾或缓冲。",
+    "risk_tags": [
+      "weekend_queue"
+    ],
+    "supported_scenarios": [
+      "family",
+      "friends",
+      "date"
+    ],
+    "audience": [
+      "饭后散步",
+      "轻甜品偏好",
+      "拍照打卡"
+    ],
+    "district": "宫城野区",
+    "menu_summary": "低糖甜品、咖啡和季节水果",
+    "review_summary": "评论认为步行节奏轻松，甜品份量适中，适合饭后聊天。",
+    "capacity": 13,
+    "min_child_age": 0,
+    "max_party_size": 6,
+    "duration_minutes": 40
+  }
+]
