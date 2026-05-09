@@ -23,7 +23,7 @@ export function PlanCanvas({ response }: PlanCanvasProps) {
 
         <section className="itinerary-section">
           <h2>主方案</h2>
-          <div className="timeline-list">
+          <div className="timeline-list" data-testid="planner-timeline">
             {(plan.itinerary ?? []).map((step: Record<string, any>, index: number) => (
               <article key={step.id ?? step.place_id ?? index} className={`itinerary-card ${index === 0 ? 'featured' : ''}`}>
                 <div className="timeline-dot">
@@ -51,11 +51,11 @@ export function PlanCanvas({ response }: PlanCanvasProps) {
         <RejectedReasons rejected={rejected} />
       </div>
 
-      <aside className="map-panel">
+      <aside className="map-panel" data-testid="desktop-map-panel">
         <h2><MapPinned size={18} /> 地图与路线</h2>
         <RoutePreview route={response.route} />
       </aside>
-      <div className="route-summary-mobile">地图与路线：{plan.overview?.driveTime}，步行 {plan.overview?.walkingDistance}</div>
+      <div className="route-summary-mobile" data-testid="mobile-route-summary">地图与路线：{plan.overview?.driveTime}，步行 {plan.overview?.walkingDistance}</div>
     </section>
   );
 }

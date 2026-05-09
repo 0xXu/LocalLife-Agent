@@ -11,7 +11,8 @@
     "test:contracts": "tsx --test tests/contracts/*.test.ts",
     "test:server": "tsx --test tests/server/*.test.ts",
     "test:frontend": "tsx --test tests/frontend/*.test.ts tests/frontend/*.test.tsx",
-    "test:all": "npm test && npm run test:contracts && npm run test:server && npm run test:frontend"
+    "test:e2e": "playwright test tests/e2e",
+    "test:all": "npm test && npm run test:contracts && npm run test:server && npm run test:frontend && npm run test:e2e"
   },
   "dependencies": {
     "@langchain/langgraph": "^1.3.0",
@@ -32,6 +33,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/pg": "^8.20.0",
     "@types/react": "^19.2.14"
   }

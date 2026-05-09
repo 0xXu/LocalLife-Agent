@@ -14,8 +14,24 @@ export class PlanningServiceError extends Error {
   }
 }
 
-const plans = new Map<string, Record<string, any>>();
-const planThreads = new Map<string, string>();
+type PlanningServiceStore = {
+  plans: Map<string, Record<string, any>>;
+  planThreads: Map<string, string>;
+};
+
+declare global {
+  // Keep dev-route module reloads from dropping in-flight demo plans.
+  // Task 18 replaces this runtime cache boundary with repository persistence.
+  var __weekendPilotPlanningServiceStore: PlanningServiceStore | undefined;
+}
+
+const serviceStore = globalThis.__weekendPilotPlanningServiceStore ??= {
+  plans: new Map<string, Record<string, any>>(),
+  planThreads: new Map<string, string>(),
+};
+
+const plans = serviceStore.plans;
+const planThreads = serviceStore.planThreads;
 const plannerCheckpointer = createTestCheckpointer();
 const plannerGraph = createPlannerGraph({ checkpointer: plannerCheckpointer });
 

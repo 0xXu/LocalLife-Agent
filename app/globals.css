@@ -1348,6 +1348,17 @@ dd,
   line-height: 1.45;
 }
 
+.recovery-next-action {
+  display: inline-flex;
+  margin-top: 14px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  align-items: center;
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+
 .diff-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2041,6 +2052,19 @@ dd,
 
   .route-summary-mobile {
     display: block;
+  }
+
+  .timeline-list {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scroll-snap-type: x proximity;
+  }
+
+  .timeline-list .itinerary-card {
+    min-width: min(82vw, 340px);
+    scroll-snap-align: start;
   }
 
   .bottom-execution-bar {

@@ -37,6 +37,8 @@ out/
 .nuxt/
 .vite/
 coverage/
+test-results/
+playwright-report/
 
 # Python
 __pycache__/

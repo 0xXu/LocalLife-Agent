@@ -20,6 +20,7 @@ export function RecoveryDiff({ diff, adjustment }: RecoveryDiffProps) {
         <div><span>预算变化</span><strong>{diff.costDelta}</strong></div>
         <div><span>路线变化</span><strong>{diff.travelDelta}</strong></div>
       </div>
+      <strong className="recovery-next-action">重新确认执行</strong>
     </section>
   );
 }

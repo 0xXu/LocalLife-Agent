@@ -28,7 +28,7 @@ const actionIcons: Record<string, typeof Ticket> = {
 
 export function BottomExecutionBar({ actions, onExecute }: BottomExecutionBarProps) {
   return (
-    <section className="bottom-execution-bar" aria-label="确认执行">
+    <section className="bottom-execution-bar" aria-label="确认执行" data-testid="bottom-execution-bar">
       <div className="bottom-action-list">
         {actions.map((action) => {
           const tool = action.tool ?? action.type;
