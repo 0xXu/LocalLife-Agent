@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { buildContext } from './nodes/buildContext';
 import { buildItinerary } from './nodes/buildItinerary';
 import { executeActions } from './nodes/executeActions';
-import { parseConstraints } from './nodes/parseConstraints';
+import { parseConstraintsNode } from './nodes/parseConstraints';
 import { rankCandidates } from './nodes/rankCandidates';
 import { searchCandidates } from './nodes/searchCandidates';
 import { validatePlan } from './nodes/validatePlan';
@@ -43,7 +43,7 @@ export function createPlannerGraph({ checkpointer = createTestCheckpointer() }: 
       }
 
       const initial = createInitialState(threadId, input);
-      let state = parseConstraints(initial);
+      let state = await parseConstraintsNode(initial);
       if (state.status === PlanStatuses.NEED_CLARIFICATION) {
         await checkpointer.put(threadId, state);
         return state;

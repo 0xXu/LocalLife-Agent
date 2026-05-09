@@ -37,6 +37,10 @@ export type PlannerState = {
   plan_response?: PlanResponse;
   receipts: Receipt[];
   pending_side_effects: Array<Record<string, unknown>>;
+  openai_metadata?: {
+    llm_fallback: boolean;
+    agent?: string;
+  };
   error?: string;
 };
 
