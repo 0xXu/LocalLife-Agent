@@ -454,6 +454,43 @@ button {
   padding: 28px 28px 46px;
 }
 
+.planner-workbench .conversation-scroll {
+  max-width: 1120px;
+  padding-bottom: 112px;
+}
+
+.prompt-composer {
+  min-height: 84px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: var(--shadow-sm);
+  display: grid;
+  grid-template-columns: auto 1fr 40px;
+  align-items: center;
+  gap: 18px;
+}
+
+.prompt-composer p {
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1.45;
+}
+
+.prompt-location {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--blue);
+  background: var(--blue-soft);
+  font-weight: 760;
+}
+
 .user-message {
   display: grid;
   justify-items: end;
@@ -547,6 +584,82 @@ button {
   line-height: 1.35;
 }
 
+.constraint-controls {
+  margin-top: 18px;
+}
+
+.constraint-controls .constraint-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.constraint-metric select,
+.constraint-metric input {
+  width: 100%;
+  min-height: 38px;
+  margin-top: 8px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  color: var(--text);
+  background: #fff;
+}
+
+.plan-canvas {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 22px;
+  align-items: start;
+}
+
+.plan-main-column {
+  min-width: 0;
+  display: grid;
+  gap: 22px;
+}
+
+.trace-panel,
+.variant-tabs,
+.rejected-reasons {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: var(--shadow-sm);
+}
+
+.trace-panel h2,
+.map-panel h2,
+.rejected-reasons h3 {
+  margin: 0 0 16px;
+  font-size: 18px;
+}
+
+.map-panel {
+  position: sticky;
+  top: 72px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: var(--shadow-sm);
+}
+
+.map-panel h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.route-summary-mobile {
+  display: none;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--muted);
+}
+
 .agent-steps {
   margin: 28px 0 40px;
   padding: 0 0 0 14px;
@@ -588,6 +701,68 @@ button {
 .timeline-list {
   display: grid;
   gap: 18px;
+}
+
+.variant-tabs {
+  display: grid;
+  gap: 16px;
+}
+
+.variant-tab-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.variant-tab-list button {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: #4f5668;
+  background: var(--surface-2);
+  font-weight: 760;
+}
+
+.variant-tab-list button.active {
+  color: white;
+  background: var(--blue);
+}
+
+.variant-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.variant-panel {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fbfbff;
+}
+
+.variant-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.variant-panel h3,
+.variant-panel p {
+  margin: 0;
+}
+
+.variant-panel p {
+  margin-top: 8px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.variant-panel ol {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: #4f5668;
 }
 
 .itinerary-card {
@@ -898,6 +1073,63 @@ dd,
   margin-top: 3px;
   color: #405047;
   line-height: 1.35;
+}
+
+.rejected-reasons ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.rejected-reasons li {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--coral-soft);
+}
+
+.rejected-reasons span {
+  color: var(--coral);
+  font-weight: 760;
+}
+
+.bottom-execution-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  grid-column: 1 / -1;
+  min-height: 72px;
+  padding: 12px 28px;
+  border-top: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 -8px 24px rgba(28, 35, 52, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.bottom-action-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bottom-action-list span {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #4f5668;
+  background: var(--surface);
+  font-weight: 700;
 }
 
 .recovery-card h2 {
@@ -1575,6 +1807,41 @@ dd,
 
   .planner-topbar {
     flex-wrap: wrap;
+  }
+
+  .planner-workbench {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  .planner-workbench .conversation-scroll,
+  .prompt-composer,
+  .bottom-execution-bar {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .prompt-composer,
+  .plan-canvas {
+    grid-template-columns: 1fr;
+  }
+
+  .constraint-controls .constraint-grid,
+  .variant-panels {
+    grid-template-columns: 1fr;
+  }
+
+  .map-panel {
+    display: none;
+  }
+
+  .route-summary-mobile {
+    display: block;
+  }
+
+  .bottom-execution-bar {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .itinerary-topline {

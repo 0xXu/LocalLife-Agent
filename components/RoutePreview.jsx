@@ -1,3 +1,4 @@
+import React from 'react';
 import { MapPin, Minus, Plus } from 'lucide-react';
 
 export function RoutePreview({ status = '正在规划路线' }) {
