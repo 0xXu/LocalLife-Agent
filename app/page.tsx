@@ -1,119 +1,145 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { ActivityView } from '@/components/ActivityView';
-import { AppChrome } from '@/components/AppChrome';
-import { HomeView } from '@/components/HomeView';
-import { PlannerView } from '@/components/PlannerView';
+import React, { useState } from 'react';
+import { AppShell } from '@/components/layout/AppShell';
+import { ChatView } from '@/components/chat/ChatView';
+import { PlanningProgress } from '@/components/planning/PlanningProgress';
+import { PlanResultsView } from '@/components/plan/PlanResultsView';
+import { ConfirmView } from '@/components/confirm/ConfirmView';
+import { ReceiptsView } from '@/components/receipts/ReceiptsView';
 import { SavedPlansView } from '@/components/SavedPlansView';
+import { ActivityView } from '@/components/ActivityView';
 import { SettingsView } from '@/components/SettingsView';
-import {
-  buildPlan,
-  executePlan,
-  recoverPlan,
-  scenarioPrompts
-} from '@/features/planner/apiClient';
-import type { PlanResponse } from '@/types/weekendpilot';
-
-type Plan = PlanResponse['plan'];
-type Receipt = PlanResponse['receipts'][number];
+import { usePlanMachine } from '@/features/planner/usePlanMachine';
+import type { ActiveTab } from '@/types/views';
 
 export default function WeekendPilotApp() {
-  const [activeView, setActiveView] = useState('home');
-  const [goal, setGoal] = useState(scenarioPrompts.family);
-  const [planResult, setPlanResult] = useState<PlanResponse | null>(null);
-  const [recoveredPlan, setRecoveredPlan] = useState<Plan | null>(null);
-  const [receipts, setReceipts] = useState<Receipt[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [isPlanning, setIsPlanning] = useState(false);
+  const [activeTab, setActiveTab] = useState<ActiveTab>('home');
+  const machine = usePlanMachine();
+  const { state } = machine;
 
-  const currentPlanner = useMemo(() => ({
-    goal,
-    result: planResult,
-    receipts,
-    recoveredPlan
-  }), [goal, planResult, receipts, recoveredPlan]);
-
-  async function createPlan(nextGoal = goal) {
-    try {
-      setGoal(nextGoal);
-      setError(null);
-      setIsPlanning(true);
-      setPlanResult(null);
-      setRecoveredPlan(null);
-      setReceipts([]);
-      setActiveView('planner');
-      const result = await buildPlan(nextGoal);
-      setPlanResult(result);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : '计划生成失败');
-      setActiveView('home');
-    } finally {
-      setIsPlanning(false);
-    }
+  function handleNavigate(tab: ActiveTab) {
+    setActiveTab(tab);
   }
 
-  function startNewPlan() {
-    setGoal(scenarioPrompts.family);
-    setPlanResult(null);
-    setRecoveredPlan(null);
-    setReceipts([]);
-    setError(null);
-    setIsPlanning(false);
-    setActiveView('home');
+  function handleNewPlan() {
+    machine.reset();
+    setActiveTab('home');
   }
 
-  async function executeCurrentPlan() {
-    const planId = (recoveredPlan ?? planResult?.plan)?.id;
-    if (!planId) {
-      return;
-    }
-    try {
-      setError(null);
-      const result = await executePlan(planId);
-      setPlanResult(result);
-      setRecoveredPlan(null);
-      setReceipts(result.receipts);
-      setActiveView('planner');
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : '计划执行失败');
-    }
+  function handleSubmitGoal(goal: string) {
+    machine.startPlan(goal);
   }
 
-  async function recoverRestaurant() {
-    const planId = (recoveredPlan ?? planResult?.plan)?.id;
-    if (!planId) {
-      return;
-    }
-    try {
-      setError(null);
-      const result = await recoverPlan(planId, 'restaurant_unavailable');
-      setPlanResult(result);
-      setRecoveredPlan(result.plan);
-      setReceipts([]);
-      setActiveView('planner');
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : '恢复计划失败');
-    }
+  function handleConfirm() {
+    machine.goToConfirm();
   }
+
+  function handleExecute() {
+    machine.confirmAndExecute();
+  }
+
+  function handleRecover(reason: string) {
+    machine.recoverCurrentPlan(reason);
+  }
+
+  function handleBackToResults() {
+    machine.setPhase('results');
+  }
+
+  const planContent = (() => {
+    switch (state.phase) {
+      case 'idle':
+        return (
+          <ChatView
+            onSubmitGoal={handleSubmitGoal}
+            isPlanning={false}
+            error={state.error}
+          />
+        );
+
+      case 'planning':
+        return (
+          <PlanningProgress
+            goal={state.goal}
+            progress={[]}
+          />
+        );
+
+      case 'results':
+        if (!state.result) return null;
+        return (
+          <PlanResultsView
+            result={state.result}
+            recoveredPlan={state.recoveredPlan}
+            onConfirm={handleConfirm}
+            onRecover={handleRecover}
+            onLoadAlternatives={machine.loadAlternatives}
+            error={state.error}
+          />
+        );
+
+      case 'confirming':
+        if (!state.result) return null;
+        return (
+          <ConfirmView
+            result={state.result}
+            selectedActions={state.selectedActions}
+            onToggleAction={machine.toggleAction}
+            onSelectAll={machine.selectAllActions}
+            onDeselectAll={machine.deselectAllActions}
+            onExecute={handleExecute}
+            onBack={handleBackToResults}
+            executing={false}
+          />
+        );
+
+      case 'executing':
+        if (!state.result) return null;
+        return (
+          <ConfirmView
+            result={state.result}
+            selectedActions={state.selectedActions}
+            onToggleAction={machine.toggleAction}
+            onSelectAll={machine.selectAllActions}
+            onDeselectAll={machine.deselectAllActions}
+            onExecute={handleExecute}
+            onBack={handleBackToResults}
+            executing={true}
+          />
+        );
+
+      case 'completed':
+        return (
+          <ReceiptsView
+            receipts={state.receipts}
+            onNewPlan={handleNewPlan}
+          />
+        );
+
+      case 'recovering':
+        return (
+          <PlanningProgress
+            goal="正在恢复方案..."
+            progress={[]}
+          />
+        );
+
+      default:
+        return null;
+    }
+  })();
 
   return (
-    <AppChrome activeView={activeView} onNavigate={setActiveView} onNewPlan={startNewPlan}>
-      {error ? <div className="app-error" role="alert">{error}</div> : null}
-      {activeView === 'home' ? (
-        <HomeView goal={goal} isPlanning={isPlanning} onGoalChange={setGoal} onPlan={createPlan} />
-      ) : null}
-      {activeView === 'planner' && planResult ? (
-        <PlannerView
-          {...currentPlanner}
-          onExecute={executeCurrentPlan}
-          onRecover={recoverRestaurant}
-        />
-      ) : null}
-      {activeView === 'planner' && !planResult ? <section className="planner-view">正在生成计划...</section> : null}
-      {activeView === 'saved' ? <SavedPlansView onPlan={() => createPlan(scenarioPrompts.family)} /> : null}
-      {activeView === 'activity' ? <ActivityView /> : null}
-      {activeView === 'settings' ? <SettingsView /> : null}
-    </AppChrome>
+    <AppShell
+      activeTab={activeTab}
+      onNavigate={handleNavigate}
+      onNewPlan={handleNewPlan}
+    >
+      {activeTab === 'home' && planContent}
+      {activeTab === 'plans' && <SavedPlansView onPlan={() => handleSubmitGoal('今天下午带孩子出去玩')} />}
+      {activeTab === 'activity' && <ActivityView />}
+      {activeTab === 'settings' && <SettingsView />}
+    </AppShell>
   );
 }

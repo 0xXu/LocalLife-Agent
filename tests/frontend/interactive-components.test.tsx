@@ -5,7 +5,6 @@ import { createRoot } from 'react-dom/client';
 import { JSDOM } from 'jsdom';
 
 import { ActivityView } from '../../components/ActivityView';
-import { AppChrome } from '../../components/AppChrome';
 import { HomeView } from '../../components/HomeView';
 import { SavedPlansView } from '../../components/SavedPlansView';
 import { SettingsView } from '../../components/SettingsView';
@@ -29,22 +28,6 @@ test('home composer gives immediate plan and voice feedback', async () => {
 
   await click(byTestId(container, 'voice-input-button'));
   assert.match(container.textContent ?? '', /当前浏览器不支持语音输入/);
-});
-
-test('app chrome search opens a real input and reports queries', async () => {
-  const queries: string[] = [];
-  const { container } = render(
-    <AppChrome activeView="home" onNavigate={() => {}} onNewPlan={() => {}} onSearch={(query: string) => queries.push(query)}>
-      <div />
-    </AppChrome>,
-  );
-
-  await click(byTestId(container, 'global-search-trigger'));
-  const input = byTestId<HTMLInputElement>(container, 'global-search-input');
-  await inputText(input, '亲子');
-
-  assert.equal(input.value, '亲子');
-  assert.deepEqual(queries, ['亲子']);
 });
 
 test('activity view filter, search, and receipt details are interactive', async () => {
