@@ -14,8 +14,11 @@ type RecoveryBannerProps = {
     preserved?: string[];
   };
   adjustment?: {
-    headline?: string;
-    message?: string;
+    requested_by?: 'user' | 'agent' | 'system';
+    reason?: string;
+    changes?: string[];
+    requires_confirmation?: boolean;
+    payload?: Record<string, unknown>;
   };
 };
 
@@ -24,8 +27,8 @@ export function RecoveryBanner({ diff, adjustment }: RecoveryBannerProps) {
     <div className="recovery-banner">
       <div className="recovery-banner-icon"><RefreshCw size={18} /></div>
       <div className="recovery-banner-body">
-        <strong>{adjustment?.headline ?? '方案已调整'}</strong>
-        <p>{adjustment?.message ?? diff.reason ?? '检测到问题，已自动替换。'}</p>
+        <strong>方案已调整</strong>
+        <p>{adjustment?.reason ?? diff.reason ?? '检测到问题，已自动替换。'}</p>
         {diff.from && diff.to && (
           <div className="recovery-diff">
             <span>{diff.from}</span>
