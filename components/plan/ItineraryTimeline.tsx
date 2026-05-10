@@ -1,0 +1,22 @@
+'use client';
+
+import React from 'react';
+import { ItineraryCard } from './ItineraryCard';
+
+type ItineraryTimelineProps = {
+  itinerary: Array<Record<string, any> & { title?: string }>;
+};
+
+export function ItineraryTimeline({ itinerary }: ItineraryTimelineProps) {
+  if (!itinerary.length) return null;
+  return (
+    <section className="itinerary-timeline">
+      <h2 className="section-title">行程安排</h2>
+      <div className="itinerary-list">
+        {itinerary.map((step, index) => (
+          <ItineraryCard key={step.id ?? step.place_id ?? index} step={step as any} index={index} isLast={index === itinerary.length - 1} />
+        ))}
+      </div>
+    </section>
+  );
+}
