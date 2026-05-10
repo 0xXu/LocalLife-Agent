@@ -7,9 +7,9 @@ import { PlanningProgress } from '@/components/planning/PlanningProgress';
 import { PlanResultsView } from '@/components/plan/PlanResultsView';
 import { ConfirmView } from '@/components/confirm/ConfirmView';
 import { ReceiptsView } from '@/components/receipts/ReceiptsView';
-import { SavedPlansView } from '@/components/SavedPlansView';
-import { ActivityView } from '@/components/ActivityView';
-import { SettingsView } from '@/components/SettingsView';
+import { SavedPlansView } from '@/components/saved/SavedPlansView';
+import { ActivityView } from '@/components/activity/ActivityView';
+import { SettingsView } from '@/components/settings/SettingsView';
 import { usePlanMachine } from '@/features/planner/usePlanMachine';
 import type { ActiveTab } from '@/types/views';
 
@@ -137,7 +137,7 @@ export default function WeekendPilotApp() {
       onNewPlan={handleNewPlan}
     >
       {activeTab === 'home' && planContent}
-      {activeTab === 'plans' && <SavedPlansView onPlan={() => handleSubmitGoal('今天下午带孩子出去玩')} />}
+      {activeTab === 'plans' && <SavedPlansView onNavigateHome={handleNewPlan} />}
       {activeTab === 'activity' && <ActivityView />}
       {activeTab === 'settings' && <SettingsView />}
     </AppShell>
