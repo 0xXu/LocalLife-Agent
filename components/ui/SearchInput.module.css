@@ -1,0 +1,24 @@
+.wrapper { position: relative; display: flex; align-items: center; }
+
+.icon { position: absolute; left: 12px; color: var(--subtle); pointer-events: none; }
+
+.input {
+  width: 100%; height: 40px; padding: 0 36px 0 38px;
+  background: var(--surface-2); border: 1.5px solid transparent;
+  border-radius: 10px; font-size: 14px; color: var(--text);
+  font-family: inherit; transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.input::placeholder { color: var(--subtle); }
+.input:focus {
+  outline: none; border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(11, 119, 255, 0.1); background: var(--panel);
+}
+
+.clear {
+  position: absolute; right: 8px;
+  display: grid; place-items: center;
+  width: 24px; height: 24px; border: none;
+  background: var(--line); border-radius: 50%;
+  color: var(--muted); cursor: pointer; transition: background 0.15s ease;
+}
+.clear:hover { background: var(--line-strong); }

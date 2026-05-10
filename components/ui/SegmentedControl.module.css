@@ -1,0 +1,18 @@
+.control {
+  display: inline-flex; padding: 4px; border-radius: 10px;
+  background: #e7e6ee; gap: 2px;
+}
+
+.option {
+  position: relative; display: inline-flex; align-items: center;
+  justify-content: center; gap: 6px; min-height: 34px; padding: 0 14px;
+  border: none; border-radius: 8px; background: transparent;
+  color: var(--muted); font-size: 13px; font-weight: 600;
+  font-family: inherit; cursor: pointer; white-space: nowrap;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+.option:hover:not(.active) { color: var(--text); }
+.option.active {
+  background: white; color: var(--text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
