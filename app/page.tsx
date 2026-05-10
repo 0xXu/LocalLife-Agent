@@ -62,7 +62,7 @@ export default function WeekendPilotApp() {
         return (
           <PlanningProgress
             goal={state.goal}
-            progress={[]}
+            progress={state.progress}
           />
         );
 

@@ -18,4 +18,5 @@ export type PlanState = {
   receipts: import('./weekendpilot').PlanResponse['receipts'];
   error: string | null;
   selectedActions: Set<string>;
+  progress: string[];
 };

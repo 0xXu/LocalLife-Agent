@@ -1,4 +1,4 @@
-import { useCallback, useReducer } from 'react';
+import { useCallback, useEffect, useReducer, useRef } from 'react';
 import type { PlanPhase, PlanState } from '../../types/views';
 import type { PlanResponse } from '../../types/weekendpilot';
 import {
@@ -11,6 +11,7 @@ import {
 
 type Action =
   | { type: 'START_PLAN'; goal: string }
+  | { type: 'UPDATE_PROGRESS'; step: string }
   | { type: 'PLAN_LOADED'; result: PlanResponse }
   | { type: 'PLAN_FAILED'; error: string }
   | { type: 'GO_TO_CONFIRM' }
@@ -35,6 +36,7 @@ const initialState: PlanState = {
   receipts: [],
   error: null,
   selectedActions: new Set(),
+  progress: [],
 };
 
 function getActionKey(action: Record<string, unknown>): string {
@@ -45,13 +47,15 @@ function reducer(state: PlanState, action: Action): PlanState {
   switch (action.type) {
     case 'START_PLAN':
       return { ...initialState, phase: 'planning', goal: action.goal };
+    case 'UPDATE_PROGRESS':
+      return { ...state, progress: [...state.progress, action.step] };
     case 'PLAN_LOADED': {
       const plan = action.result.plan;
-      const allKeys = new Set((plan.actions ?? []).map((a) => getActionKey(a)));
+      const allKeys = new Set<string>(((plan as any)?.actions ?? []).map((a: any) => getActionKey(a)));
       return {
         ...state,
         phase: 'results',
-        planId: plan.id,
+        planId: (plan as any)?.id ?? null,
         result: action.result,
         recoveredPlan: null,
         receipts: [],
@@ -83,7 +87,7 @@ function reducer(state: PlanState, action: Action): PlanState {
         ...state,
         phase: 'results',
         result: action.result,
-        recoveredPlan: action.result.plan,
+        recoveredPlan: (action.result as any).plan ?? null,
         receipts: [],
         error: null,
       };
@@ -113,14 +117,31 @@ function reducer(state: PlanState, action: Action): PlanState {
 
 export function usePlanMachine() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const startPlan = useCallback(async (goal: string) => {
     dispatch({ type: 'START_PLAN', goal });
+    const steps = ['解析需求', '构建上下文', '搜索候选', '排序推荐', '规划路线', '验证方案'];
+    const stepMs = [800, 1200, 1500, 1200, 1500, 800];
+
+    const progressPromise = (async () => {
+      for (let i = 0; i < steps.length; i++) {
+        await new Promise((r) => setTimeout(r, stepMs[i]));
+        if (mountedRef.current) dispatch({ type: 'UPDATE_PROGRESS', step: steps[i] });
+      }
+    })();
+
     try {
       const result = await buildPlan(goal);
-      dispatch({ type: 'PLAN_LOADED', result });
+      await progressPromise;
+      if (mountedRef.current) dispatch({ type: 'PLAN_LOADED', result });
     } catch (err) {
-      dispatch({ type: 'PLAN_FAILED', error: err instanceof Error ? err.message : '计划生成失败' });
+      await progressPromise;
+      if (mountedRef.current) dispatch({ type: 'PLAN_FAILED', error: err instanceof Error ? err.message : '计划生成失败' });
     }
   }, []);
 
