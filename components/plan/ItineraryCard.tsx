@@ -14,7 +14,7 @@ type ItineraryCardProps = {
     travel?: string;
     travel_minutes?: number;
     mode?: string;
-    risk?: string[];
+    risk?: string | string[];
   };
   index: number;
   isLast: boolean;
@@ -58,9 +58,9 @@ export function ItineraryCard({ step, index, isLast }: ItineraryCardProps) {
           {step.travel_minutes && !step.travel && <span><Timer size={14} /> {step.travel_minutes}分钟</span>}
           {step.mode && <span><Footprints size={14} /> {step.mode}</span>}
         </div>
-        {step.risk && step.risk.length > 0 && (
+        {step.risk && (Array.isArray(step.risk) ? step.risk.length > 0 : true) && (
           <div className="itinerary-risks">
-            {step.risk.map((r) => <span key={r} className="itinerary-risk">{r}</span>)}
+            {(Array.isArray(step.risk) ? step.risk : [step.risk]).map((r) => <span key={r} className="itinerary-risk">{r}</span>)}
           </div>
         )}
       </div>
