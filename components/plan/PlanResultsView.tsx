@@ -24,11 +24,21 @@ export function PlanResultsView({
 }: PlanResultsViewProps) {
   const [activeVariant, setActiveVariant] = useState(0);
   const [showTrace, setShowTrace] = useState(false);
+  const [loadingAlternatives, setLoadingAlternatives] = useState(false);
 
   const plan = recoveredPlan ?? result.plan;
   const displayItinerary = activeVariant === 0
     ? (plan.itinerary ?? [])
     : (result.variants?.[activeVariant]?.itinerary ?? plan.itinerary ?? []);
+
+  const handleLoadAlternatives = async () => {
+    setLoadingAlternatives(true);
+    try {
+      await onLoadAlternatives();
+    } finally {
+      setLoadingAlternatives(false);
+    }
+  };
 
   return (
     <section className="plan-results">
@@ -40,7 +50,8 @@ export function PlanResultsView({
         variants={result.variants?.length ? result.variants : [plan]}
         activeIndex={activeVariant}
         onSelect={setActiveVariant}
-        onLoadMore={onLoadAlternatives}
+        onLoadMore={handleLoadAlternatives}
+        loading={loadingAlternatives}
       />
       <ItineraryTimeline itinerary={displayItinerary} />
       {result.route && (
