@@ -1,0 +1,33 @@
+.view { display: flex; flex-direction: column; height: 100%; padding: 16px; animation: view-enter 0.4s ease both; }
+
+.header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.title { font-size: 22px; font-weight: 700; color: var(--text); margin: 0; }
+.controls { display: flex; align-items: center; gap: 8px; }
+
+.filterChips { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.chip {
+  padding: 6px 14px; background: var(--surface-2); border: 1.5px solid transparent;
+  border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--muted);
+  cursor: pointer; transition: all 0.2s ease;
+}
+.chip:hover { background: var(--line); color: var(--text); }
+.chipActive { background: var(--blue-soft); border-color: var(--blue); color: var(--blue); }
+
+.timeline { flex: 1; overflow-y: auto; min-height: 0; }
+
+.error {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; background: rgba(221, 75, 75, 0.06);
+  border: 1px solid rgba(221, 75, 75, 0.15); border-radius: 10px;
+  color: var(--danger); font-size: 14px; margin-bottom: 12px; animation: shake 0.4s ease;
+}
+.retryBtn {
+  margin-left: auto; padding: 4px 12px; background: var(--danger);
+  color: white; border: none; border-radius: 6px; font-size: 13px;
+  font-weight: 600; cursor: pointer;
+}
+
+@media (min-width: 820px) {
+  .content { display: grid; grid-template-columns: 1fr 280px; gap: 16px; flex: 1; min-height: 0; }
+  .sidebar { display: flex; flex-direction: column; gap: 12px; }
+}
