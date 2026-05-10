@@ -83,19 +83,24 @@ def create_app(service: PlanningService | None = None) -> FastAPI:
     @api.get("/api/plans/build/stream")
     async def build_plan_stream(goal: str, request: Request) -> StreamingResponse:
         svc = planning_service(request)
-        queue: asyncio.Queue[tuple[str, str] | None] = asyncio.Queue()
+        queue: asyncio.Queue[tuple[str, str] | tuple[str, str, str] | None] = asyncio.Queue()
         loop = asyncio.get_running_loop()
 
         def on_progress(label: str, detail: str) -> None:
             loop.call_soon_threadsafe(queue.put_nowait, (label, detail))
 
+        def on_token(token: str) -> None:
+            loop.call_soon_threadsafe(queue.put_nowait, ("__token__", token))
+
         async def event_stream():
             result_holder: dict[str, Any] = {}
             error_holder: dict[str, str] = {}
 
+            yield f"data: {json.dumps({'type': 'started'}, ensure_ascii=False)}\n\n"
+
             def run():
                 try:
-                    result_holder["data"] = svc.build_plan(goal, on_progress=on_progress)
+                    result_holder["data"] = svc.build_plan(goal, on_progress=on_progress, on_token=on_token)
                 except Exception as exc:
                     error_holder["error"] = str(exc)
                 finally:
@@ -107,8 +112,11 @@ def create_app(service: PlanningService | None = None) -> FastAPI:
                 item = await queue.get()
                 if item is None:
                     break
-                label, detail = item
-                yield f"data: {json.dumps({'type': 'progress', 'label': label, 'detail': detail}, ensure_ascii=False)}\n\n"
+                if item[0] == "__token__":
+                    yield f"data: {json.dumps({'type': 'token', 'content': item[1]}, ensure_ascii=False)}\n\n"
+                else:
+                    label, detail = item
+                    yield f"data: {json.dumps({'type': 'progress', 'label': label, 'detail': detail}, ensure_ascii=False)}\n\n"
 
             if "error" in error_holder:
                 yield f"data: {json.dumps({'type': 'error', 'message': error_holder['error']}, ensure_ascii=False)}\n\n"

@@ -14,28 +14,52 @@ export async function buildPlan(goal: string) {
 
 export async function buildPlanStream(
   goal: string,
-  onProgress: (label: string, detail: string) => void,
+  callbacks: {
+    onStarted?: () => void | Promise<void>;
+    onToken?: (content: string) => void | Promise<void>;
+    onProgress: (label: string, detail: string) => void | Promise<void>;
+  },
 ): Promise<PlanResponse> {
   const url = resolveApiUrl(`/api/plans/build/stream?goal=${encodeURIComponent(goal)}`);
 
   return new Promise<PlanResponse>((resolve, reject) => {
+    const queue: Array<() => Promise<void>> = [];
+    let processing = false;
+
+    async function processNext() {
+      if (processing || queue.length === 0) return;
+      processing = true;
+      await queue.shift()!();
+      processing = false;
+      processNext();
+    }
+
     const es = new EventSource(url);
 
     es.onmessage = (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        if (data.type === 'progress') {
-          onProgress(data.label, data.detail);
-        } else if (data.type === 'done') {
-          es.close();
-          resolve(data.result);
-        } else if (data.type === 'error') {
-          es.close();
-          reject(new Error(data.message));
+      const data = JSON.parse(e.data);
+
+      if (data.type === 'started') {
+        if (callbacks.onStarted) {
+          queue.push(async () => { await callbacks.onStarted!(); });
+          processNext();
         }
-      } catch (err) {
+      } else if (data.type === 'token') {
+        if (callbacks.onToken) {
+          queue.push(async () => { await callbacks.onToken!(data.content); });
+          processNext();
+        }
+      } else if (data.type === 'progress') {
+        queue.push(async () => {
+          await callbacks.onProgress(data.label, data.detail);
+        });
+        processNext();
+      } else if (data.type === 'done') {
         es.close();
-        reject(err);
+        resolve(data.result);
+      } else if (data.type === 'error') {
+        es.close();
+        reject(new Error(data.message));
       }
     };
 

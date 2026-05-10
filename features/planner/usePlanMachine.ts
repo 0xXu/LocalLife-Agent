@@ -11,6 +11,8 @@ import {
 
 type Action =
   | { type: 'START_PLAN'; goal: string }
+  | { type: 'STREAM_STARTED' }
+  | { type: 'STREAM_TOKEN'; content: string }
   | { type: 'UPDATE_PROGRESS'; step: string }
   | { type: 'PLAN_LOADED'; result: PlanResponse }
   | { type: 'PLAN_FAILED'; error: string }
@@ -37,6 +39,8 @@ const initialState: PlanState = {
   error: null,
   selectedActions: new Set(),
   progress: [],
+  currentStep: -1,
+  streamingText: '',
 };
 
 function getActionKey(action: Record<string, unknown>): string {
@@ -46,9 +50,13 @@ function getActionKey(action: Record<string, unknown>): string {
 function reducer(state: PlanState, action: Action): PlanState {
   switch (action.type) {
     case 'START_PLAN':
-      return { ...initialState, phase: 'planning', goal: action.goal };
+      return { ...initialState, phase: 'planning', goal: action.goal, currentStep: 0, streamingText: '' };
+    case 'STREAM_STARTED':
+      return { ...state, currentStep: 0 };
+    case 'STREAM_TOKEN':
+      return { ...state, streamingText: state.streamingText + action.content };
     case 'UPDATE_PROGRESS':
-      return { ...state, progress: [...state.progress, action.step] };
+      return { ...state, progress: [...state.progress, action.step], currentStep: state.currentStep + 1, streamingText: '' };
     case 'PLAN_LOADED': {
       const plan = action.result.plan;
       const allKeys = new Set<string>(((plan as any)?.actions ?? []).map((a: any) => getActionKey(a)));
@@ -126,8 +134,19 @@ export function usePlanMachine() {
   const startPlan = useCallback(async (goal: string) => {
     dispatch({ type: 'START_PLAN', goal });
     try {
-      const result = await buildPlanStream(goal, (label) => {
-        if (mountedRef.current) dispatch({ type: 'UPDATE_PROGRESS', step: label });
+      const result = await buildPlanStream(goal, {
+        onStarted: async () => {
+          if (mountedRef.current) dispatch({ type: 'STREAM_STARTED' });
+        },
+        onToken: async (content: string) => {
+          if (mountedRef.current) dispatch({ type: 'STREAM_TOKEN', content });
+        },
+        onProgress: async (label: string) => {
+          if (mountedRef.current) dispatch({ type: 'UPDATE_PROGRESS', step: label });
+          await new Promise<void>((resolve) => {
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+          });
+        },
       });
       if (mountedRef.current) dispatch({ type: 'PLAN_LOADED', result });
     } catch (err) {

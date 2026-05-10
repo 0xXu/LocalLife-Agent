@@ -19,4 +19,6 @@ export type PlanState = {
   error: string | null;
   selectedActions: Set<string>;
   progress: string[];
+  currentStep: number;
+  streamingText: string;
 };

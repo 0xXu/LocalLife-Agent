@@ -6,6 +6,8 @@ import { ProgressStep } from './ProgressStep';
 type PlanningProgressProps = {
   goal: string;
   progress: string[];
+  currentStep: number;
+  streamingText: string;
 };
 
 const pipelineSteps = [
@@ -17,18 +19,18 @@ const pipelineSteps = [
   '校验可订性和约束',
 ];
 
-function getStepStatus(progress: string[], index: number): 'pending' | 'running' | 'done' {
-  if (index < progress.length - 1) return 'done';
-  if (index === progress.length - 1) return 'running';
+function getStepStatus(currentStep: number, index: number): 'pending' | 'running' | 'done' {
+  if (index < currentStep) return 'done';
+  if (index === currentStep) return 'running';
   return 'pending';
 }
 
-export function PlanningProgress({ goal, progress }: PlanningProgressProps) {
+export function PlanningProgress({ goal, progress, currentStep, streamingText }: PlanningProgressProps) {
   const steps = pipelineSteps.map((label, index) => ({
     label,
-    status: progress.length === 0
+    status: currentStep < 0
       ? (index === 0 ? 'running' : 'pending')
-      : getStepStatus(progress, index),
+      : getStepStatus(currentStep, index),
     detail: progress[index] ?? undefined,
   }));
 
@@ -44,7 +46,7 @@ export function PlanningProgress({ goal, progress }: PlanningProgressProps) {
       <div className="planning-progress-bar">
         <div
           className="planning-progress-fill"
-          style={{ width: `${Math.min(100, (progress.length / pipelineSteps.length) * 100)}%` }}
+          style={{ width: `${Math.min(100, (currentStep / pipelineSteps.length) * 100)}%` }}
         />
       </div>
 
@@ -59,6 +61,7 @@ export function PlanningProgress({ goal, progress }: PlanningProgressProps) {
           />
         ))}
       </div>
+
     </section>
   );
 }

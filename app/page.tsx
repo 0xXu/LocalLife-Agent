@@ -63,6 +63,8 @@ export default function WeekendPilotApp() {
           <PlanningProgress
             goal={state.goal}
             progress={state.progress}
+            currentStep={state.currentStep}
+            streamingText={state.streamingText}
           />
         );
 
@@ -122,6 +124,8 @@ export default function WeekendPilotApp() {
           <PlanningProgress
             goal="正在恢复方案..."
             progress={[]}
+            currentStep={0}
+            streamingText=""
           />
         );
 

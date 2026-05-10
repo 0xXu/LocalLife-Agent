@@ -28,9 +28,9 @@ class PlanningPipeline:
         self.llm_config = llm_config or LLMConfig.from_env_file()
         self.llm = LLMClient(self.llm_config)
 
-    def build(self, goal: str, overrides: dict | None = None, on_progress: Callable[[str, str], None] | None = None) -> PlanState:
+    def build(self, goal: str, overrides: dict | None = None, on_progress: Callable[[str, str], None] | None = None, on_token: Callable[[str], None] | None = None) -> PlanState:
         state = PlanState(goal=goal, plan_id=f"plan_{uuid4().hex[:10]}", status="input_received")
-        constraints, llm_fallback = self.parse_constraints(goal)
+        constraints, llm_fallback = self.parse_constraints(goal, on_token=on_token)
         if overrides:
             constraints = apply_constraint_overrides(constraints, overrides)
         state.constraints = constraints
@@ -160,31 +160,24 @@ class PlanningPipeline:
         state.add_trace(TraceStep("RecoveryAgent", "compare_alternatives", "ok", "异常恢复只替换冲突节点并展示差异。", {"reason": reason}, diff.as_frontend_dict(), 210))
         return state
 
-    def parse_constraints(self, goal: str) -> tuple[ParsedConstraints, bool]:
+    def parse_constraints(self, goal: str, on_token: Callable[[str], None] | None = None) -> tuple[ParsedConstraints, bool]:
         if self.llm_config.is_configured and self.llm_config.remote_enabled:
+            messages = [
+                {
+                    "role": "system",
+                    "content": (
+                        "Extract planning info as JSON. Only return JSON, no explanation.\n"
+                        '{"scenario":"family|friends|date|rainy_indoor","origin":{"type":"current_location","label":"home","lat":38.26,"lng":140.88},"time_window":{"date":"today","start":"HH:MM","duration_hours":N,"flexible":true},"people":{"adults":N,"children":[{"age":N}],"relationship":"family"},"preferences":{"distance":"nearby","diet":[],"activity":[],"budget_level":"medium"},"constraints":{"radius_km":N,"max_wait_minutes":15,"avoid":[]},"required_actions":["activity_reservation","restaurant_reservation","claim_coupon","create_order","send_plan_message","create_calendar_event"]}'
+                    ),
+                },
+                {"role": "user", "content": goal},
+            ]
             try:
-                response = self.llm.chat(
-                    [
-                        {
-                            "role": "system",
-                            "content": (
-                                "You parse a user's local-life half-day planning goal. "
-                                "Return only one strict JSON object with exactly these top-level keys: "
-                                "scenario, origin, time_window, people, preferences, constraints, required_actions. "
-                                "Use scenario as one of family, friends, date, rainy_indoor. "
-                                "Use origin={\"type\":\"current_location\",\"label\":\"home\",\"lat\":38.2601,\"lng\":140.8824} unless the user says otherwise. "
-                                "Use time_window with date, start, duration_hours, flexible. "
-                                "Use people with adults, children, relationship. "
-                                "Use preferences with distance, diet, activity, budget_level. "
-                                "Use constraints with radius_km, max_wait_minutes, avoid. "
-                                "Use required_actions as local-life action names. "
-                                "Do not recommend places. Do not include markdown."
-                            ),
-                        },
-                        {"role": "user", "content": goal},
-                    ]
-                )
-                content = response["choices"][0]["message"]["content"]
+                content = ""
+                for token in self.llm.chat_stream(messages):
+                    content += token
+                    if on_token:
+                        on_token(token)
                 parsed = json.loads(extract_json_object(content))
                 return constraints_from_dict(parsed), False
             except Exception:

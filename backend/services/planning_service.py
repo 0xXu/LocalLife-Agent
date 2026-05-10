@@ -18,10 +18,10 @@ class PlanningService:
         self._plans: dict[str, PlanState] = {}
         self._checkpoints: dict[str, dict] = {}
 
-    def build_plan(self, goal: str, on_progress: Callable[[str, str], None] | None = None) -> dict:
+    def build_plan(self, goal: str, on_progress: Callable[[str, str], None] | None = None, on_token: Callable[[str], None] | None = None) -> dict:
         if not goal.strip():
             raise ValueError("validation_error")
-        state = self.pipeline.build(goal, on_progress=on_progress)
+        state = self.pipeline.build(goal, on_progress=on_progress, on_token=on_token)
         self._save(state)
         return state_response(state)
 

@@ -2622,6 +2622,44 @@ dd,
 .progress-step-text strong { display: block; font-size: 14px; font-weight: 600; }
 .progress-step-text span { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
 
+/* AI thinking indicator */
+.planning-thinking {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 10px 16px;
+  background: var(--card-bg, #f8f9fa);
+  border-radius: 10px;
+  border: 1px solid var(--border, #e5e7eb);
+}
+
+.planning-thinking-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.planning-thinking-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--blue, #3b82f6);
+  animation: thinking-pulse 1.4s ease-in-out infinite;
+}
+
+.planning-thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+.planning-thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes thinking-pulse {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+.planning-thinking-label {
+  font-size: 13px;
+  color: var(--muted, #6b7280);
+}
+
 .spin { animation: spin 1s linear infinite; }
 
 @keyframes spin {

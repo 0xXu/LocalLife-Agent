@@ -14,7 +14,7 @@ class LLMConfig:
     model: str = "MiMo-V2.5-Pro"
     temperature: float = 0.2
     max_tokens: int = 2048
-    timeout_seconds: int = 30
+    timeout_seconds: int = 60
     remote_enabled: bool = False
 
     @classmethod
