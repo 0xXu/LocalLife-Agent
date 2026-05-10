@@ -2764,3 +2764,98 @@ dd,
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ==========================================
+   PLANNING PROGRESS
+   ========================================== */
+
+.planning-progress {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 40px 16px;
+  animation: fade-up 0.5s ease both;
+}
+
+.planning-progress-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.planning-progress-goal span {
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.planning-progress-goal p {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+
+.planning-progress-bar {
+  height: 4px;
+  background: var(--line);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 28px;
+}
+
+.planning-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--violet));
+  border-radius: 2px;
+  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.planning-progress-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.progress-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  animation: step-in 0.4s ease both;
+  transition: background 0.2s ease;
+}
+
+@keyframes step-in {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.progress-step--running { background: var(--blue-soft); }
+.progress-step--done { opacity: 0.7; }
+
+.progress-step-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.progress-step--pending .progress-step-icon { color: var(--subtle); }
+.progress-step--running .progress-step-icon { color: var(--blue); }
+.progress-step--done .progress-step-icon { color: var(--green); background: var(--green-soft); }
+.progress-step--error .progress-step-icon { color: var(--danger); background: rgba(221, 75, 75, 0.1); }
+
+.progress-step-text strong { display: block; font-size: 14px; font-weight: 600; }
+.progress-step-text span { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.spin { animation: spin 1s linear infinite; }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
