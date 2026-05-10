@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useState } from 'react';
 import { CloudRain, Heart, Mic, SendHorizontal, Users, Utensils } from 'lucide-react';
 import { scenarioPrompts } from '@/features/planner/mockAgent';
 
@@ -34,7 +35,43 @@ const scenarios = [
   }
 ];
 
-export function HomeView({ goal, onGoalChange, onPlan }) {
+export function HomeView({ goal, isPlanning = false, onGoalChange, onPlan }) {
+  const [voiceStatus, setVoiceStatus] = useState('');
+  const [isListening, setIsListening] = useState(false);
+
+  function startVoiceInput() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setVoiceStatus('当前浏览器不支持语音输入，可直接输入文字。');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'zh-CN';
+    recognition.interimResults = false;
+    recognition.onstart = () => {
+      setIsListening(true);
+      setVoiceStatus('正在听，请说出你的周末安排。');
+    };
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map((result) => result[0]?.transcript ?? '')
+        .join('')
+        .trim();
+      if (transcript) {
+        onGoalChange(transcript);
+        setVoiceStatus('已填入语音内容。');
+      }
+    };
+    recognition.onerror = () => {
+      setVoiceStatus('语音输入失败，请直接输入文字。');
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+    recognition.start();
+  }
+
   return (
     <section className="home-view">
       <div className="home-center">
@@ -48,14 +85,28 @@ export function HomeView({ goal, onGoalChange, onPlan }) {
             placeholder="我想要...（例如：找一家附近安静的咖啡店，再安排一段轻松散步）"
           />
           <div className="composer-actions">
-            <button className="voice-button" type="button" aria-label="语音输入">
+            <button
+              className={`voice-button${isListening ? ' active' : ''}`}
+              type="button"
+              aria-label="语音输入"
+              data-testid="voice-input-button"
+              onClick={startVoiceInput}
+            >
               <Mic size={22} />
             </button>
-            <button className="primary-button plan-button" type="button" onClick={() => onPlan(goal)}>
-              生成计划
+            <button
+              className="primary-button plan-button"
+              type="button"
+              data-testid="generate-plan-button"
+              disabled={isPlanning}
+              aria-busy={isPlanning}
+              onClick={() => onPlan(goal)}
+            >
+              {isPlanning ? '生成中...' : '生成计划'}
               <SendHorizontal size={17} />
             </button>
           </div>
+          {voiceStatus ? <div className="composer-status" role="status">{voiceStatus}</div> : null}
         </div>
 
         <div className="scenario-heading">也可以从场景开始</div>

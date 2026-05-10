@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { PlanningServiceError } from '../../lib/server/planningService';
 
+// Deprecated compatibility routes: the frontend now calls the FastAPI backend
+// through NEXT_PUBLIC_API_URL instead of these Next.js API handlers.
 const statusByCode: Record<string, number> = {
   validation_error: 400,
   confirmation_required: 403,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityView } from '@/components/ActivityView';
 import { AppChrome } from '@/components/AppChrome';
 import { HomeView } from '@/components/HomeView';
@@ -25,6 +25,7 @@ export default function WeekendPilotApp() {
   const [recoveredPlan, setRecoveredPlan] = useState<Plan | null>(null);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isPlanning, setIsPlanning] = useState(false);
 
   const currentPlanner = useMemo(() => ({
     goal,
@@ -37,21 +38,30 @@ export default function WeekendPilotApp() {
     try {
       setGoal(nextGoal);
       setError(null);
-      const result = await buildPlan(nextGoal);
-      setPlanResult(result);
+      setIsPlanning(true);
+      setPlanResult(null);
       setRecoveredPlan(null);
       setReceipts([]);
       setActiveView('planner');
+      const result = await buildPlan(nextGoal);
+      setPlanResult(result);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : '计划生成失败');
+      setActiveView('home');
+    } finally {
+      setIsPlanning(false);
     }
   }
 
-  useEffect(() => {
-    void buildPlan(scenarioPrompts.family)
-      .then(setPlanResult)
-      .catch((caught) => setError(caught instanceof Error ? caught.message : '计划生成失败'));
-  }, []);
+  function startNewPlan() {
+    setGoal(scenarioPrompts.family);
+    setPlanResult(null);
+    setRecoveredPlan(null);
+    setReceipts([]);
+    setError(null);
+    setIsPlanning(false);
+    setActiveView('home');
+  }
 
   async function executeCurrentPlan() {
     const planId = (recoveredPlan ?? planResult?.plan)?.id;
@@ -88,10 +98,10 @@ export default function WeekendPilotApp() {
   }
 
   return (
-    <AppChrome activeView={activeView} onNavigate={setActiveView} onNewPlan={() => setActiveView('home')}>
+    <AppChrome activeView={activeView} onNavigate={setActiveView} onNewPlan={startNewPlan}>
       {error ? <div className="app-error" role="alert">{error}</div> : null}
       {activeView === 'home' ? (
-        <HomeView goal={goal} onGoalChange={setGoal} onPlan={createPlan} />
+        <HomeView goal={goal} isPlanning={isPlanning} onGoalChange={setGoal} onPlan={createPlan} />
       ) : null}
       {activeView === 'planner' && planResult ? (
         <PlannerView

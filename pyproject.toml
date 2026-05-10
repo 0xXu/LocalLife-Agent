@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "周末管家本地生活执行助手静态演示"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "fastapi>=0.136.1",
+    "uvicorn[standard]>=0.46.0",
+]
 
 [tool.uv]
 package = false
@@ -14,5 +17,6 @@ pythonpath = ["."]
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1",
     "pytest>=9.0.3",
 ]

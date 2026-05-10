@@ -129,6 +129,11 @@ button {
   background: #0458b3;
 }
 
+.primary-button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
 .secondary-button {
   color: var(--violet);
   border: 1px solid #c9c5ff;
@@ -214,6 +219,15 @@ button {
   gap: 10px;
   color: var(--subtle);
   background: #f4f5fa;
+}
+
+.topbar-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: var(--text);
+  background: transparent;
 }
 
 .execute-pill {
@@ -336,6 +350,25 @@ button {
   place-items: center;
   color: #4c5362;
   background: transparent;
+}
+
+.voice-button.active,
+.voice-button:hover {
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+
+.composer-status {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.home-view .prompt-composer {
+  min-height: 210px;
+  padding: 34px 28px 28px;
+  border-radius: 18px;
+  display: block;
 }
 
 .plan-button {
@@ -1424,12 +1457,26 @@ dd,
   gap: 18px;
 }
 
+.saved-grid.list {
+  grid-template-columns: 1fr;
+}
+
+.saved-grid.list .saved-card {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+}
+
 .saved-card {
   border: 1px solid var(--line);
   border-radius: 15px;
   overflow: hidden;
   background: var(--panel);
   box-shadow: var(--shadow-md);
+}
+
+.saved-card.selected {
+  outline: 2px solid var(--blue-2);
+  outline-offset: 2px;
 }
 
 .saved-card.blue {
@@ -1486,6 +1533,33 @@ dd,
 .saved-title button {
   color: #4d5565;
   background: transparent;
+}
+
+.saved-menu-panel {
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  gap: 8px;
+  background: #f7f9ff;
+}
+
+.saved-menu-panel button,
+.inline-notice {
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 7px;
+  color: var(--blue);
+  background: var(--blue-soft);
+  font-weight: 720;
+}
+
+.inline-notice {
+  width: calc(100% - 56px);
+  margin: 18px 28px 0;
+  display: flex;
+  align-items: center;
 }
 
 .saved-meta,
@@ -1596,6 +1670,31 @@ dd,
   color: var(--danger);
 }
 
+.edit-panel {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfbff;
+}
+
+.edit-panel h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.edit-panel label {
+  display: grid;
+  gap: 6px;
+}
+
+.edit-panel input {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: white;
+}
+
 .activity-header {
   display: flex;
   align-items: center;
@@ -1610,6 +1709,46 @@ dd,
 .activity-header button {
   color: #4d5565;
   background: transparent;
+}
+
+.activity-header button[aria-pressed="true"],
+.activity-header button:hover {
+  color: var(--blue);
+}
+
+.activity-filter-panel,
+.activity-search-panel {
+  margin: 16px 28px 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.activity-filter-panel button {
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 7px;
+  color: #4f5668;
+  background: var(--surface-2);
+  font-weight: 720;
+}
+
+.activity-filter-panel button.active {
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+
+.activity-search-panel input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: var(--text);
 }
 
 .activity-timeline {
@@ -1700,9 +1839,47 @@ dd,
   font-weight: 720;
 }
 
+.activity-card footer button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--blue);
+  background: transparent;
+  font-weight: 720;
+}
+
+.activity-card footer button:hover {
+  text-decoration: underline;
+}
+
 .timeline-end {
   color: var(--subtle);
   font-size: 13px;
+}
+
+.activity-receipt-panel {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.activity-receipt-panel h3 {
+  margin: 0 0 12px;
+}
+
+.activity-receipt-panel p {
+  color: var(--muted);
+}
+
+.activity-receipt-panel button {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 7px;
+  color: var(--blue);
+  background: var(--blue-soft);
+  font-weight: 720;
 }
 
 .summary-panel {
@@ -1796,6 +1973,10 @@ dd,
 .settings-content {
   display: grid;
   gap: 36px;
+}
+
+.muted-section {
+  display: none;
 }
 
 .settings-content h2 {
@@ -1942,6 +2123,12 @@ dd,
   background: #dedfe7;
 }
 
+.radius-slider {
+  grid-column: 1 / -1;
+  width: 100%;
+  accent-color: var(--blue-2);
+}
+
 .range-track span {
   position: absolute;
   left: 45%;
@@ -1997,10 +2184,19 @@ dd,
 
   .sidebar {
     min-height: auto;
+    padding: 18px 20px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    gap: 18px;
+  }
+
+  .sidebar-footer {
+    display: none;
   }
 
   .global-topbar {
     grid-template-columns: 1fr;
+    padding: 12px 20px;
   }
 
   .topbar-brand,
@@ -2022,6 +2218,28 @@ dd,
 
   .planner-topbar {
     flex-wrap: wrap;
+  }
+
+  .workspace-tabs {
+    overflow-x: auto;
+  }
+
+  .home-view {
+    min-height: auto;
+    padding: 42px 20px;
+    place-items: start center;
+  }
+
+  .home-center h1 {
+    font-size: 42px;
+  }
+
+  .home-center p {
+    font-size: 20px;
+  }
+
+  .home-view .prompt-composer {
+    margin: 42px auto 36px;
   }
 
   .planner-workbench {

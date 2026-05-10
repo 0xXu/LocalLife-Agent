@@ -1,53 +1,69 @@
-import http.client
-import json
-import threading
 import unittest
 
-from backend.api.app import create_server
+from fastapi.testclient import TestClient
+
+from backend.api.app import create_app
+from backend.llm.config import LLMConfig
+from backend.services.planning_service import PlanningService
 
 
 class BackendApiTest(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.server = create_server("127.0.0.1", 0)
-        cls.port = cls.server.server_address[1]
-        cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
-        cls.thread.start()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.server.shutdown()
-        cls.server.server_close()
-        cls.thread.join(timeout=2)
+    def setUp(self):
+        service = PlanningService(llm_config=LLMConfig(api_key="", base_url="", model="MiMo-V2.5-Pro"))
+        self.client = TestClient(create_app(service))
 
     def request(self, method, path, body=None):
-        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
-        payload = json.dumps(body).encode("utf-8") if body is not None else None
-        headers = {"Content-Type": "application/json"} if body is not None else {}
-        conn.request(method, path, body=payload, headers=headers)
-        response = conn.getresponse()
-        data = response.read().decode("utf-8")
-        conn.close()
-        return response.status, json.loads(data)
+        response = self.client.request(method, path, json=body)
+        return response.status_code, response.json()
 
     def raw_request(self, method, path, payload):
-        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
-        conn.request(
+        response = self.client.request(
             method,
             path,
-            body=payload.encode("utf-8"),
+            content=payload,
             headers={"Content-Type": "application/json"},
         )
-        response = conn.getresponse()
-        data = response.read().decode("utf-8")
-        conn.close()
-        return response.status, json.loads(data)
+        return response.status_code, response.json()
+
+    def test_openapi_documents_required_paths(self):
+        response = self.client.get("/openapi.json")
+
+        self.assertEqual(response.status_code, 200)
+        paths = response.json()["paths"]
+        for path in [
+            "/api/health",
+            "/api/plans/build",
+            "/api/plans/{plan_id}",
+            "/api/plans/{plan_id}/confirm",
+            "/api/plans/{plan_id}/execute",
+            "/api/plans/{plan_id}/recover",
+            "/api/plans/{plan_id}/constraints",
+            "/api/plans/{plan_id}/alternatives",
+            "/api/tool-schemas",
+            "/api/traces/{plan_id}",
+        ]:
+            self.assertIn(path, paths)
+
+    def test_cors_preflight_allows_frontend_origin(self):
+        response = self.client.options(
+            "/api/plans/build",
+            headers={
+                "Origin": "http://127.0.0.1:4173",
+                "Access-Control-Request-Method": "POST",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["access-control-allow-origin"], "*")
+        self.assertIn("POST", response.headers["access-control-allow-methods"])
 
     def test_health_endpoint(self):
         status, data = self.request("GET", "/api/health")
 
         self.assertEqual(status, 200)
         self.assertEqual(data["status"], "ok")
+        self.assertEqual(data["service"], "weekendpilot-planner")
+        self.assertEqual(data["mode"], "fastapi-python-service")
         self.assertGreaterEqual(data["agents"], 7)
 
     def test_build_execute_and_recover_endpoints(self):
@@ -76,11 +92,18 @@ class BackendApiTest(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(recovered["diff"]["changed"], "restaurant")
 
+        status, traces = self.request("GET", f"/api/traces/{plan_id}")
+        self.assertEqual(status, 200)
+        self.assertEqual(traces["planId"], plan_id)
+        self.assertGreaterEqual(len(traces["trace"]), 1)
+        self.assertIn("tool_calls", traces)
+
     def test_invalid_json_returns_400_response(self):
         status, data = self.raw_request("POST", "/api/plans/build", "{bad json")
 
         self.assertEqual(status, 400)
-        self.assertEqual(data["error"], "invalid_json")
+        self.assertEqual(data["error"]["code"], "invalid_json")
+        self.assertEqual(data["error"]["message"], "invalid_json")
 
 
 if __name__ == "__main__":

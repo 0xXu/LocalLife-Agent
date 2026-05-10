@@ -2,140 +2,140 @@ from __future__ import annotations
 
 import json
 from json import JSONDecodeError
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from typing import Any
+
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from backend.llm import LLMConfig
 from backend.services import PlanningService
 
 
-def create_server(host: str = "127.0.0.1", port: int = 8787) -> ThreadingHTTPServer:
-    service = PlanningService()
+def create_app(service: PlanningService | None = None) -> FastAPI:
+    api = FastAPI(
+        title="WeekendPilot Backend",
+        description="FastAPI backend for the WeekendPilot local-life planning workflow.",
+        version="0.1.0",
+    )
+    api.state.planning_service = service or PlanningService()
+    api.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
+        allow_headers=["Content-Type"],
+    )
 
-    class Handler(WeekendPilotHandler):
-        planning_service = service
+    @api.exception_handler(PermissionError)
+    async def permission_error_handler(_request: Request, exc: PermissionError) -> JSONResponse:
+        return error_response(str(exc) or "confirmation_required", 403)
 
-    return ThreadingHTTPServer((host, port), Handler)
+    @api.exception_handler(KeyError)
+    async def key_error_handler(_request: Request, exc: KeyError) -> JSONResponse:
+        return error_response(str(exc.args[0]) if exc.args else "plan_not_found", 404)
+
+    @api.exception_handler(ValueError)
+    async def value_error_handler(_request: Request, exc: ValueError) -> JSONResponse:
+        return error_response(str(exc) or "validation_error", 400)
+
+    @api.exception_handler(StarletteHTTPException)
+    async def http_error_handler(_request: Request, exc: StarletteHTTPException) -> JSONResponse:
+        if exc.status_code == 404:
+            return error_response("not_found", 404)
+        return error_response(str(exc.detail), exc.status_code)
+
+    @api.exception_handler(Exception)
+    async def generic_error_handler(_request: Request, exc: Exception) -> JSONResponse:
+        return JSONResponse(
+            {"error": {"code": "tool_failed", "message": str(exc) or "Unknown error"}},
+            status_code=500,
+        )
+
+    @api.get("/api/health")
+    async def health() -> dict[str, Any]:
+        return {"status": "ok", "service": "weekendpilot-planner", "mode": "fastapi-python-service", "agents": 9}
+
+    @api.get("/api/llm/status")
+    async def llm_status() -> dict[str, Any]:
+        return LLMConfig.from_env_file().safe_status()
+
+    @api.get("/api/tool-schemas")
+    async def tool_schemas(request: Request) -> dict[str, Any]:
+        return planning_service(request).tool_schemas()
+
+    @api.get("/api/traces/{plan_id}")
+    async def traces(plan_id: str, request: Request) -> dict[str, Any]:
+        service = planning_service(request)
+        plan = service.get_plan(plan_id)
+        return {"planId": plan_id, "trace": service.get_trace(plan_id), "tool_calls": plan.get("tool_calls", [])}
+
+    @api.get("/api/plans/{plan_id}")
+    async def get_plan(plan_id: str, request: Request) -> dict[str, Any]:
+        return planning_service(request).get_plan(plan_id)
+
+    @api.post("/api/plans/build")
+    async def build_plan(request: Request) -> dict[str, Any]:
+        body = await read_json_object(request)
+        return planning_service(request).build_plan(str(body.get("goal", "")))
+
+    @api.post("/api/plans/{plan_id}/alternatives")
+    async def build_alternatives(plan_id: str, request: Request) -> dict[str, Any]:
+        response = planning_service(request).build_alternatives(plan_id)
+        response["variants"] = response.get("alternatives", [])
+        return response
+
+    @api.post("/api/plans/{plan_id}/confirm")
+    async def confirm_plan(plan_id: str, request: Request) -> dict[str, Any]:
+        body = await read_json_object(request)
+        return planning_service(request).confirm_plan(plan_id, bool(body.get("confirmed")))
+
+    @api.post("/api/plans/{plan_id}/execute")
+    async def execute_plan(plan_id: str, request: Request) -> dict[str, Any]:
+        body = await read_json_object(request)
+        return planning_service(request).execute_plan(plan_id, bool(body.get("confirmed")))
+
+    @api.post("/api/plans/{plan_id}/recover")
+    async def recover_plan(plan_id: str, request: Request) -> dict[str, Any]:
+        body = await read_json_object(request)
+        return planning_service(request).recover_plan(plan_id, str(body.get("reason", "restaurant_unavailable")))
+
+    @api.patch("/api/plans/{plan_id}/constraints")
+    async def patch_constraints(plan_id: str, request: Request) -> dict[str, Any]:
+        body = await read_json_object(request)
+        return planning_service(request).patch_constraints(plan_id, body)
+
+    return api
 
 
-class WeekendPilotHandler(BaseHTTPRequestHandler):
-    planning_service: PlanningService
+async def read_json_object(request: Request) -> dict[str, Any]:
+    raw = await request.body()
+    if not raw:
+        return {}
+    try:
+        data = json.loads(raw.decode("utf-8") or "{}")
+    except (UnicodeDecodeError, JSONDecodeError) as exc:
+        raise ValueError("invalid_json") from exc
+    if not isinstance(data, dict):
+        raise ValueError("validation_error")
+    return data
 
-    def do_OPTIONS(self) -> None:
-        self.respond_json({})
 
-    def do_GET(self) -> None:
-        path = urlparse(self.path).path
-        try:
-            if path == "/api/health":
-                self.respond_json({"status": "ok", "service": "weekendpilot-backend", "agents": 9})
-                return
-            if path == "/api/llm/status":
-                self.respond_json(LLMConfig.from_env_file().safe_status())
-                return
-            if path == "/api/tool-schemas":
-                self.respond_json(self.planning_service.tool_schemas())
-                return
-            if path.startswith("/api/traces/"):
-                plan_id = path.rsplit("/", 1)[-1]
-                self.respond_json({"plan_id": plan_id, "trace": self.planning_service.get_trace(plan_id)})
-                return
-            if path.startswith("/api/plans/"):
-                plan_id = path.split("/")[3]
-                self.respond_json(self.planning_service.get_plan(plan_id))
-                return
-        except Exception as exc:
-            self.respond_error(exc)
-            return
-        self.respond_json({"error": "not_found"}, status=404)
+def planning_service(request: Request) -> PlanningService:
+    return request.app.state.planning_service
 
-    def do_PATCH(self) -> None:
-        path = urlparse(self.path).path
-        try:
-            body = self.read_json()
-            if path.startswith("/api/plans/") and path.endswith("/constraints"):
-                plan_id = path.split("/")[3]
-                self.respond_json(self.planning_service.patch_constraints(plan_id, body))
-                return
-        except Exception as exc:
-            self.respond_error(exc)
-            return
-        self.respond_json({"error": "not_found"}, status=404)
 
-    def do_POST(self) -> None:
-        path = urlparse(self.path).path
-        try:
-            body = self.read_json()
-            if path == "/api/plans/build":
-                self.respond_json(self.planning_service.build_plan(str(body.get("goal", ""))))
-                return
-            if path.startswith("/api/plans/") and path.endswith("/alternatives"):
-                plan_id = path.split("/")[3]
-                self.respond_json(self.planning_service.build_alternatives(plan_id))
-                return
-            if path.startswith("/api/plans/") and path.endswith("/confirm"):
-                plan_id = path.split("/")[3]
-                self.respond_json(self.planning_service.confirm_plan(plan_id, bool(body.get("confirmed"))))
-                return
-            if path.startswith("/api/plans/") and path.endswith("/execute"):
-                plan_id = path.split("/")[3]
-                self.respond_json(self.planning_service.execute_plan(plan_id, bool(body.get("confirmed"))))
-                return
-            if path.startswith("/api/plans/") and path.endswith("/recover"):
-                plan_id = path.split("/")[3]
-                reason = str(body.get("reason", "restaurant_unavailable"))
-                self.respond_json(self.planning_service.recover_plan(plan_id, reason))
-                return
-        except Exception as exc:
-            self.respond_error(exc)
-            return
-        self.respond_json({"error": "not_found"}, status=404)
+def error_response(error: str, status_code: int) -> JSONResponse:
+    return JSONResponse({"error": {"code": error, "message": error}}, status_code=status_code)
 
-    def read_json(self) -> dict:
-        length = int(self.headers.get("Content-Length", "0") or "0")
-        if length == 0:
-            return {}
-        raw = self.rfile.read(length).decode("utf-8")
-        try:
-            data = json.loads(raw or "{}")
-        except JSONDecodeError as exc:
-            raise ValueError("invalid_json") from exc
-        if not isinstance(data, dict):
-            raise ValueError("validation_error")
-        return data
 
-    def respond_error(self, exc: Exception) -> None:
-        if isinstance(exc, PermissionError):
-            self.respond_json({"error": str(exc) or "confirmation_required"}, status=403)
-        elif isinstance(exc, KeyError):
-            self.respond_json({"error": exc.args[0] if exc.args else "plan_not_found"}, status=404)
-        elif isinstance(exc, ValueError):
-            self.respond_json({"error": str(exc) or "validation_error"}, status=400)
-        else:
-            self.respond_json({"error": "tool_failed", "detail": str(exc)}, status=500)
-
-    def respond_json(self, payload: dict | list, status: int = 200) -> None:
-        data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(data)))
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.end_headers()
-        self.wfile.write(data)
-
-    def log_message(self, format: str, *args) -> None:
-        return
+app = create_app()
 
 
 def main() -> None:
-    server = create_server()
-    print("WeekendPilot backend listening on http://127.0.0.1:8787")
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        server.shutdown()
+    import uvicorn
+
+    uvicorn.run("backend.api.app:app", host="127.0.0.1", port=8787)
 
 
 if __name__ == "__main__":

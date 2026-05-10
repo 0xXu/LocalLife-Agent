@@ -1,9 +1,8 @@
-import http.client
-import json
-import threading
 import unittest
 
-from backend.api.app import create_server
+from fastapi.testclient import TestClient
+
+from backend.api.app import create_app
 from backend.data.catalog import LocalDataCatalog
 from backend.llm.config import LLMConfig
 from backend.services.planning_service import PlanningService
@@ -12,7 +11,7 @@ from backend.tools.registry import LocalToolRegistry
 
 class CompleteBackendTest(unittest.TestCase):
     def setUp(self):
-        self.service = PlanningService()
+        self.service = PlanningService(llm_config=LLMConfig(api_key="", base_url="", model="MiMo-V2.5-Pro"))
 
     def test_local_catalog_has_full_seed_data(self):
         catalog = LocalDataCatalog()
@@ -119,28 +118,13 @@ class CompleteBackendTest(unittest.TestCase):
 
 
 class CompleteApiTest(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.server = create_server("127.0.0.1", 0)
-        cls.port = cls.server.server_address[1]
-        cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
-        cls.thread.start()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.server.shutdown()
-        cls.server.server_close()
-        cls.thread.join(timeout=2)
+    def setUp(self):
+        service = PlanningService(llm_config=LLMConfig(api_key="", base_url="", model="MiMo-V2.5-Pro"))
+        self.client = TestClient(create_app(service))
 
     def request(self, method, path, body=None):
-        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
-        payload = json.dumps(body, ensure_ascii=False).encode("utf-8") if body is not None else None
-        headers = {"Content-Type": "application/json"} if body is not None else {}
-        conn.request(method, path, body=payload, headers=headers)
-        response = conn.getresponse()
-        data = response.read().decode("utf-8")
-        conn.close()
-        return response.status, json.loads(data)
+        response = self.client.request(method, path, json=body)
+        return response.status_code, response.json()
 
     def test_expanded_api_flow(self):
         status, schemas = self.request("GET", "/api/tool-schemas")
@@ -161,11 +145,12 @@ class CompleteApiTest(unittest.TestCase):
 
         status, alternatives = self.request("POST", f"/api/plans/{plan_id}/alternatives", {})
         self.assertEqual(status, 200)
+        self.assertGreaterEqual(len(alternatives["variants"]), 3)
         self.assertGreaterEqual(len(alternatives["alternatives"]), 3)
 
         status, rejected = self.request("POST", f"/api/plans/{plan_id}/execute", {"confirmed": False})
         self.assertEqual(status, 403)
-        self.assertEqual(rejected["error"], "confirmation_required")
+        self.assertEqual(rejected["error"]["code"], "confirmation_required")
 
         status, confirmed = self.request("POST", f"/api/plans/{plan_id}/confirm", {"confirmed": True})
         self.assertEqual(status, 200)
@@ -178,8 +163,8 @@ class CompleteApiTest(unittest.TestCase):
     def test_api_errors_are_stable_json(self):
         status, data = self.request("GET", "/api/plans/missing-plan")
         self.assertEqual(status, 404)
-        self.assertEqual(data["error"], "plan_not_found")
+        self.assertEqual(data["error"]["code"], "plan_not_found")
 
         status, data = self.request("PATCH", "/api/plans/missing-plan/constraints", {"radius_km": -1})
         self.assertEqual(status, 404)
-        self.assertEqual(data["error"], "plan_not_found")
+        self.assertEqual(data["error"]["code"], "plan_not_found")

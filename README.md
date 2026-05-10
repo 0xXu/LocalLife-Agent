@@ -1,5 +1,32 @@
 # 周末管家本地生活演示
 
+## Frontend / Backend Separation
+
+The app now runs as two services:
+
+- Backend: FastAPI on `http://127.0.0.1:8787`
+- Frontend: Next.js on `http://127.0.0.1:4173`
+
+Start the backend:
+
+```bash
+uvicorn backend.api.app:app --host 127.0.0.1 --port 8787
+```
+
+Start the frontend:
+
+```bash
+npm run dev
+```
+
+Or start both in one terminal:
+
+```bash
+npm run dev:full
+```
+
+Frontend API calls use `NEXT_PUBLIC_API_URL`; `.env.example` defaults it to `http://127.0.0.1:8787`. FastAPI docs are available at `http://127.0.0.1:8787/docs` and OpenAPI JSON at `http://127.0.0.1:8787/openapi.json`.
+
 周末管家是一个可运行的本地生活 Hackathon 演示项目。它不是普通推荐列表，而是一个执行型助手：用户输入一句自然语言目标，系统理解约束、生成半日行程、展示规划过程，并在用户确认后返回活动预约、餐厅订座和计划发送回执。
 
 ## 快速运行

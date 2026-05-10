@@ -1,13 +1,13 @@
 # WeekendPilot Complete Local Backend
 
-This Python backend is retained as a legacy reference for the earlier local demo. The production demo path is the Next.js TypeScript API and LangGraph workflow.
+This Python backend is the single backend service for the separated WeekendPilot app. The Next.js app is frontend-only and calls these `/api/*` endpoints through `NEXT_PUBLIC_API_URL`.
 
 This backend implements the complete local product flow described in `detailed_design.md` as a migration reference.
 
 ## Architecture
 
 ```text
-api/              stdlib HTTP JSON API
+api/              FastAPI JSON API with OpenAPI docs
 services/         plan lifecycle facade
 orchestrator/     central state-machine planner
 models/           dataclass domain models and API DTO helpers
@@ -54,13 +54,20 @@ Sensitive tools always require confirmation. `execute` with `confirmed=false` re
 ## Run
 
 ```powershell
-python -m backend.api.app
+uvicorn backend.api.app:app --host 127.0.0.1 --port 8787
 ```
 
 Default URL:
 
 ```text
 http://127.0.0.1:8787
+```
+
+OpenAPI docs:
+
+```text
+http://127.0.0.1:8787/docs
+http://127.0.0.1:8787/openapi.json
 ```
 
 ## Smoke Examples
@@ -92,7 +99,7 @@ Invoke-RestMethod `
 ## Test
 
 ```powershell
-python -m unittest discover -s tests/backend -p "test_*.py"
+uv run pytest tests/backend
 node --test tests/*.test.mjs
 python -m compileall backend
 ```

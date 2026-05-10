@@ -36,7 +36,7 @@ class FakeLLMClient:
 
 class PlanningPipelineTest(unittest.TestCase):
     def setUp(self):
-        self.service = PlanningService()
+        self.service = PlanningService(llm_config=LLMConfig(api_key="", base_url="", model="MiMo-V2.5-Pro"))
 
     def test_build_plan_runs_layered_pipeline_and_returns_trace(self):
         result = self.service.build_plan(
