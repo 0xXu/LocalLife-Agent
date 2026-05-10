@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { Calendar, Copy, Edit3, Grid2X2, List, Map, MapPin, Play, Share2, Trash2 } from 'lucide-react';
-import { savedPlans } from '@/features/planner/mockAgent';
+import { savedPlans } from '@/features/planner/uiFixtures';
 
 export function SavedPlansView({ onPlan }) {
   const [plans, setPlans] = useState(savedPlans);

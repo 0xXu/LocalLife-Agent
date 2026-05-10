@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { CloudRain, Heart, Mic, SendHorizontal, Users, Utensils } from 'lucide-react';
-import { scenarioPrompts } from '@/features/planner/mockAgent';
+import { scenarioPrompts } from '@/features/planner/uiFixtures';
 
 const scenarios = [
   {

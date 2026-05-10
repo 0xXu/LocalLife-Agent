@@ -1,6 +1,0 @@
-import { jsonRoute, planIdFrom } from '../../_shared';
-import { getPlan } from '../../../../lib/server/planningService';
-
-export async function GET(_request: Request, context: { params: Promise<{ planId: string }> }) {
-  return jsonRoute(async () => getPlan(await planIdFrom(context)));
-}

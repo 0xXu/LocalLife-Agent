@@ -5,7 +5,11 @@ import { join } from 'node:path';
 
 test('product source does not import legacy mock agent on the main path', async () => {
   const files = await sourceFiles(['app', 'components', 'features']);
-  const offenders = files.filter((file) => file.content.includes("from '@/src/agent.mjs'") || file.content.includes("from '../src/agent.mjs'"));
+  const offenders = files.filter((file) =>
+    file.content.includes("from '@/src/agent.mjs'")
+    || file.content.includes("from '../src/agent.mjs'")
+    || file.content.includes('mockAgent')
+  );
   assert.deepEqual(offenders.map((file) => file.path), []);
 });
 

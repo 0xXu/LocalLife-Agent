@@ -2,7 +2,7 @@
 
 This Python backend is the single backend service for the separated WeekendPilot app. The Next.js app is frontend-only and calls these `/api/*` endpoints through `NEXT_PUBLIC_API_URL`.
 
-This backend implements the complete local product flow described in `detailed_design.md` as a migration reference.
+This backend is the production API path for the current demo.
 
 ## Architecture
 
@@ -54,7 +54,7 @@ Sensitive tools always require confirmation. `execute` with `confirmed=false` re
 ## Run
 
 ```powershell
-uvicorn backend.api.app:app --host 127.0.0.1 --port 8787
+uv run uvicorn backend.api.app:app --host 127.0.0.1 --port 8787
 ```
 
 Default URL:
@@ -100,6 +100,5 @@ Invoke-RestMethod `
 
 ```powershell
 uv run pytest tests/backend
-node --test tests/*.test.mjs
 python -m compileall backend
 ```

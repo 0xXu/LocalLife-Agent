@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { Filter, MapPin, ReceiptText, Search, Ticket } from 'lucide-react';
-import { recentActivity } from '@/features/planner/mockAgent';
+import { recentActivity } from '@/features/planner/uiFixtures';
 
 export function ActivityView() {
   const [filterOpen, setFilterOpen] = useState(false);
