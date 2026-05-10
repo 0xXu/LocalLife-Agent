@@ -9,12 +9,12 @@ type PlanningProgressProps = {
 };
 
 const pipelineSteps = [
-  '解析需求',
-  '构建上下文',
-  '搜索候选',
-  '排序推荐',
-  '规划路线',
-  '验证方案',
+  '理解出行需求',
+  '补全场景上下文',
+  '筛选本地供给',
+  '多目标排序',
+  '生成时间轴和路线',
+  '校验可订性和约束',
 ];
 
 function getStepStatus(progress: string[], index: number): 'pending' | 'running' | 'done' {

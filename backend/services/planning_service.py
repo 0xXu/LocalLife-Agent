@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from backend.data.catalog import LocalDataCatalog
 from backend.llm import LLMConfig
 from backend.models.schemas import PlanState, action_dict, state_response, to_dict, variant_dict
@@ -16,10 +18,10 @@ class PlanningService:
         self._plans: dict[str, PlanState] = {}
         self._checkpoints: dict[str, dict] = {}
 
-    def build_plan(self, goal: str) -> dict:
+    def build_plan(self, goal: str, on_progress: Callable[[str, str], None] | None = None) -> dict:
         if not goal.strip():
             raise ValueError("validation_error")
-        state = self.pipeline.build(goal)
+        state = self.pipeline.build(goal, on_progress=on_progress)
         self._save(state)
         return state_response(state)
 

@@ -1,5 +1,5 @@
 import type { PlanResponse } from '../../types/weekendpilot';
-import { apiRequest } from '../../lib/api/client';
+import { apiRequest, resolveApiUrl } from '../../lib/api/client';
 
 export const scenarioPrompts = {
   family: '今天下午是空的，想和老婆孩子出去玩几个小时，别离家太远。孩子 5 岁，老婆最近在减脂，帮我安排一下。',
@@ -10,6 +10,40 @@ export const scenarioPrompts = {
 
 export async function buildPlan(goal: string) {
   return apiRequest<PlanResponse>('/api/plans/build', { method: 'POST', body: { goal } });
+}
+
+export async function buildPlanStream(
+  goal: string,
+  onProgress: (label: string, detail: string) => void,
+): Promise<PlanResponse> {
+  const url = resolveApiUrl(`/api/plans/build/stream?goal=${encodeURIComponent(goal)}`);
+
+  return new Promise<PlanResponse>((resolve, reject) => {
+    const es = new EventSource(url);
+
+    es.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.type === 'progress') {
+          onProgress(data.label, data.detail);
+        } else if (data.type === 'done') {
+          es.close();
+          resolve(data.result);
+        } else if (data.type === 'error') {
+          es.close();
+          reject(new Error(data.message));
+        }
+      } catch (err) {
+        es.close();
+        reject(err);
+      }
+    };
+
+    es.onerror = () => {
+      es.close();
+      reject(new Error('SSE connection failed'));
+    };
+  });
 }
 
 export async function getPlan(planId: string) {

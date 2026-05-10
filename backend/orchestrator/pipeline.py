@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Callable
 from uuid import uuid4
 
 from backend.data.catalog import LocalDataCatalog
@@ -27,7 +28,7 @@ class PlanningPipeline:
         self.llm_config = llm_config or LLMConfig.from_env_file()
         self.llm = LLMClient(self.llm_config)
 
-    def build(self, goal: str, overrides: dict | None = None) -> PlanState:
+    def build(self, goal: str, overrides: dict | None = None, on_progress: Callable[[str, str], None] | None = None) -> PlanState:
         state = PlanState(goal=goal, plan_id=f"plan_{uuid4().hex[:10]}", status="input_received")
         constraints, llm_fallback = self.parse_constraints(goal)
         if overrides:
@@ -45,12 +46,16 @@ class PlanningPipeline:
                 140,
             )
         )
+        if on_progress:
+            on_progress("理解出行需求", "解析自然语言目标为结构化约束。")
 
         rainy = constraints.scenario == "rainy_indoor" or "下雨" in goal or "雨" in goal
         weather = self.tools.get_weather(rainy).output
         state.context = {"weather": weather, "profile": "local_demo_user", "privacy": "minimal"}
         state.status = "context_ready"
         state.add_trace(TraceStep("ContextBuilderAgent", "get_weather", "ok", "补全天气、位置和用户偏好上下文。", {}, weather, 120))
+        if on_progress:
+            on_progress("补全场景上下文", "补全天气、位置和用户偏好上下文。")
 
         radius = float(constraints.constraints["radius_km"])
         activity_tags = list(constraints.preferences.get("activity", []))
@@ -67,10 +72,14 @@ class PlanningPipeline:
         }
         state.status = "candidates_ready"
         state.add_trace(TraceStep("CandidateSearchAgent", "search_places", "ok", "检索活动、餐厅、甜品散步点和本地供给。", {}, {key: len(value) for key, value in state.candidates.items()}, 260))
+        if on_progress:
+            on_progress("筛选本地供给", "检索活动、餐厅、甜品散步点和本地供给。")
 
         state.ranked = {key: rank_items(items, constraints) for key, items in state.candidates.items()}
         state.status = "ranked"
         state.add_trace(TraceStep("RankerAgent", "rank_candidates", "ok", "按距离、评分、可订性、预算和场景匹配排序。", {}, {key: [item["id"] for item in value[:3]] for key, value in state.ranked.items()}, 180))
+        if on_progress:
+            on_progress("多目标排序", "按距离、评分、可订性、预算和场景匹配排序。")
 
         activity = state.ranked["activities"][0]
         restaurant = state.ranked["restaurants"][0]
@@ -90,6 +99,8 @@ class PlanningPipeline:
         state.variants = build_variants(state.itinerary, build_result.output["estimated_budget"], constraints)
         state.status = "itinerary_built"
         state.add_trace(TraceStep("RouteSchedulerAgent", "optimize_route", "ok", "生成 4 到 6 小时可执行时间轴和顺路路线。", {}, route, 220))
+        if on_progress:
+            on_progress("生成时间轴和路线", "生成 4 到 6 小时可执行时间轴和顺路路线。")
 
         party_size = party_size_of(constraints)
         availability = self.tools.check_availability(restaurant["id"], "15:45", party_size).output
@@ -97,6 +108,8 @@ class PlanningPipeline:
         state.add_tool_result(self.tools.check_availability(restaurant["id"], "15:45", party_size), {"place_id": restaurant["id"], "party_size": party_size})
         state.status = "pending_confirmation" if validation["valid"] else "recovering"
         state.add_trace(TraceStep("PlanValidatorAgent", "validate_plan", "ok" if validation["valid"] else "warning", "校验营业时间、路线、预算和可订性。", {}, validation, 170))
+        if on_progress:
+            on_progress("校验可订性和约束", "校验营业时间、路线、预算和可订性。")
 
         state.pending_actions = build_pending_actions(activity, restaurant, walk, constraints)
         state.actions = list(state.pending_actions)

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useReducer, useRef } from 'react';
 import type { PlanPhase, PlanState } from '../../types/views';
 import type { PlanResponse } from '../../types/weekendpilot';
 import {
-  buildPlan,
+  buildPlanStream,
   buildAlternatives,
   confirmPlan,
   executePlan,
@@ -125,22 +125,12 @@ export function usePlanMachine() {
 
   const startPlan = useCallback(async (goal: string) => {
     dispatch({ type: 'START_PLAN', goal });
-    const steps = ['解析需求', '构建上下文', '搜索候选', '排序推荐', '规划路线', '验证方案'];
-    const stepMs = [800, 1200, 1500, 1200, 1500, 800];
-
-    const progressPromise = (async () => {
-      for (let i = 0; i < steps.length; i++) {
-        await new Promise((r) => setTimeout(r, stepMs[i]));
-        if (mountedRef.current) dispatch({ type: 'UPDATE_PROGRESS', step: steps[i] });
-      }
-    })();
-
     try {
-      const result = await buildPlan(goal);
-      await progressPromise;
+      const result = await buildPlanStream(goal, (label) => {
+        if (mountedRef.current) dispatch({ type: 'UPDATE_PROGRESS', step: label });
+      });
       if (mountedRef.current) dispatch({ type: 'PLAN_LOADED', result });
     } catch (err) {
-      await progressPromise;
       if (mountedRef.current) dispatch({ type: 'PLAN_FAILED', error: err instanceof Error ? err.message : '计划生成失败' });
     }
   }, []);

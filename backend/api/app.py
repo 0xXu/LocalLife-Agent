@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from json import JSONDecodeError
 from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from backend.llm import LLMConfig
@@ -78,6 +79,51 @@ def create_app(service: PlanningService | None = None) -> FastAPI:
     async def build_plan(request: Request) -> dict[str, Any]:
         body = await read_json_object(request)
         return planning_service(request).build_plan(str(body.get("goal", "")))
+
+    @api.get("/api/plans/build/stream")
+    async def build_plan_stream(goal: str, request: Request) -> StreamingResponse:
+        svc = planning_service(request)
+        queue: asyncio.Queue[tuple[str, str] | None] = asyncio.Queue()
+        loop = asyncio.get_running_loop()
+
+        def on_progress(label: str, detail: str) -> None:
+            loop.call_soon_threadsafe(queue.put_nowait, (label, detail))
+
+        async def event_stream():
+            result_holder: dict[str, Any] = {}
+            error_holder: dict[str, str] = {}
+
+            def run():
+                try:
+                    result_holder["data"] = svc.build_plan(goal, on_progress=on_progress)
+                except Exception as exc:
+                    error_holder["error"] = str(exc)
+                finally:
+                    loop.call_soon_threadsafe(queue.put_nowait, None)
+
+            loop.run_in_executor(None, run)
+
+            while True:
+                item = await queue.get()
+                if item is None:
+                    break
+                label, detail = item
+                yield f"data: {json.dumps({'type': 'progress', 'label': label, 'detail': detail}, ensure_ascii=False)}\n\n"
+
+            if "error" in error_holder:
+                yield f"data: {json.dumps({'type': 'error', 'message': error_holder['error']}, ensure_ascii=False)}\n\n"
+            else:
+                yield f"data: {json.dumps({'type': 'done', 'result': result_holder['data']}, ensure_ascii=False)}\n\n"
+
+        return StreamingResponse(
+            event_stream(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "X-Accel-Buffering": "no",
+                "Connection": "keep-alive",
+            },
+        )
 
     @api.post("/api/plans/{plan_id}/alternatives")
     async def build_alternatives(plan_id: str, request: Request) -> dict[str, Any]:
