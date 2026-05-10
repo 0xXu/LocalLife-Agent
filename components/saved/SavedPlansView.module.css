@@ -1,0 +1,32 @@
+.view {
+  display: flex; flex-direction: column; height: 100%;
+  padding: 16px; animation: view-enter 0.4s ease both;
+}
+
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.title { font-size: 22px; font-weight: 700; color: var(--text); margin: 0; }
+.subtitle { font-size: 14px; color: var(--muted); margin: 4px 0 0; }
+.controls { display: flex; align-items: center; gap: 10px; }
+
+.grid { display: grid; grid-template-columns: 1fr; gap: 12px; flex: 1; min-height: 0; }
+
+.error {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; background: rgba(221, 75, 75, 0.06);
+  border: 1px solid rgba(221, 75, 75, 0.15); border-radius: 10px;
+  color: var(--danger); font-size: 14px; margin-bottom: 12px;
+  animation: shake 0.4s ease;
+}
+.retryBtn {
+  margin-left: auto; padding: 4px 12px; background: var(--danger);
+  color: white; border: none; border-radius: 6px; font-size: 13px;
+  font-weight: 600; cursor: pointer;
+}
+
+@media (min-width: 820px) {
+  .content { display: grid; grid-template-columns: 1fr 360px; gap: 16px; flex: 1; min-height: 0; }
+  .grid { overflow-y: auto; padding-right: 4px; }
+}
