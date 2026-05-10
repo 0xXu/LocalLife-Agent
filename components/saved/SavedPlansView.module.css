@@ -11,7 +11,9 @@
 .subtitle { font-size: 14px; color: var(--muted); margin: 4px 0 0; }
 .controls { display: flex; align-items: center; gap: 10px; }
 
-.grid { display: grid; grid-template-columns: 1fr; gap: 12px; flex: 1; min-height: 0; }
+.grid { gap: 12px; flex: 1; min-height: 0; }
+.gridMode { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); align-content: start; }
+.list { display: flex; flex-direction: column; }
 
 .error {
   display: flex; align-items: center; gap: 8px;

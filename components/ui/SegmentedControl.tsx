@@ -14,10 +14,11 @@ export interface SegmentedControlProps<T extends string> {
   value: T;
   onChange: (value: T) => void;
   className?: string;
+  testIdPrefix?: string;
 }
 
 export function SegmentedControl<T extends string>({
-  options, value, onChange, className,
+  options, value, onChange, className, testIdPrefix,
 }: SegmentedControlProps<T>) {
   return (
     <div className={`${styles.control} ${className ?? ''}`} role="tablist">
@@ -25,6 +26,7 @@ export function SegmentedControl<T extends string>({
         <button key={opt.value} type="button" role="tab"
           aria-selected={opt.value === value}
           className={`${styles.option} ${opt.value === value ? styles.active : ''}`}
+          data-testid={testIdPrefix ? `${testIdPrefix}-${opt.value}` : undefined}
           onClick={() => onChange(opt.value)}>
           {opt.icon}
           {opt.label}

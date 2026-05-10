@@ -52,5 +52,6 @@ venv/
 # Temporary files
 tmp/
 temp/
+.codex-run/
 *.tmp
 *.bak

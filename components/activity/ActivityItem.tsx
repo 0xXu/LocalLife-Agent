@@ -37,13 +37,13 @@ export function ActivityItem({ activity, index, isLast }: ActivityItemProps) {
         )}
         {activity.receipts.length > 0 && (
           <>
-            <button type="button" className={styles.receiptToggle} onClick={() => setShowReceipts(!showReceipts)}>
+            <button type="button" className={styles.receiptToggle} data-testid={`activity-receipt-${index}`} onClick={() => setShowReceipts(!showReceipts)}>
               <ReceiptText size={14} />
               {showReceipts ? '收起回执' : `查看回执（${activity.receipts.length}）`}
               {showReceipts ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
             {showReceipts && (
-              <div className={styles.receipts}>
+              <div className={styles.receipts} data-testid="activity-receipt-panel">
                 {activity.receipts.map((r) => (
                   <div key={r.id} className={styles.receiptItem}>
                     <CheckCircle2 size={14} className={styles.receiptIcon} />

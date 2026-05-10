@@ -23,6 +23,7 @@ type Action =
   | { type: 'START_RECOVER' }
   | { type: 'RECOVER_LOADED'; result: PlanResponse }
   | { type: 'RECOVER_FAILED'; error: string }
+  | { type: 'ALTERNATIVES_FAILED'; error: string }
   | { type: 'TOGGLE_ACTION'; key: string }
   | { type: 'SELECT_ALL_ACTIONS' }
   | { type: 'DESELECT_ALL_ACTIONS' }
@@ -100,6 +101,8 @@ function reducer(state: PlanState, action: Action): PlanState {
         error: null,
       };
     case 'RECOVER_FAILED':
+      return { ...state, phase: 'results', error: action.error };
+    case 'ALTERNATIVES_FAILED':
       return { ...state, phase: 'results', error: action.error };
     case 'TOGGLE_ACTION': {
       const next = new Set(state.selectedActions);
@@ -188,8 +191,8 @@ export function usePlanMachine() {
     try {
       const result = await buildAlternatives(state.planId);
       dispatch({ type: 'PLAN_LOADED', result });
-    } catch {
-      // alternatives are optional, fail silently
+    } catch (err) {
+      dispatch({ type: 'ALTERNATIVES_FAILED', error: err instanceof Error ? err.message : '备选方案加载失败' });
     }
   }, [state.planId]);
 

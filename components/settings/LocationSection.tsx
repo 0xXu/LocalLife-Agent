@@ -19,7 +19,9 @@ export function LocationSection({ radiusKm, onChange }: LocationSectionProps) {
           <span className={styles.sliderValue}>{radiusKm} 公里</span>
         </div>
         <input type="range" className={styles.slider} min={1} max={10}
-          value={radiusKm} onChange={(e) => onChange(Number(e.target.value))}
+          value={radiusKm}
+          onInput={(e) => onChange(Number(e.currentTarget.value))}
+          onChange={(e) => onChange(Number(e.target.value))}
           aria-label="活动半径" data-testid="radius-slider" />
         <div className={styles.sliderLabels}>
           <span>1 公里</span><span>10 公里</span>

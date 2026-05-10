@@ -2,7 +2,7 @@ import unittest
 
 from backend.llm.config import LLMConfig
 from backend.orchestrator.pipeline import PlanningPipeline, constraints_from_dict
-from backend.services.planning_service import PlanningService
+from tests.backend.helpers import planning_service_with_fake_llm
 
 
 class FakeLLMClient:
@@ -33,10 +33,24 @@ class FakeLLMClient:
             ]
         }
 
+    def chat_stream(self, messages):
+        response = self.chat(messages)
+        yield response["choices"][0]["message"]["content"]
+
+
+class FailingLLMClient:
+    def chat_stream(self, _messages):
+        raise RuntimeError("LLM request timed out after 30 seconds.")
+
+
+class InvalidJsonLLMClient:
+    def chat_stream(self, _messages):
+        yield "not-json"
+
 
 class PlanningPipelineTest(unittest.TestCase):
     def setUp(self):
-        self.service = PlanningService(llm_config=LLMConfig(api_key="", base_url="", model="MiMo-V2.5-Pro"))
+        self.service = planning_service_with_fake_llm()
 
     def test_build_plan_runs_layered_pipeline_and_returns_trace(self):
         result = self.service.build_plan(
@@ -130,6 +144,50 @@ class PlanningPipelineTest(unittest.TestCase):
         self.assertEqual(len(fake_llm.calls), 1)
         intent_trace = next(step for step in result.trace if step.agent == "IntentParserAgent")
         self.assertFalse(intent_trace.output_summary["llm_fallback"])
+
+    def test_configured_llm_failure_interrupts_build_without_template_fallback(self):
+        pipeline = PlanningPipeline(
+            llm_config=LLMConfig(
+                base_url="https://token-plan-sgp.xiaomimimo.com/v1",
+                api_key="secret-key-value",
+                model="MiMo-V2.5-Pro",
+                remote_enabled=True,
+            )
+        )
+        pipeline.llm = FailingLLMClient()
+
+        with self.assertRaisesRegex(RuntimeError, "LLM intent parsing failed"):
+            pipeline.build("friends dinner this afternoon")
+
+    def test_configured_llm_invalid_json_interrupts_build_without_template_fallback(self):
+        pipeline = PlanningPipeline(
+            llm_config=LLMConfig(
+                base_url="https://token-plan-sgp.xiaomimimo.com/v1",
+                api_key="secret-key-value",
+                model="MiMo-V2.5-Pro",
+                remote_enabled=True,
+            )
+        )
+        pipeline.llm = InvalidJsonLLMClient()
+
+        with self.assertRaisesRegex(RuntimeError, "LLM intent parsing failed"):
+            pipeline.build("date plan this afternoon")
+
+    def test_missing_or_disabled_remote_llm_interrupts_build_without_template_fallback(self):
+        missing_config = PlanningPipeline(llm_config=LLMConfig(api_key="", base_url="", model="MiMo-V2.5-Pro"))
+        disabled_config = PlanningPipeline(
+            llm_config=LLMConfig(
+                base_url="https://token-plan-sgp.xiaomimimo.com/v1",
+                api_key="secret-key-value",
+                model="MiMo-V2.5-Pro",
+                remote_enabled=False,
+            )
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "Remote LLM is required"):
+            missing_config.build("family plan")
+        with self.assertRaisesRegex(RuntimeError, "Remote LLM is required"):
+            disabled_config.build("family plan")
 
     def test_constraints_from_llm_normalizes_children_count_to_list(self):
         constraints = constraints_from_dict(

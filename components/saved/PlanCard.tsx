@@ -59,10 +59,10 @@ export function PlanCard({ plan, index, selected, onSelect, onEdit, onExecute, o
         ))}
       </div>
       <div className={styles.footer}>
-        <button type="button" className={styles.editBtn} onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+        <button type="button" className={styles.editBtn} data-testid={`plan-edit-${plan.id}`} onClick={(e) => { e.stopPropagation(); onEdit(); }}>
           <Edit3 size={14} /> 编辑
         </button>
-        <button type="button" className={styles.executeBtn} onClick={(e) => { e.stopPropagation(); onExecute(); }}>
+        <button type="button" className={styles.executeBtn} data-testid={`plan-execute-${plan.id}`} onClick={(e) => { e.stopPropagation(); onExecute(); }}>
           <Play size={14} /> 执行
         </button>
         <button type="button" className={styles.deleteBtn} onClick={(e) => { e.stopPropagation(); handleDelete(); }} data-testid={`plan-delete-${plan.id}`}>

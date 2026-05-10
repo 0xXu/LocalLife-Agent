@@ -55,8 +55,8 @@ export function SavedPlansView({ onNavigateHome }: SavedPlansViewProps) {
       <div className={styles.header}>
         <div><h1 className={styles.title}>我的计划</h1><p className={styles.subtitle}>管理并执行你收藏的周末行程</p></div>
         <div className={styles.controls}>
-          <SearchInput value={search} onChange={setSearch} placeholder="搜索计划..." />
-          <SegmentedControl options={VIEW_OPTIONS} value={viewMode} onChange={setViewMode} />
+          <SearchInput value={search} onChange={setSearch} placeholder="搜索计划..." inputTestId="saved-search-input" />
+          <SegmentedControl options={VIEW_OPTIONS} value={viewMode} onChange={setViewMode} testIdPrefix="saved-view" />
         </div>
       </div>
 
@@ -71,7 +71,7 @@ export function SavedPlansView({ onNavigateHome }: SavedPlansViewProps) {
         <EmptyPlans onNavigateHome={onNavigateHome ?? (() => {})} />
       ) : (
         <div className={styles.content}>
-          <div className={styles.grid}>
+          <div className={`${styles.grid} ${viewMode === 'list' ? styles.list : styles.gridMode}`} data-testid="saved-plans-list">
             {filtered.map((plan, i) => (
               <PlanCard key={plan.id} plan={plan} index={i} selected={plan.id === selectedId}
                 onSelect={() => setSelectedId(plan.id)} onEdit={() => setEditingPlan(plan)}

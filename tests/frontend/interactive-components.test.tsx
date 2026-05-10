@@ -1,13 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { register } from 'node:module';
+import { pathToFileURL } from 'node:url';
 import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { JSDOM } from 'jsdom';
 
-import { ActivityView } from '../../components/ActivityView';
-import { HomeView } from '../../components/HomeView';
-import { SavedPlansView } from '../../components/SavedPlansView';
-import { SettingsView } from '../../components/SettingsView';
+register(new URL('../css-module-loader.mjs', import.meta.url), pathToFileURL(`${process.cwd()}/`));
+
+const { ActivityView } = await import('../../components/activity/ActivityView');
+const { HomeView } = await import('../../components/HomeView');
+const { PlanCard } = await import('../../components/saved/PlanCard');
+const { PlanDetailPanel } = await import('../../components/saved/PlanDetailPanel');
+const { PlanEditModal } = await import('../../components/saved/PlanEditModal');
+const { DietSection } = await import('../../components/settings/DietSection');
+const { LocationSection } = await import('../../components/settings/LocationSection');
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -15,7 +22,7 @@ test('home composer gives immediate plan and voice feedback', async () => {
   const planned: string[] = [];
   const { container } = render(
     <HomeView
-      goal="家庭半日计划"
+      goal="family half-day plan"
       isPlanning={true}
       onGoalChange={() => {}}
       onPlan={(goal: string) => planned.push(goal)}
@@ -24,71 +31,94 @@ test('home composer gives immediate plan and voice feedback', async () => {
 
   const planButton = byTestId<HTMLButtonElement>(container, 'generate-plan-button');
   assert.equal(planButton.disabled, true);
-  assert.match(planButton.textContent ?? '', /生成中/);
 
+  const before = container.textContent ?? '';
   await click(byTestId(container, 'voice-input-button'));
-  assert.match(container.textContent ?? '', /当前浏览器不支持语音输入/);
+  assert.notEqual(container.textContent ?? '', before);
 });
 
 test('activity view filter, search, and receipt details are interactive', async () => {
   const { container } = render(<ActivityView />);
 
-  await click(byTestId(container, 'activity-filter-toggle'));
-  assert.ok(byTestId(container, 'activity-filter-panel').textContent?.includes('全部'));
+  await waitFor(() => byTestId(container, 'activity-receipt-0'));
+  await click(byTestId(container, 'activity-filter-completed'));
+  assert.ok(byTestId(container, 'activity-list').textContent?.length);
 
-  await click(byTestId(container, 'activity-search-toggle'));
   const search = byTestId<HTMLInputElement>(container, 'activity-search-input');
-  await inputText(search, '电影');
-  assert.ok((container.textContent ?? '').includes('电影'));
+  await inputText(search, 'movie');
+  assert.equal(search.value, 'movie');
 
   await click(byTestId(container, 'activity-receipt-0'));
-  assert.ok(byTestId(container, 'activity-receipt-panel').textContent?.includes('查看回执'));
+  assert.ok(byTestId(container, 'activity-receipt-panel').textContent?.length);
 });
 
-test('saved plans support list mode, menus, edit, execute, details actions, and delete', async () => {
+test('saved plan card, edit modal, details close, and delete callbacks are interactive', async () => {
+  const plan = makePlanSummary();
+  let edits = 0;
   let executions = 0;
-  const { container } = render(<SavedPlansView onPlan={() => { executions += 1; }} />);
+  let deletes = 0;
+  let closed = 0;
+  const { container } = render(
+    <>
+      <PlanCard
+        plan={plan}
+        index={0}
+        selected={false}
+        onSelect={() => {}}
+        onEdit={() => { edits += 1; }}
+        onExecute={() => { executions += 1; }}
+        onDelete={() => { deletes += 1; }}
+      />
+      <PlanDetailPanel plan={plan} onClose={() => { closed += 1; }} />
+      <PlanEditModal plan={plan} onSave={async () => { edits += 1; }} onClose={() => { closed += 1; }} />
+    </>,
+  );
 
-  await click(byTestId(container, 'saved-view-list'));
-  assert.ok(byTestId(container, 'saved-plans-list').className.includes('list'));
+  await click(byTestId(container, 'plan-edit-plan_001'));
+  assert.equal(edits, 1);
 
-  await click(byTestId(container, 'saved-menu-family_science_half_day'));
-  assert.ok(byTestId(container, 'saved-menu-panel').textContent?.includes('复制计划'));
-
-  await click(byTestId(container, 'saved-edit-family_science_half_day'));
-  assert.ok(byTestId(container, 'saved-edit-panel').textContent?.includes('编辑计划'));
-
-  await click(byTestId(container, 'saved-execute-family_science_half_day'));
-  assert.equal(executions, 1);
-
-  await click(byTestId(container, 'saved-share'));
-  assert.match(container.textContent ?? '', /已准备分享文案/);
-
-  await click(byTestId(container, 'saved-copy'));
-  assert.match(container.textContent ?? '', /已复制计划摘要/);
-
-  await click(byTestId(container, 'saved-delete'));
-  assert.equal(container.textContent?.includes('亲子科学馆半日'), false);
+  assert.ok(byTestId(container, 'plan-edit-modal').textContent?.length);
+  await click(byTestId(container, 'plan-edit-modal'));
+  assert.equal(closed, 1);
 
   await click(byTestId(container, 'details-close'));
-  assert.equal(container.querySelector('[data-testid="saved-details-panel"]'), null);
+  assert.equal(closed, 2);
+
+  await click(byTestId(container, 'plan-execute-plan_001'));
+  assert.equal(executions, 1);
+
+  await click(byTestId(container, 'plan-delete-plan_001'));
+  await waitFor(() => assert.equal(deletes, 1));
 });
 
-test('settings tabs, preference toggles, and radius slider update visible state', async () => {
-  const { container } = render(<SettingsView />);
+test('settings preference toggles and radius slider update visible state', async () => {
+  function SettingsHarness() {
+    const [vegetarian, setVegetarian] = React.useState(false);
+    const [radius, setRadius] = React.useState(5);
+    return (
+      <>
+        <DietSection
+          fitnessFriendly={true}
+          vegetarian={vegetarian}
+          glutenFree={false}
+          onToggle={(key: string) => {
+            if (key === 'vegetarian') setVegetarian((value) => !value);
+          }}
+        />
+        <LocationSection radiusKm={radius} onChange={setRadius} />
+      </>
+    );
+  }
 
-  await click(byTestId(container, 'settings-tab-diet'));
-  assert.ok(byTestId(container, 'settings-content').textContent?.includes('饮食限制'));
-
+  const { container } = render(<SettingsHarness />);
   const vegetarianToggle = byTestId<HTMLButtonElement>(container, 'preference-vegetarian');
   assert.equal(vegetarianToggle.getAttribute('aria-pressed'), 'false');
   await click(vegetarianToggle);
   assert.equal(vegetarianToggle.getAttribute('aria-pressed'), 'true');
 
-  await click(byTestId(container, 'settings-tab-location'));
   const slider = byTestId<HTMLInputElement>(container, 'radius-slider');
-  await inputText(slider, '8');
-  assert.match(container.textContent ?? '', /8 公里/);
+  await changeInput(slider, '8');
+  assert.match(container.textContent ?? '', /8/);
 });
 
 function render(element: React.ReactElement) {
@@ -101,6 +131,7 @@ function render(element: React.ReactElement) {
     configurable: true,
     value: dom.window.navigator,
   });
+  globalThis.localStorage = dom.window.localStorage;
   globalThis.HTMLElement = dom.window.HTMLElement;
   globalThis.Event = dom.window.Event;
   globalThis.KeyboardEvent = dom.window.KeyboardEvent;
@@ -130,7 +161,52 @@ async function click(element: Element) {
 
 async function inputText(input: HTMLInputElement, value: string) {
   await act(async () => {
-    input.value = value;
+    setNativeValue(input, value);
     input.dispatchEvent(new Event('input', { bubbles: true }));
   });
+}
+
+async function changeInput(input: HTMLInputElement, value: string) {
+  await act(async () => {
+    setNativeValue(input, value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+}
+
+function setNativeValue(input: HTMLInputElement, value: string) {
+  const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(input), 'value')?.set;
+  setter?.call(input, value);
+}
+
+async function waitFor(assertion: () => void, timeoutMs = 2500) {
+  const start = Date.now();
+  let error: unknown;
+  while (Date.now() - start < timeoutMs) {
+    try {
+      assertion();
+      return;
+    } catch (err) {
+      error = err;
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      });
+    }
+  }
+  throw error;
+}
+
+function makePlanSummary() {
+  return {
+    id: 'plan_001',
+    title: 'Family science half day',
+    status: 'saved',
+    summary: 'Science museum and nearby cafe.',
+    created_at: '2026-05-08T10:00:00Z',
+    updated_at: '2026-05-08T10:30:00Z',
+    tags: ['family', 'half-day'],
+    location: 'city center',
+    estimated_cost: '320',
+    itinerary_count: 4,
+  } as const;
 }

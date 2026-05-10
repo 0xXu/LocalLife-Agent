@@ -7,11 +7,12 @@ from backend.data.catalog import LocalDataCatalog
 from backend.llm.config import LLMConfig
 from backend.services.planning_service import PlanningService
 from backend.tools.registry import LocalToolRegistry
+from tests.backend.helpers import planning_service_with_fake_llm
 
 
 class CompleteBackendTest(unittest.TestCase):
     def setUp(self):
-        self.service = PlanningService(llm_config=LLMConfig(api_key="", base_url="", model="MiMo-V2.5-Pro"))
+        self.service = planning_service_with_fake_llm()
 
     def test_local_catalog_has_full_seed_data(self):
         catalog = LocalDataCatalog()
@@ -26,11 +27,11 @@ class CompleteBackendTest(unittest.TestCase):
 
     def test_builds_five_core_scenarios_with_variants_and_pending_actions(self):
         cases = [
-            ("family", "今天下午想和老婆孩子出去玩几个小时，孩子5岁，老婆减脂，别太远"),
-            ("friends", "今天下午朋友4个人出去玩，2男2女，先活动再吃饭，想拍照聊天，预算适中"),
-            ("date", "下午想和对象约会，安静一点，有氛围，排队少，饭前饭后都顺"),
-            ("rainy_indoor", "今天下雨，想安排室内活动，别太累，附近吃点健康的"),
-            ("family", "孩子5岁，老婆减脂，先帮我安排，顺便模拟餐厅无位后的恢复"),
+            ("family", "family afternoon with a child age 5, low fat food, not too far"),
+            ("friends", "friends afternoon, four adults, photo friendly, dinner after activity"),
+            ("date", "date afternoon, quiet romantic places, low queue"),
+            ("rainy_indoor", "rainy indoor afternoon, comfortable food nearby"),
+            ("family", "family child age 5, simulate restaurant unavailable recovery later"),
         ]
 
         for expected_scenario, goal in cases:
@@ -43,7 +44,7 @@ class CompleteBackendTest(unittest.TestCase):
             self.assertGreaterEqual(len(result["trace"]), 7)
 
     def test_confirmation_gate_and_full_receipts(self):
-        result = self.service.build_plan("今天下午朋友4个人出去玩，2男2女，先活动再吃饭，预算适中")
+        result = self.service.build_plan("friends afternoon, four adults, activity before dinner")
         plan_id = result["plan"]["id"]
 
         with self.assertRaises(PermissionError):
@@ -63,7 +64,7 @@ class CompleteBackendTest(unittest.TestCase):
         self.assertEqual(executed["plan"]["status"], "completed")
 
     def test_patch_constraints_alternatives_checkpoint_and_recovery(self):
-        result = self.service.build_plan("今天下午想和老婆孩子出去玩几个小时，孩子5岁，老婆减脂，别太远")
+        result = self.service.build_plan("family afternoon with child age 5, low fat food nearby")
         plan_id = result["plan"]["id"]
 
         patched = self.service.patch_constraints(plan_id, {"radius_km": 3, "budget_level": "low"})
@@ -82,12 +83,11 @@ class CompleteBackendTest(unittest.TestCase):
         self.assertEqual(recovered["diff"]["changed"], "restaurant")
         self.assertIn("重新确认", recovered["adjustment"]["primaryAction"])
 
-    def test_llm_fallback_is_traced_when_remote_disabled(self):
+    def test_remote_llm_disabled_interrupts_plan_build(self):
         service = PlanningService(llm_config=LLMConfig(api_key="", base_url="", model="MiMo-V2.5-Pro"))
-        result = service.build_plan("今天下午朋友4个人出去玩，2男2女，别太远")
 
-        intent_trace = next(step for step in result["trace"] if step["agent"] == "IntentParserAgent")
-        self.assertTrue(intent_trace["output_summary"]["llm_fallback"])
+        with self.assertRaisesRegex(RuntimeError, "Remote LLM is required"):
+            service.build_plan("friends plan")
 
     def test_tool_schemas_cover_all_mcp_ready_tools(self):
         schemas = LocalToolRegistry(LocalDataCatalog()).schemas()
@@ -119,8 +119,7 @@ class CompleteBackendTest(unittest.TestCase):
 
 class CompleteApiTest(unittest.TestCase):
     def setUp(self):
-        service = PlanningService(llm_config=LLMConfig(api_key="", base_url="", model="MiMo-V2.5-Pro"))
-        self.client = TestClient(create_app(service))
+        self.client = TestClient(create_app(planning_service_with_fake_llm()))
 
     def request(self, method, path, body=None):
         response = self.client.request(method, path, json=body)
@@ -131,7 +130,7 @@ class CompleteApiTest(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(len(schemas["tools"]), 15)
 
-        status, built = self.request("POST", "/api/plans/build", {"goal": "今天下午朋友4个人出去玩，2男2女，别太远"})
+        status, built = self.request("POST", "/api/plans/build", {"goal": "friends afternoon, four adults, activity before dinner"})
         self.assertEqual(status, 200)
         plan_id = built["plan"]["id"]
 

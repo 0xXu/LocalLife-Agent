@@ -13,7 +13,7 @@ orchestrator/     central state-machine planner
 models/           dataclass domain models and API DTO helpers
 tools/            MCP-ready local tool adapters
 data/             deterministic local catalog generator
-llm/              OpenAI-compatible config/client with deterministic fallback
+llm/              OpenAI-compatible config/client for required remote intent parsing
 ```
 
 The backend is intentionally local-first for competition stability. Meituan, map, booking, ordering, messaging, and calendar actions are represented by replaceable local adapters that return realistic IDs and receipts.
@@ -28,10 +28,11 @@ LLM_API_PROTOCOL=openai
 LLM_BASE_URL=https://token-plan-sgp.xiaomimimo.com/v1
 LLM_API_KEY=replace-with-your-full-dedicated-api-key
 LLM_MODEL=MiMo-V2.5-Pro
-LLM_REMOTE_ENABLED=false
+LLM_TIMEOUT_SECONDS=90
+LLM_REMOTE_ENABLED=true
 ```
 
-`LLM_REMOTE_ENABLED=false` keeps demos deterministic and avoids accidental token usage. Set it to `true` to let the intent parser try the remote model first; invalid responses or network failures automatically fall back to deterministic parsing and are marked in trace.
+The product demo should run with `LLM_REMOTE_ENABLED=true`. If the remote model times out, returns invalid JSON, or is misconfigured, plan building stops with an error response instead of falling back to a deterministic template.
 
 ## API
 

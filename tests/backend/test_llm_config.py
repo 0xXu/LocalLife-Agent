@@ -35,6 +35,7 @@ class LLMConfigTest(unittest.TestCase):
         self.assertNotIn("secret-key-value", str(config.safe_status()))
         self.assertEqual(config.safe_status()["api_key"], "configured")
         self.assertTrue(config.remote_enabled)
+        self.assertEqual(config.timeout_seconds, 90)
 
     def test_env_can_explicitly_disable_remote_llm(self):
         with tempfile.TemporaryDirectory() as tmp:

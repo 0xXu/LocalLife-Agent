@@ -5,11 +5,17 @@ from fastapi.testclient import TestClient
 from backend.api.app import create_app
 from backend.llm.config import LLMConfig
 from backend.services.planning_service import PlanningService
+from tests.backend.helpers import planning_service_with_fake_llm
+
+
+class FailingLLMClient:
+    def chat_stream(self, _messages):
+        raise RuntimeError("LLM request timed out after 30 seconds.")
 
 
 class BackendApiTest(unittest.TestCase):
     def setUp(self):
-        service = PlanningService(llm_config=LLMConfig(api_key="", base_url="", model="MiMo-V2.5-Pro"))
+        service = planning_service_with_fake_llm()
         self.client = TestClient(create_app(service))
 
     def request(self, method, path, body=None):
@@ -104,6 +110,25 @@ class BackendApiTest(unittest.TestCase):
         self.assertEqual(status, 400)
         self.assertEqual(data["error"]["code"], "invalid_json")
         self.assertEqual(data["error"]["message"], "invalid_json")
+
+    def test_remote_llm_failure_returns_500_without_template_plan(self):
+        service = PlanningService(
+            llm_config=LLMConfig(
+                base_url="https://token-plan-sgp.xiaomimimo.com/v1",
+                api_key="secret-key-value",
+                model="MiMo-V2.5-Pro",
+                remote_enabled=True,
+            )
+        )
+        service.pipeline.llm = FailingLLMClient()
+        client = TestClient(create_app(service), raise_server_exceptions=False)
+
+        response = client.post("/api/plans/build", json={"goal": "friends dinner this afternoon"})
+
+        self.assertEqual(response.status_code, 500)
+        data = response.json()
+        self.assertEqual(data["error"]["code"], "tool_failed")
+        self.assertIn("LLM intent parsing failed", data["error"]["message"])
 
 
 if __name__ == "__main__":

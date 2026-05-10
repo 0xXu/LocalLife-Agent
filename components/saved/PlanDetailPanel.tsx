@@ -31,7 +31,7 @@ export function PlanDetailPanel({ plan, onClose }: PlanDetailPanelProps) {
         <div className={styles.handle} />
         <div className={styles.header}>
           <h2>{plan.title}</h2>
-          <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="关闭">
+          <button type="button" className={styles.closeBtn} data-testid="details-close" onClick={onClose} aria-label="关闭">
             <X size={18} />
           </button>
         </div>

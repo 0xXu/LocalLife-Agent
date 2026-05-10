@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import socket
 import subprocess
 import urllib.error
 import urllib.request
@@ -121,8 +122,13 @@ class LLMClient:
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
             raise RuntimeError(f"LLM stream failed with HTTP {exc.code}: {detail}") from exc
-        except urllib.error.URLError:
-            yield from self._curl_chat_stream(url, payload)
+        except (urllib.error.URLError, TimeoutError, socket.timeout):
+            fallback_payload = {**payload, "stream": False}
+            response = self._curl_chat(url, fallback_payload)
+            content = response.get("choices", [{}])[0].get("message", {}).get("content")
+            if not content:
+                raise RuntimeError("LLM stream fallback returned an empty response.")
+            yield content
 
     def _curl_chat_stream(self, url: str, payload: dict[str, Any]) -> Generator[str, None, None]:
         binary = "curl.exe" if os.name == "nt" else "curl"

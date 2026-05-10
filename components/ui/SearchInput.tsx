@@ -11,10 +11,12 @@ export interface SearchInputProps {
   debounceMs?: number;
   autoFocus?: boolean;
   className?: string;
+  containerTestId?: string;
+  inputTestId?: string;
 }
 
 export function SearchInput({
-  value, onChange, placeholder = '搜索...', debounceMs = 300, autoFocus, className,
+  value, onChange, placeholder = '搜索...', debounceMs = 300, autoFocus, className, containerTestId, inputTestId,
 }: SearchInputProps) {
   const [local, setLocal] = useState(value);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -33,11 +35,11 @@ export function SearchInput({
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
   return (
-    <div className={`${styles.wrapper} ${className ?? ''}`}>
+    <div className={`${styles.wrapper} ${className ?? ''}`} data-testid={containerTestId}>
       <Search size={16} className={styles.icon} />
       <input type="search" className={styles.input} value={local}
         onChange={(e) => debouncedChange(e.target.value)}
-        placeholder={placeholder} autoFocus={autoFocus} />
+        placeholder={placeholder} autoFocus={autoFocus} data-testid={inputTestId} />
       {local && (
         <button type="button" className={styles.clear}
           onClick={() => { setLocal(''); onChange(''); }} aria-label="清除搜索">

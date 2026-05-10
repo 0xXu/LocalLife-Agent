@@ -65,8 +65,8 @@ export function SettingsView() {
   return (
     <section className={styles.view}>
       <h1 className={styles.title}>设置</h1>
-      <SegmentedControl options={TAB_OPTIONS} value={activeTab} onChange={setActiveTab} />
-      <div className={styles.layout}>
+      <SegmentedControl options={TAB_OPTIONS} value={activeTab} onChange={setActiveTab} testIdPrefix="settings-tab" />
+      <div className={styles.layout} data-testid="settings-content">
         {activeTab === 'profile' && (
           <ProfileSection displayName={preferences.profile.display_name}
             email={preferences.profile.email} onChange={handleProfileChange} />

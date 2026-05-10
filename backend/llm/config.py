@@ -39,7 +39,7 @@ class LLMConfig:
             model=model,
             temperature=float(merged.get("LLM_TEMPERATURE", "0.2")),
             max_tokens=int(merged.get("LLM_MAX_TOKENS", "2048")),
-            timeout_seconds=int(merged.get("LLM_TIMEOUT_SECONDS", "30")),
+            timeout_seconds=int(merged.get("LLM_TIMEOUT_SECONDS", "90")),
             remote_enabled=remote_enabled,
         )
 

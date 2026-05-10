@@ -91,4 +91,4 @@ npm run test:all
 Next.js UI -> lib/api/client.ts -> FastAPI /api/* -> backend.services.PlanningService -> backend.orchestrator.PlanningPipeline -> backend.tools/*
 ```
 
-如果配置了 `LLM_BASE_URL`、`LLM_API_KEY` 和 `LLM_MODEL`，后端会使用 OpenAI-compatible 远程 LLM 解析自然语言约束；超时或异常时会降级到确定性解析。
+当 `LLM_REMOTE_ENABLED=true` 时，`LLM_BASE_URL`、`LLM_API_KEY` 和 `LLM_MODEL` 必须可用。远程 LLM 超时、返回非 JSON 或请求失败都会中断 `/api/plans/build` 并返回错误，不再降级到确定性模板。

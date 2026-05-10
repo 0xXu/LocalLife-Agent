@@ -21,6 +21,10 @@ from backend.models.schemas import (
 from backend.tools import LocalToolRegistry
 
 
+class LLMIntentParsingError(RuntimeError):
+    pass
+
+
 class PlanningPipeline:
     def __init__(self, catalog: LocalDataCatalog | None = None, llm_config: LLMConfig | None = None) -> None:
         self.catalog = catalog or LocalDataCatalog()
@@ -161,28 +165,28 @@ class PlanningPipeline:
         return state
 
     def parse_constraints(self, goal: str, on_token: Callable[[str], None] | None = None) -> tuple[ParsedConstraints, bool]:
-        if self.llm_config.is_configured and self.llm_config.remote_enabled:
-            messages = [
-                {
-                    "role": "system",
-                    "content": (
-                        "Extract planning info as JSON. Only return JSON, no explanation.\n"
-                        '{"scenario":"family|friends|date|rainy_indoor","origin":{"type":"current_location","label":"home","lat":38.26,"lng":140.88},"time_window":{"date":"today","start":"HH:MM","duration_hours":N,"flexible":true},"people":{"adults":N,"children":[{"age":N}],"relationship":"family"},"preferences":{"distance":"nearby","diet":[],"activity":[],"budget_level":"medium"},"constraints":{"radius_km":N,"max_wait_minutes":15,"avoid":[]},"required_actions":["activity_reservation","restaurant_reservation","claim_coupon","create_order","send_plan_message","create_calendar_event"]}'
-                    ),
-                },
-                {"role": "user", "content": goal},
-            ]
-            try:
-                content = ""
-                for token in self.llm.chat_stream(messages):
-                    content += token
-                    if on_token:
-                        on_token(token)
-                parsed = json.loads(extract_json_object(content))
-                return constraints_from_dict(parsed), False
-            except Exception:
-                pass
-        return deterministic_constraints(goal), True
+        if not self.llm_config.is_configured or not self.llm_config.remote_enabled:
+            raise LLMIntentParsingError("Remote LLM is required. Configure LLM_BASE_URL, LLM_API_KEY, LLM_MODEL, and LLM_REMOTE_ENABLED=true.")
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "Extract planning info as JSON. Only return JSON, no explanation.\n"
+                    '{"scenario":"family|friends|date|rainy_indoor","origin":{"type":"current_location","label":"home","lat":38.26,"lng":140.88},"time_window":{"date":"today","start":"HH:MM","duration_hours":N,"flexible":true},"people":{"adults":N,"children":[{"age":N}],"relationship":"family"},"preferences":{"distance":"nearby","diet":[],"activity":[],"budget_level":"medium"},"constraints":{"radius_km":N,"max_wait_minutes":15,"avoid":[]},"required_actions":["activity_reservation","restaurant_reservation","claim_coupon","create_order","send_plan_message","create_calendar_event"]}'
+                ),
+            },
+            {"role": "user", "content": goal},
+        ]
+        try:
+            content = ""
+            for token in self.llm.chat_stream(messages):
+                content += token
+                if on_token:
+                    on_token(token)
+            parsed = json.loads(extract_json_object(content))
+            return constraints_from_dict(parsed), False
+        except Exception as exc:
+            raise LLMIntentParsingError(f"LLM intent parsing failed: {exc}") from exc
 
 
 def extract_json_object(content: str) -> str:

@@ -51,6 +51,30 @@ class LLMClientTest(unittest.TestCase):
         self.assertNotIn("secret-key-value", str(raised.exception))
         self.assertIn("timed out", str(raised.exception))
 
+    def test_chat_stream_curl_fallback_uses_bounded_non_stream_request(self):
+        config = LLMConfig(
+            base_url="https://token-plan-sgp.xiaomimimo.com/v1",
+            api_key="secret-key-value",
+            model="mimo-v2.5-pro",
+            timeout_seconds=3,
+        )
+        expected = {"choices": [{"message": {"content": "{\"scenario\":\"friends\"}"}}]}
+        completed = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout=json.dumps(expected),
+            stderr="",
+        )
+
+        with patch("urllib.request.urlopen", side_effect=urllib.error.URLError("tls failed")):
+            with patch("subprocess.run", return_value=completed) as run:
+                chunks = list(LLMClient(config).chat_stream([{"role": "user", "content": "ping"}]))
+
+        self.assertEqual(chunks, ['{"scenario":"friends"}'])
+        payload = json.loads(run.call_args.kwargs["input"])
+        self.assertIs(payload.get("stream"), False)
+        self.assertEqual(run.call_args.kwargs["timeout"], 3)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -54,7 +54,7 @@ export function ActivityView() {
       <div className={styles.header}>
         <h1 className={styles.title}>执行记录</h1>
         <div className={styles.controls}>
-          <SearchInput value={search} onChange={setSearch} placeholder="搜索记录..." />
+          <SearchInput value={search} onChange={setSearch} placeholder="搜索记录..." inputTestId="activity-search-input" />
         </div>
       </div>
 
@@ -71,6 +71,7 @@ export function ActivityView() {
         {FILTER_OPTIONS.map((opt) => (
           <button key={opt.value} type="button"
             className={`${styles.chip} ${filter === opt.value ? styles.chipActive : ''}`}
+            data-testid={`activity-filter-${opt.value}`}
             onClick={() => setFilter(opt.value)}>
             {opt.label}
           </button>
@@ -84,7 +85,7 @@ export function ActivityView() {
           description="执行你的第一个计划后，记录会显示在这里"
         />
       ) : (
-        <div className={styles.content}>
+        <div className={styles.content} data-testid="activity-list">
           <div className={styles.timeline}>
             {filtered.map((activity, i) => (
               <ActivityItem key={activity.id} activity={activity} index={i} isLast={i === filtered.length - 1} />
