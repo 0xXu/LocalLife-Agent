@@ -19,12 +19,7 @@ class LLMClient:
     def chat(self, messages: list[dict[str, str]], max_tokens: int | None = None) -> dict[str, Any]:
         if not self.config.is_configured:
             raise RuntimeError("LLM is not configured. Check LLM_BASE_URL, LLM_API_KEY, and LLM_MODEL.")
-        payload = {
-            "model": self.config.model,
-            "messages": messages,
-            "temperature": self.config.temperature,
-            "max_tokens": max_tokens or self.config.max_tokens,
-        }
+        payload = self._build_payload(messages, max_tokens=max_tokens, stream=False)
         url = self.config.base_url.rstrip("/") + "/chat/completions"
         request = urllib.request.Request(
             url,
@@ -81,13 +76,7 @@ class LLMClient:
         """Stream tokens from an OpenAI-compatible SSE endpoint."""
         if not self.config.is_configured:
             raise RuntimeError("LLM is not configured. Check LLM_BASE_URL, LLM_API_KEY, and LLM_MODEL.")
-        payload = {
-            "model": self.config.model,
-            "messages": messages,
-            "temperature": self.config.temperature,
-            "max_tokens": max_tokens or self.config.max_tokens,
-            "stream": True,
-        }
+        payload = self._build_payload(messages, max_tokens=max_tokens, stream=True)
         url = self.config.base_url.rstrip("/") + "/chat/completions"
         request = urllib.request.Request(
             url,
@@ -129,6 +118,20 @@ class LLMClient:
             if not content:
                 raise RuntimeError("LLM stream fallback returned an empty response.")
             yield content
+
+    def _build_payload(self, messages: list[dict[str, str]], max_tokens: int | None = None, stream: bool = False) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "model": self.config.model,
+            "messages": messages,
+            "temperature": self.config.temperature,
+            "max_tokens": max_tokens or self.config.max_tokens,
+            "stream": stream,
+        }
+        if self.config.response_format == "json_object":
+            payload["response_format"] = {"type": "json_object"}
+        if self.config.disable_thinking:
+            payload["thinking"] = {"type": "disabled"}
+        return payload
 
     def _curl_chat_stream(self, url: str, payload: dict[str, Any]) -> Generator[str, None, None]:
         binary = "curl.exe" if os.name == "nt" else "curl"

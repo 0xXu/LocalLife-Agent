@@ -205,6 +205,10 @@ class PlanningPipelineTest(unittest.TestCase):
         self.assertEqual(constraints.constraints["max_wait_minutes"], 15)
         self.assertEqual(constraints.constraints["avoid"], ["long_queue"])
 
+    def test_constraints_from_llm_rejects_invalid_scenario_enum(self):
+        with self.assertRaisesRegex(ValueError, "invalid_scenario"):
+            constraints_from_dict({"scenario": "family|friends|date|rainy_indoor"})
+
 
 if __name__ == "__main__":
     unittest.main()

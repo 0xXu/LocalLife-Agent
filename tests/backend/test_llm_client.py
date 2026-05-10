@@ -73,7 +73,33 @@ class LLMClientTest(unittest.TestCase):
         self.assertEqual(chunks, ['{"scenario":"friends"}'])
         payload = json.loads(run.call_args.kwargs["input"])
         self.assertIs(payload.get("stream"), False)
+        self.assertEqual(payload["response_format"], {"type": "json_object"})
+        self.assertEqual(payload["thinking"], {"type": "disabled"})
         self.assertEqual(run.call_args.kwargs["timeout"], 3)
+
+    def test_chat_requests_json_content_and_disables_provider_reasoning(self):
+        config = LLMConfig(
+            base_url="https://token-plan-sgp.xiaomimimo.com/v1",
+            api_key="secret-key-value",
+            model="mimo-v2.5-pro",
+            response_format="json_object",
+            disable_thinking=True,
+        )
+        expected = {"choices": [{"message": {"content": "{\"ok\": true}"}}]}
+        completed = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout=json.dumps(expected),
+            stderr="",
+        )
+
+        with patch("urllib.request.urlopen", side_effect=urllib.error.URLError("tls failed")):
+            with patch("subprocess.run", return_value=completed) as run:
+                LLMClient(config).chat([{"role": "user", "content": "ping"}])
+
+        payload = json.loads(run.call_args.kwargs["input"])
+        self.assertEqual(payload["response_format"], {"type": "json_object"})
+        self.assertEqual(payload["thinking"], {"type": "disabled"})
 
 
 if __name__ == "__main__":

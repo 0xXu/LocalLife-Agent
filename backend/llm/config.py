@@ -16,6 +16,8 @@ class LLMConfig:
     max_tokens: int = 2048
     timeout_seconds: int = 60
     remote_enabled: bool = False
+    response_format: str = "json_object"
+    disable_thinking: bool = True
 
     @classmethod
     def from_env_file(cls, env_path: Path | None = None) -> "LLMConfig":
@@ -41,6 +43,8 @@ class LLMConfig:
             max_tokens=int(merged.get("LLM_MAX_TOKENS", "2048")),
             timeout_seconds=int(merged.get("LLM_TIMEOUT_SECONDS", "90")),
             remote_enabled=remote_enabled,
+            response_format=merged.get("LLM_RESPONSE_FORMAT", "json_object").strip(),
+            disable_thinking=merged.get("LLM_DISABLE_THINKING", "true").lower() in {"1", "true", "yes", "on"},
         )
 
     @property
@@ -56,6 +60,8 @@ class LLMConfig:
             "api_key": "configured" if self.api_key else "missing",
             "configured": self.is_configured,
             "remote_enabled": self.remote_enabled,
+            "response_format": self.response_format or "disabled",
+            "disable_thinking": self.disable_thinking,
         }
 
 
