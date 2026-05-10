@@ -83,7 +83,7 @@ export function SavedPlansView({ onNavigateHome }: SavedPlansViewProps) {
       )}
 
       {editingPlan && (
-        <PlanEditModal plan={editingPlan} onSave={(updates) => update(editingPlan.id, updates)} onClose={() => setEditingPlan(null)} />
+        <PlanEditModal plan={editingPlan} onSave={async (updates) => { await update(editingPlan.id, updates); }} onClose={() => setEditingPlan(null)} />
       )}
     </section>
   );
