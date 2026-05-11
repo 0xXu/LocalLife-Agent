@@ -150,8 +150,11 @@ export function usePlanMachine() {
         },
         onProgress: async (label: string) => {
           if (mountedRef.current) dispatch({ type: 'UPDATE_PROGRESS', step: label });
+          // 添加 400ms 延迟，让用户能看到每个步骤的变化
           await new Promise<void>((resolve) => {
-            requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+            requestAnimationFrame(() => {
+              setTimeout(resolve, 400);
+            });
           });
         },
       });

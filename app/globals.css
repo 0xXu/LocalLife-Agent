@@ -2616,8 +2616,14 @@ dd,
 
 .progress-step--pending .progress-step-icon { color: var(--subtle); }
 .progress-step--running .progress-step-icon { color: var(--blue); }
-.progress-step--done .progress-step-icon { color: var(--green); background: var(--green-soft); }
+.progress-step--done .progress-step-icon { color: var(--green); background: var(--green-soft); animation: checkmark 0.3s ease-in-out; }
 .progress-step--error .progress-step-icon { color: var(--danger); background: rgba(221, 75, 75, 0.1); }
+
+@keyframes checkmark {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
 
 .progress-step-text strong { display: block; font-size: 14px; font-weight: 600; }
 .progress-step-text span { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
