@@ -2,8 +2,16 @@ from __future__ import annotations
 
 import json
 import re
+import warnings
 from collections.abc import Callable
+from typing import Any, TypedDict
 from uuid import uuid4
+
+from langchain_core._api.deprecation import LangChainPendingDeprecationWarning
+
+warnings.filterwarnings("ignore", category=LangChainPendingDeprecationWarning)
+
+from langgraph.graph import END, START, StateGraph
 
 from backend.data.catalog import LocalDataCatalog
 from backend.llm import LLMClient, LLMConfig
@@ -25,16 +33,56 @@ class LLMIntentParsingError(RuntimeError):
     pass
 
 
+class BuildGraphState(TypedDict, total=False):
+    state: PlanState
+    overrides: dict | None
+    on_progress: Callable[[str, str], None] | None
+    on_token: Callable[[str], None] | None
+    llm_fallback: bool
+    activity: dict | None
+    restaurant: dict | None
+    walk: dict | None
+    route: dict[str, Any]
+    build_result: dict[str, Any]
+    validation: dict[str, Any]
+
+
 class PlanningPipeline:
     def __init__(self, catalog: LocalDataCatalog | None = None, llm_config: LLMConfig | None = None) -> None:
         self.catalog = catalog or LocalDataCatalog()
         self.tools = LocalToolRegistry(self.catalog)
         self.llm_config = llm_config or LLMConfig.from_env_file()
         self.llm = LLMClient(self.llm_config)
+        self.graph = self._compile_graph()
 
     def build(self, goal: str, overrides: dict | None = None, on_progress: Callable[[str, str], None] | None = None, on_token: Callable[[str], None] | None = None) -> PlanState:
         state = PlanState(goal=goal, plan_id=f"plan_{uuid4().hex[:10]}", status="input_received")
-        constraints, llm_fallback = self.parse_constraints(goal, on_token=on_token)
+        result = self.graph.invoke({"state": state, "overrides": overrides, "on_progress": on_progress, "on_token": on_token})
+        return result["state"]
+
+    def _compile_graph(self):
+        graph = StateGraph(BuildGraphState)
+        graph.add_node("parse_intent", self._parse_intent_node)
+        graph.add_node("build_context", self._build_context_node)
+        graph.add_node("search_candidates", self._search_candidates_node)
+        graph.add_node("rank_candidates", self._rank_candidates_node)
+        graph.add_node("build_itinerary", self._build_itinerary_node)
+        graph.add_node("validate_plan", self._validate_plan_node)
+        graph.add_node("prepare_confirmation", self._prepare_confirmation_node)
+        graph.add_edge(START, "parse_intent")
+        graph.add_edge("parse_intent", "build_context")
+        graph.add_edge("build_context", "search_candidates")
+        graph.add_edge("search_candidates", "rank_candidates")
+        graph.add_edge("rank_candidates", "build_itinerary")
+        graph.add_edge("build_itinerary", "validate_plan")
+        graph.add_edge("validate_plan", "prepare_confirmation")
+        graph.add_edge("prepare_confirmation", END)
+        return graph.compile()
+
+    def _parse_intent_node(self, graph_state: BuildGraphState) -> BuildGraphState:
+        state = graph_state["state"]
+        constraints, llm_fallback = self.parse_constraints(state.goal, on_token=graph_state.get("on_token"))
+        overrides = graph_state.get("overrides")
         if overrides:
             constraints = apply_constraint_overrides(constraints, overrides)
         state.constraints = constraints
@@ -45,22 +93,28 @@ class PlanningPipeline:
                 "parse_user_goal",
                 "ok",
                 "解析自然语言目标为结构化约束。",
-                {"goal_length": len(goal)},
+                {"goal_length": len(state.goal)},
                 {"scenario": constraints.scenario, "llm_fallback": llm_fallback},
                 140,
             )
         )
-        if on_progress:
-            on_progress("理解出行需求", "解析自然语言目标为结构化约束。")
+        emit_progress(graph_state, "理解出行需求", "解析自然语言目标为结构化约束。")
+        return {"state": state, "llm_fallback": llm_fallback}
 
-        rainy = constraints.scenario == "rainy_indoor" or "下雨" in goal or "雨" in goal
+    def _build_context_node(self, graph_state: BuildGraphState) -> BuildGraphState:
+        state = graph_state["state"]
+        constraints = require_constraints(state)
+        rainy = constraints.scenario == "rainy_indoor" or "下雨" in state.goal or "雨" in state.goal
         weather = self.tools.get_weather(rainy).output
         state.context = {"weather": weather, "profile": "local_demo_user", "privacy": "minimal"}
         state.status = "context_ready"
         state.add_trace(TraceStep("ContextBuilderAgent", "get_weather", "ok", "补全天气、位置和用户偏好上下文。", {}, weather, 120))
-        if on_progress:
-            on_progress("补全场景上下文", "补全天气、位置和用户偏好上下文。")
+        emit_progress(graph_state, "补全场景上下文", "补全天气、位置和用户偏好上下文。")
+        return {"state": state}
 
+    def _search_candidates_node(self, graph_state: BuildGraphState) -> BuildGraphState:
+        state = graph_state["state"]
+        constraints = require_constraints(state)
         radius = float(constraints.constraints["radius_km"])
         activity_tags = list(constraints.preferences.get("activity", []))
         restaurant_tags = list(constraints.preferences.get("diet", [])) or ["booking_supported"]
@@ -76,49 +130,78 @@ class PlanningPipeline:
         }
         state.status = "candidates_ready"
         state.add_trace(TraceStep("CandidateSearchAgent", "search_places", "ok", "检索活动、餐厅、甜品散步点和本地供给。", {}, {key: len(value) for key, value in state.candidates.items()}, 260))
-        if on_progress:
-            on_progress("筛选本地供给", "检索活动、餐厅、甜品散步点和本地供给。")
+        emit_progress(graph_state, "筛选本地供给", "检索活动、餐厅、甜品散步点和本地供给。")
+        return {"state": state}
 
+    def _rank_candidates_node(self, graph_state: BuildGraphState) -> BuildGraphState:
+        state = graph_state["state"]
+        constraints = require_constraints(state)
         state.ranked = {key: rank_items(items, constraints) for key, items in state.candidates.items()}
         state.status = "ranked"
         state.add_trace(TraceStep("RankerAgent", "rank_candidates", "ok", "按距离、评分、可订性、预算和场景匹配排序。", {}, {key: [item["id"] for item in value[:3]] for key, value in state.ranked.items()}, 180))
-        if on_progress:
-            on_progress("多目标排序", "按距离、评分、可订性、预算和场景匹配排序。")
+        emit_progress(graph_state, "多目标排序", "按距离、评分、可订性、预算和场景匹配排序。")
+        return {"state": state}
 
+    def _build_itinerary_node(self, graph_state: BuildGraphState) -> BuildGraphState:
+        state = graph_state["state"]
+        constraints = require_constraints(state)
         activity = state.ranked["activities"][0]
-        restaurant = state.ranked["restaurants"][0]
-        walk = state.ranked["walks"][0]
-        route = self.tools.optimize_route([activity, restaurant, walk]).output
+        restaurant = state.ranked["restaurants"][0] if should_include_restaurant(constraints) and state.ranked.get("restaurants") else None
+        walk = state.ranked["walks"][0] if should_include_walk(constraints, restaurant) and state.ranked.get("walks") else None
+        waypoints = [item for item in [activity, restaurant, walk] if item]
+        route = self.tools.optimize_route(waypoints).output
         state.itinerary = build_steps(activity, restaurant, walk, constraints)
         build_result = self.tools.build_itinerary(constraints, activity, restaurant, walk)
-        state.add_tool_result(build_result, {"activity": activity["id"], "restaurant": restaurant["id"], "walk": walk["id"]})
+        state.add_tool_result(
+            build_result,
+            {
+                "activity": activity["id"],
+                "restaurant": restaurant["id"] if restaurant else None,
+                "walk": walk["id"] if walk else None,
+            },
+        )
         state.overview = PlanOverview(
             scenario_theme(constraints.scenario),
-            "4.5 小时",
+            format_duration_hours(constraints.time_window.get("duration_hours", 4.5)),
             route["drive_time"],
             route["walking_distance"],
             f"约 {build_result.output['estimated_budget']} 元",
             build_result.output["score"],
         )
-        state.variants = build_variants(state.itinerary, build_result.output["estimated_budget"], constraints)
+        state.variants = build_variants(state.itinerary, build_result.output["estimated_budget"], constraints, build_result.output["score"])
         state.status = "itinerary_built"
-        state.add_trace(TraceStep("RouteSchedulerAgent", "optimize_route", "ok", "生成 4 到 6 小时可执行时间轴和顺路路线。", {}, route, 220))
-        if on_progress:
-            on_progress("生成时间轴和路线", "生成 4 到 6 小时可执行时间轴和顺路路线。")
+        state.add_trace(TraceStep("RouteSchedulerAgent", "optimize_route", "ok", "按用户时长生成可执行时间轴和顺路路线。", {}, route, 220))
+        emit_progress(graph_state, "生成时间轴和路线", "按用户时长生成可执行时间轴和顺路路线。")
+        return {"state": state, "activity": activity, "restaurant": restaurant, "walk": walk, "route": route, "build_result": build_result.output}
 
+    def _validate_plan_node(self, graph_state: BuildGraphState) -> BuildGraphState:
+        state = graph_state["state"]
+        constraints = require_constraints(state)
+        restaurant = graph_state.get("restaurant")
+        route = graph_state["route"]
+        build_result = graph_state["build_result"]
         party_size = party_size_of(constraints)
-        availability = self.tools.check_availability(restaurant["id"], "15:45", party_size).output
-        validation = self.tools.validate_plan(bool(availability["available"]), route["total_travel_minutes"], build_result.output["estimated_budget"]).output
-        state.add_tool_result(self.tools.check_availability(restaurant["id"], "15:45", party_size), {"place_id": restaurant["id"], "party_size": party_size})
+        available = True
+        if restaurant:
+            availability_result = self.tools.check_availability(restaurant["id"], restaurant_time_from_steps(state.itinerary), party_size)
+            state.add_tool_result(availability_result, {"place_id": restaurant["id"], "party_size": party_size})
+            available = bool(availability_result.output["available"])
+        validation = self.tools.validate_plan(available, route["total_travel_minutes"], build_result["estimated_budget"]).output
         state.status = "pending_confirmation" if validation["valid"] else "recovering"
         state.add_trace(TraceStep("PlanValidatorAgent", "validate_plan", "ok" if validation["valid"] else "warning", "校验营业时间、路线、预算和可订性。", {}, validation, 170))
-        if on_progress:
-            on_progress("校验可订性和约束", "校验营业时间、路线、预算和可订性。")
+        emit_progress(graph_state, "校验可订性和约束", "校验营业时间、路线、预算和可订性。")
+        return {"state": state, "validation": validation}
 
+    def _prepare_confirmation_node(self, graph_state: BuildGraphState) -> BuildGraphState:
+        state = graph_state["state"]
+        constraints = require_constraints(state)
+        activity = graph_state["activity"]
+        restaurant = graph_state.get("restaurant")
+        walk = graph_state.get("walk")
         state.pending_actions = build_pending_actions(activity, restaurant, walk, constraints)
         state.actions = list(state.pending_actions)
         state.add_trace(TraceStep("ConfirmationAgent", "human_in_the_loop", "ok", "敏感动作已暂停，等待用户确认。", {}, {"pending_actions": len(state.pending_actions)}, 80))
-        return state
+        return {"state": state}
 
     def execute(self, state: PlanState) -> PlanState:
         state.status = "executing"
@@ -171,8 +254,11 @@ class PlanningPipeline:
             {
                 "role": "system",
                 "content": (
-                    "Extract planning info as JSON. Only return JSON, no explanation.\n"
-                    '{"scenario":"family|friends|date|rainy_indoor","origin":{"type":"current_location","label":"home","lat":38.26,"lng":140.88},"time_window":{"date":"today","start":"HH:MM","duration_hours":N,"flexible":true},"people":{"adults":N,"children":[{"age":N}],"relationship":"family"},"preferences":{"distance":"nearby","diet":[],"activity":[],"budget_level":"medium"},"constraints":{"radius_km":N,"max_wait_minutes":15,"avoid":[]},"required_actions":["activity_reservation","restaurant_reservation","claim_coupon","create_order","send_plan_message","create_calendar_event"]}'
+                    "Extract planning info as one JSON object only. Do not use markdown, prose, or reasoning.\n"
+                    "The scenario value must be exactly one of: family, friends, date, rainy_indoor. Never return the enum list itself.\n"
+                    "Use family only for children/family trips, friends only for explicit friends/groups, rainy_indoor only for rainy or indoor-first requests, and date for couples, solo quiet plans, bookstores, art, calm walks, or low-noise experiences.\n"
+                    "For hiking, climbing, mountain, trail, trekking, or outdoor nature requests, use friends unless the user explicitly mentions children/family/date/rain. Put hiking/outdoor/nature in preferences.activity. Do not copy restaurant/coupon/order actions unless the user asks to eat or book a meal.\n"
+                    '{"scenario":"family","origin":{"type":"current_location","label":"home","lat":38.26,"lng":140.88},"time_window":{"date":"today","start":"HH:MM","duration_hours":4.5,"flexible":true},"people":{"adults":2,"children":[{"age":5}],"relationship":"family"},"preferences":{"distance":"nearby","diet":[],"activity":[],"budget_level":"medium"},"constraints":{"radius_km":5,"max_wait_minutes":15,"avoid":[]},"required_actions":["activity_reservation","restaurant_reservation","claim_coupon","create_order","send_plan_message","create_calendar_event"]}'
                 ),
             },
             {"role": "user", "content": goal},
@@ -184,7 +270,8 @@ class PlanningPipeline:
                 if on_token:
                     on_token(token)
             parsed = json.loads(extract_json_object(content))
-            return constraints_from_dict(parsed), False
+            constraints = constraints_from_dict(parsed)
+            return normalize_constraints_for_goal(goal, constraints), False
         except Exception as exc:
             raise LLMIntentParsingError(f"LLM intent parsing failed: {exc}") from exc
 
@@ -257,12 +344,15 @@ def parse_adult_count(goal: str, child_age: int | None, scenario: str) -> int:
 
 def constraints_from_dict(data: dict) -> ParsedConstraints:
     fallback = deterministic_constraints("")
+    scenario = data.get("scenario", fallback.scenario)
+    if scenario not in {"family", "friends", "date", "rainy_indoor"}:
+        raise ValueError(f"invalid_scenario:{scenario}")
     people = normalize_people(data.get("people", fallback.people), fallback.people)
     time_window = normalize_time_window(data.get("time_window", fallback.time_window), fallback.time_window)
     preferences = normalize_preferences(data.get("preferences", fallback.preferences), fallback.preferences)
     constraints = normalize_constraints(data.get("constraints", fallback.constraints), fallback.constraints)
     return ParsedConstraints(
-        scenario=data.get("scenario", fallback.scenario),
+        scenario=scenario,
         origin=data.get("origin", fallback.origin),
         time_window=time_window,
         people=people,
@@ -270,6 +360,85 @@ def constraints_from_dict(data: dict) -> ParsedConstraints:
         constraints=constraints,
         required_actions=as_list(data.get("required_actions", fallback.required_actions)),
     )
+
+
+def normalize_constraints_for_goal(goal: str, constraints: ParsedConstraints) -> ParsedConstraints:
+    if not is_hiking_goal(goal):
+        return constraints
+
+    if not has_family_signal(goal) and not has_date_signal(goal) and constraints.scenario != "rainy_indoor":
+        constraints.scenario = "friends"
+        constraints.people["relationship"] = "friends"
+        constraints.people["children"] = []
+
+    party_size = parse_party_size(goal)
+    if party_size:
+        constraints.people["adults"] = party_size
+
+    activity_tags = as_list(constraints.preferences.get("activity", []))
+    constraints.preferences["activity"] = unique_list(["hiking", "outdoor", "nature", "walkable", "group_friendly", *activity_tags])
+    constraints.constraints["radius_km"] = max(float_or_default(constraints.constraints.get("radius_km"), 5), 10)
+
+    if not has_explicit_duration(goal) and float_or_default(constraints.time_window.get("duration_hours"), 4.5) >= 4.5:
+        constraints.time_window["duration_hours"] = 3
+
+    if not has_food_signal(goal):
+        constraints.required_actions = [
+            action for action in as_list(constraints.required_actions)
+            if action not in {"restaurant_reservation", "claim_coupon", "create_order"}
+        ]
+    return constraints
+
+
+def is_hiking_goal(goal: str) -> bool:
+    return bool(re.search(r"爬山|登山|徒步|山野|步道|hiking?|mountain|trail|trek", goal, re.I))
+
+
+def has_family_signal(goal: str) -> bool:
+    return bool(re.search(r"孩子|小孩|亲子|老婆孩子|family|child|kid", goal, re.I))
+
+
+def has_date_signal(goal: str) -> bool:
+    return bool(re.search(r"对象|约会|情侣|老婆(?!孩子)|date|couple", goal, re.I))
+
+
+def has_food_signal(goal: str) -> bool:
+    return bool(re.search(r"吃饭|用餐|聚餐|餐厅|晚饭|午饭|早饭|饭|dinner|lunch|restaurant|meal", goal, re.I))
+
+
+def has_explicit_duration(goal: str) -> bool:
+    return bool(re.search(r"\d+(?:\.\d+)?\s*(小时|钟头|h|hour)|半天|全天|一小时|两小时|三小时|四小时|五小时", goal, re.I))
+
+
+def parse_party_size(goal: str) -> int | None:
+    digit = re.search(r"(\d{1,2})\s*(?:个)?人", goal)
+    if digit:
+        return int(digit.group(1))
+    chinese_numbers = {
+        "一": 1,
+        "两": 2,
+        "二": 2,
+        "三": 3,
+        "四": 4,
+        "五": 5,
+        "六": 6,
+        "七": 7,
+        "八": 8,
+        "九": 9,
+        "十": 10,
+    }
+    chinese = re.search(r"([一两二三四五六七八九十])\s*(?:个)?人", goal)
+    if chinese:
+        return chinese_numbers[chinese.group(1)]
+    return None
+
+
+def unique_list(values: list) -> list:
+    result = []
+    for value in values:
+        if value not in result:
+            result.append(value)
+    return result
 
 
 def normalize_people(value: dict, fallback: dict) -> dict:
@@ -333,6 +502,53 @@ def float_or_default(value, default: float) -> float:
         return default
 
 
+def require_constraints(state: PlanState) -> ParsedConstraints:
+    if state.constraints is None:
+        raise ValueError("constraints_not_ready")
+    return state.constraints
+
+
+def emit_progress(graph_state: BuildGraphState, label: str, detail: str) -> None:
+    on_progress = graph_state.get("on_progress")
+    if on_progress:
+        on_progress(label, detail)
+
+
+def format_duration_hours(value) -> str:
+    hours = float_or_default(value, 4.5)
+    if hours.is_integer():
+        return f"{int(hours)} 小时"
+    return f"{hours:g} 小时"
+
+
+def duration_hours_of(constraints: ParsedConstraints) -> float:
+    return float_or_default(constraints.time_window.get("duration_hours"), 4.5)
+
+
+def required_actions_of(constraints: ParsedConstraints) -> set[str]:
+    return set(as_list(constraints.required_actions))
+
+
+def should_include_restaurant(constraints: ParsedConstraints) -> bool:
+    required = required_actions_of(constraints)
+    if required & {"restaurant_reservation", "claim_coupon", "create_order"}:
+        return True
+    if set(constraints.preferences.get("activity", [])) & {"hiking", "outdoor", "nature"}:
+        return False
+    return duration_hours_of(constraints) >= 2.25
+
+
+def should_include_walk(constraints: ParsedConstraints, restaurant: dict | None) -> bool:
+    return bool(restaurant) and duration_hours_of(constraints) >= 3.5
+
+
+def restaurant_time_from_steps(steps: list[ItineraryStep]) -> str:
+    for step in steps:
+        if step.type == "restaurant":
+            return step.start
+    return "15:45"
+
+
 def apply_constraint_overrides(constraints: ParsedConstraints, overrides: dict) -> ParsedConstraints:
     if "radius_km" in overrides:
         radius = float(overrides["radius_km"])
@@ -360,25 +576,119 @@ def rank_items(items: list[dict], constraints: ParsedConstraints) -> list[dict]:
     )
 
 
-def build_steps(activity: dict, restaurant: dict, walk: dict, constraints: ParsedConstraints) -> list[ItineraryStep]:
-    return [
-        ItineraryStep("13:30", "13:45", "transport", "从当前位置出发", "origin_home", "按当前位置估算出发时间。", "约 35 元", "打车 12 分钟", 90),
-        ItineraryStep("14:00", "15:30", "activity", activity["name"], activity["id"], activity["reason"], f"约 {activity['avg_price']} 元", "到达活动点", 92, risk_text(activity)),
-        ItineraryStep("15:45", "16:45", "restaurant", restaurant["name"], restaurant["id"], restaurant["reason"], f"约 {restaurant['avg_price']} 元", "从活动点步行 5 分钟", 91, risk_text(restaurant)),
-        ItineraryStep("17:00", "17:35", "dessert_walk", walk["name"], walk["id"], walk["reason"], f"约 {walk['avg_price']} 元", "轻松步行 1.2 公里", 88, risk_text(walk)),
+def build_steps(activity: dict, restaurant: dict | None, walk: dict | None, constraints: ParsedConstraints) -> list[ItineraryStep]:
+    start = parse_time_minutes(str(constraints.time_window.get("start", "14:00")))
+    duration_minutes = max(60, int(duration_hours_of(constraints) * 60))
+    cursor = start
+    steps = [
+        ItineraryStep(
+            format_time(cursor - 15),
+            format_time(cursor),
+            "transport",
+            "从当前位置出发",
+            "origin_home",
+            "按当前位置估算出发时间。",
+            "约 35 元",
+            "打车 12 分钟",
+            90,
+        )
     ]
+
+    reserved = 0
+    if restaurant:
+        reserved += 15 + 60
+    if walk:
+        reserved += 15 + 35
+    activity_minutes = min(int(activity.get("duration_minutes", 90)), max(45, duration_minutes - 15 - reserved))
+    activity_end = cursor + activity_minutes
+    steps.append(
+        ItineraryStep(
+            format_time(cursor),
+            format_time(activity_end),
+            "activity",
+            activity["name"],
+            activity["id"],
+            activity["reason"],
+            f"约 {activity['avg_price']} 元",
+            "到达活动点",
+            score_step(activity, constraints),
+            risk_text(activity),
+        )
+    )
+    cursor = activity_end
+
+    if restaurant:
+        cursor += 15
+        restaurant_end = cursor + 60
+        steps.append(
+            ItineraryStep(
+                format_time(cursor),
+                format_time(restaurant_end),
+                "restaurant",
+                restaurant["name"],
+                restaurant["id"],
+                restaurant["reason"],
+                f"约 {restaurant['avg_price']} 元",
+                "从活动点顺路前往",
+                score_step(restaurant, constraints),
+                risk_text(restaurant),
+            )
+        )
+        cursor = restaurant_end
+
+    if walk:
+        cursor += 15
+        walk_end = cursor + 35
+        steps.append(
+            ItineraryStep(
+                format_time(cursor),
+                format_time(walk_end),
+                "dessert_walk",
+                walk["name"],
+                walk["id"],
+                walk["reason"],
+                f"约 {walk['avg_price']} 元",
+                "饭后轻松步行",
+                score_step(walk, constraints),
+                risk_text(walk),
+            )
+        )
+    return steps
+
+
+def parse_time_minutes(value: str) -> int:
+    match = re.match(r"^(\d{1,2}):(\d{2})$", value)
+    if not match:
+        return 14 * 60
+    hours = max(0, min(23, int(match.group(1))))
+    minutes = max(0, min(59, int(match.group(2))))
+    return hours * 60 + minutes
+
+
+def format_time(total_minutes: int) -> str:
+    total_minutes = total_minutes % (24 * 60)
+    return f"{total_minutes // 60:02d}:{total_minutes % 60:02d}"
+
+
+def score_step(item: dict, constraints: ParsedConstraints) -> int:
+    tags = set(item.get("tags", []))
+    preferred = set(constraints.preferences.get("activity", [])) | set(constraints.preferences.get("diet", []))
+    score = 76 + int(float(item.get("rating", 4.0)) * 3)
+    score += min(6, 2 * len(tags & preferred))
+    score -= min(6, int(item.get("wait_minutes", 0)) // 8)
+    return max(70, min(98, score))
 
 
 def risk_text(poi: dict) -> str:
     return "周末可能排队，建议提前确认。" if poi.get("risk_tags") else "风险低。"
 
 
-def build_variants(steps: list[ItineraryStep], budget: int, constraints: ParsedConstraints) -> list[PlanVariant]:
+def build_variants(steps: list[ItineraryStep], budget: int, constraints: ParsedConstraints, base_score: int) -> list[PlanVariant]:
     return [
-        PlanVariant("main", "主方案", "综合距离、可订性和偏好匹配。", 91, budget, [copy_step(step) for step in steps]),
-        PlanVariant("budget", "省钱版", "优先使用团购券和低客单价餐厅。", 86, max(300, budget - 120), [copy_step(step) for step in steps]),
-        PlanVariant("comfort", "舒适版", "减少步行和等待，优先高评分点位。", 89, budget + 160, [copy_step(step) for step in steps]),
-        PlanVariant("child_first", "孩子优先版" if constraints.scenario == "family" else "体验优先版", "优先照顾活动体验和节奏。", 88, budget + 60, [copy_step(step) for step in steps]),
+        PlanVariant("main", "主方案", "综合距离、可订性和偏好匹配。", base_score, budget, [copy_step(step) for step in steps]),
+        PlanVariant("budget", "省钱版", "优先使用团购券和低客单价餐厅。", max(60, base_score - 5), max(300, budget - 120), [copy_step(step) for step in steps]),
+        PlanVariant("comfort", "舒适版", "减少步行和等待，优先高评分点位。", min(98, base_score + 2), budget + 160, [copy_step(step) for step in steps]),
+        PlanVariant("child_first", "孩子优先版" if constraints.scenario == "family" else "体验优先版", "优先照顾活动体验和节奏。", max(60, min(98, base_score - 1)), budget + 60, [copy_step(step) for step in steps]),
     ]
 
 
@@ -386,17 +696,27 @@ def copy_step(step: ItineraryStep) -> ItineraryStep:
     return ItineraryStep(step.start, step.end, step.type, step.title, step.place_id, step.reason, step.cost, step.travel, step.score, step.risk)
 
 
-def build_pending_actions(activity: dict, restaurant: dict, walk: dict, constraints: ParsedConstraints) -> list[PlanAction]:
+def build_pending_actions(activity: dict, restaurant: dict | None, walk: dict | None, constraints: ParsedConstraints) -> list[PlanAction]:
     people = party_size_of(constraints)
     recipient = "家庭群聊" if constraints.scenario == "family" else "朋友群聊" if constraints.scenario == "friends" else "同行人"
-    return [
+    actions = [
         PlanAction("activity_reservation", "预约活动", activity["name"], f"{people} 人名额，14:00 到 15:30。", True, "reserve_activity", {"place_id": activity["id"], "people": people}),
-        PlanAction("restaurant_reservation", "预订餐厅", restaurant["name"], f"15:45，{people} 人桌。", True, "create_reservation", {"place_id": restaurant["id"], "people": people}),
-        PlanAction("coupon", "领取团购券", restaurant["name"], "领取可核销套餐券，展示价格和规则。", True, "claim_coupon", {"place_id": restaurant["id"]}),
-        PlanAction("order", "创建点单", restaurant["name"], "预创建低脂/低糖友好点单。", True, "create_order", {"shop_id": restaurant["id"]}),
-        PlanAction("message", "发送计划", recipient, "发送时间轴、路线和预算摘要。", True, "send_plan_message", {"recipient": recipient}),
-        PlanAction("calendar", "创建日历", "本地日历", "创建半日行程提醒。", True, "create_calendar_event", {"participants": people}),
     ]
+    if restaurant:
+        actions.extend(
+            [
+                PlanAction("restaurant_reservation", "预订餐厅", restaurant["name"], f"{people} 人桌。", True, "create_reservation", {"place_id": restaurant["id"], "people": people}),
+                PlanAction("coupon", "领取团购券", restaurant["name"], "领取可核销套餐券，展示价格和规则。", True, "claim_coupon", {"place_id": restaurant["id"]}),
+                PlanAction("order", "创建点单", restaurant["name"], "预创建低脂/低糖友好点单。", True, "create_order", {"shop_id": restaurant["id"]}),
+            ]
+        )
+    actions.extend(
+        [
+            PlanAction("message", "发送计划", recipient, "发送时间轴、路线和预算摘要。", True, "send_plan_message", {"recipient": recipient}),
+            PlanAction("calendar", "创建日历", "本地日历", "创建行程提醒。", True, "create_calendar_event", {"participants": people}),
+        ]
+    )
+    return actions
 
 
 def party_size_of(constraints: ParsedConstraints) -> int:

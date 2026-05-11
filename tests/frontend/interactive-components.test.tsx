@@ -13,6 +13,7 @@ const { HomeView } = await import('../../components/HomeView');
 const { PlanCard } = await import('../../components/saved/PlanCard');
 const { PlanDetailPanel } = await import('../../components/saved/PlanDetailPanel');
 const { PlanEditModal } = await import('../../components/saved/PlanEditModal');
+const { SavedPlansView } = await import('../../components/saved/SavedPlansView');
 const { DietSection } = await import('../../components/settings/DietSection');
 const { LocationSection } = await import('../../components/settings/LocationSection');
 
@@ -89,6 +90,37 @@ test('saved plan card, edit modal, details close, and delete callbacks are inter
 
   await click(byTestId(container, 'plan-delete-plan_001'));
   await waitFor(() => assert.equal(deletes, 1));
+});
+
+test('saved plans view executes the selected backend plan', async () => {
+  const calls: Array<{ url: string; method: string }> = [];
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    const method = init?.method ?? 'GET';
+    calls.push({ url, method });
+    if (url.endsWith('/api/plans') && method === 'GET') {
+      return jsonResponse({
+        plans: [makePlanSummary()],
+        total: 1,
+      });
+    }
+    if (url.endsWith('/confirm')) {
+      return jsonResponse({ plan: { id: 'plan_001', status: 'confirmed' } });
+    }
+    if (url.endsWith('/execute')) {
+      return jsonResponse({ plan: { ...makePlanSummary(), status: 'completed' }, receipts: [] });
+    }
+    return jsonResponse({});
+  }) as typeof fetch;
+
+  const { container } = render(<SavedPlansView />);
+
+  await waitFor(() => byTestId(container, 'plan-execute-plan_001'));
+  await click(byTestId(container, 'plan-execute-plan_001'));
+  await waitFor(() => {
+    assert.ok(calls.some((call) => call.url.endsWith('/api/plans/plan_001/confirm') && call.method === 'POST'));
+    assert.ok(calls.some((call) => call.url.endsWith('/api/plans/plan_001/execute') && call.method === 'POST'));
+  });
 });
 
 test('settings preference toggles and radius slider update visible state', async () => {
@@ -177,6 +209,15 @@ async function changeInput(input: HTMLInputElement, value: string) {
 function setNativeValue(input: HTMLInputElement, value: string) {
   const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(input), 'value')?.set;
   setter?.call(input, value);
+}
+
+function jsonResponse(body: unknown): Response {
+  return {
+    ok: true,
+    status: 200,
+    statusText: 'OK',
+    json: async () => body,
+  } as Response;
 }
 
 async function waitFor(assertion: () => void, timeoutMs = 2500) {

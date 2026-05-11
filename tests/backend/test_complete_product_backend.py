@@ -116,6 +116,34 @@ class CompleteBackendTest(unittest.TestCase):
         side_effect_tools = {schema["name"] for schema in schemas if schema["side_effect"]}
         self.assertEqual(side_effect_tools, {"reserve_activity", "create_reservation", "claim_coupon", "create_order", "send_plan_message", "create_calendar_event"})
 
+    def test_itinerary_score_changes_with_candidate_quality(self):
+        registry = LocalToolRegistry(LocalDataCatalog())
+        constraints = self.service.pipeline.parse_constraints("friends afternoon, four adults")[0]
+        high_quality = {
+            "id": "high",
+            "name": "High quality spot",
+            "avg_price": 100,
+            "rating": 4.9,
+            "distance_km": 1.0,
+            "wait_minutes": 3,
+            "tags": ["social", "photo", "booking_supported"],
+        }
+        low_quality = {
+            "id": "low",
+            "name": "Low quality spot",
+            "avg_price": 100,
+            "rating": 3.8,
+            "distance_km": 8.0,
+            "wait_minutes": 45,
+            "tags": [],
+        }
+
+        high_score = registry.build_itinerary(constraints, high_quality, high_quality, high_quality).output["score"]
+        low_score = registry.build_itinerary(constraints, low_quality, low_quality, low_quality).output["score"]
+
+        self.assertGreater(high_score, low_score)
+        self.assertNotEqual(high_score, 91)
+
 
 class CompleteApiTest(unittest.TestCase):
     def setUp(self):

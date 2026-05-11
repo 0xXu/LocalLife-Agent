@@ -8,6 +8,7 @@ import {
   executePlan,
   getHealth,
   getPlan,
+  listPlans,
   getToolSchemas,
   getTraces,
   patchConstraints,
@@ -38,6 +39,7 @@ test('planner API client serializes request bodies and methods', async () => {
   const calls = installFetch({ plan: { id: 'plan_client_001' } });
 
   await buildPlan('家庭半日计划');
+  await listPlans();
   await getPlan('plan_client_001');
   await patchConstraints('plan_client_001', { constraints: { radius_km: 4 } });
   await buildAlternatives('plan_client_001');
@@ -50,6 +52,7 @@ test('planner API client serializes request bodies and methods', async () => {
 
   assert.deepEqual(calls.map((call) => [call.url, call.init?.method ?? 'GET']), [
     ['http://127.0.0.1:8787/api/plans/build', 'POST'],
+    ['http://127.0.0.1:8787/api/plans', 'GET'],
     ['http://127.0.0.1:8787/api/plans/plan_client_001', 'GET'],
     ['http://127.0.0.1:8787/api/plans/plan_client_001/constraints', 'PATCH'],
     ['http://127.0.0.1:8787/api/plans/plan_client_001/alternatives', 'POST'],
@@ -62,10 +65,10 @@ test('planner API client serializes request bodies and methods', async () => {
   ]);
 
   assert.equal(calls[0].init?.body, JSON.stringify({ goal: '家庭半日计划' }));
-  assert.equal(calls[2].init?.body, JSON.stringify({ constraints: { radius_km: 4 } }));
-  assert.equal(calls[4].init?.body, JSON.stringify({ confirmed: true }));
+  assert.equal(calls[3].init?.body, JSON.stringify({ constraints: { radius_km: 4 } }));
   assert.equal(calls[5].init?.body, JSON.stringify({ confirmed: true }));
-  assert.equal(calls[6].init?.body, JSON.stringify({ reason: 'restaurant_unavailable' }));
+  assert.equal(calls[6].init?.body, JSON.stringify({ confirmed: true }));
+  assert.equal(calls[7].init?.body, JSON.stringify({ reason: 'restaurant_unavailable' }));
   assert.equal((calls[0].init?.headers as Record<string, string>)['content-type'], 'application/json');
 });
 

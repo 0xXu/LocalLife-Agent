@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import UTC, datetime
 
 from backend.data.catalog import LocalDataCatalog
 from backend.llm import LLMConfig
@@ -30,6 +31,10 @@ class PlanningService:
         response = state_response(state)
         response["checkpoint"] = self._checkpoints[plan_id]
         return response
+
+    def list_plans(self) -> dict:
+        plans = [self._summary(state) for state in reversed(list(self._plans.values()))]
+        return {"plans": plans, "total": len(plans)}
 
     def patch_constraints(self, plan_id: str, updates: dict) -> dict:
         state = self._require_plan(plan_id)
@@ -84,3 +89,25 @@ class PlanningService:
         if plan_id not in self._plans:
             raise KeyError("plan_not_found")
         return self._plans[plan_id]
+
+    def _summary(self, state: PlanState) -> dict:
+        plan = state.plan_dict()
+        now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+        status = "completed" if state.status == "completed" else "executing" if state.status == "executing" else "saved"
+        constraints = state.constraints
+        tags = []
+        if constraints:
+            tags.append({"family": "家庭", "friends": "朋友", "date": "约会", "rainy_indoor": "雨天"}.get(constraints.scenario, "本地"))
+            tags.extend(str(tag) for tag in constraints.preferences.get("activity", [])[:2])
+        return {
+            "id": state.plan_id,
+            "title": plan["title"],
+            "status": status,
+            "summary": plan["summary"],
+            "created_at": now,
+            "updated_at": now,
+            "tags": tags or ["本地生活"],
+            "location": f"{constraints.constraints.get('radius_km', 5):g} 公里内" if constraints else "本地",
+            "estimated_cost": plan.get("overview", {}).get("estimatedCost"),
+            "itinerary_count": len(state.itinerary),
+        }

@@ -275,8 +275,8 @@ class PlanState:
         return {
             "id": self.plan_id,
             "status": self.status,
-            "title": plan_title(self.constraints),
-            "summary": plan_summary(self.constraints),
+            "title": plan_title(self.constraints, self.itinerary),
+            "summary": plan_summary(self.constraints, self.itinerary),
             "constraints": to_dict(self.constraints),
             "itinerary": [step_dict(step) for step in self.itinerary],
             "overview": frontend_overview(self.overview),
@@ -285,8 +285,26 @@ class PlanState:
         }
 
 
-def plan_title(constraints: ParsedConstraints | None) -> str:
+def plan_title(constraints: ParsedConstraints | None, itinerary: list[ItineraryStep] | None = None) -> str:
     scenario = constraints.scenario if constraints else "family"
+    step_types = {step.type for step in itinerary or []}
+    activity_text = " ".join(step.title for step in itinerary or [] if step.type == "activity")
+    if any(keyword in activity_text for keyword in ["山", "徒步", "登山", "步道"]):
+        return "户外徒步短计划" if "restaurant" not in step_types else "户外徒步 + 顺路补给计划"
+    if itinerary and "restaurant" not in step_types:
+        return {
+            "family": "亲子轻活动短计划",
+            "friends": "朋友轻活动短计划",
+            "date": "安静体验短计划",
+            "rainy_indoor": "雨天室内短计划",
+        }.get(scenario, "本地生活短计划")
+    if itinerary and "dessert_walk" not in step_types:
+        return {
+            "family": "亲子活动 + 顺路用餐计划",
+            "friends": "朋友活动 + 顺路聚餐计划",
+            "date": "安静体验 + 顺路用餐计划",
+            "rainy_indoor": "雨天室内活动 + 顺路用餐计划",
+        }.get(scenario, "本地生活顺路计划")
     return {
         "family": "亲子科学馆 + 健康轻食半日计划",
         "friends": "朋友轻松活动 + 健康聚餐半日计划",
@@ -295,8 +313,26 @@ def plan_title(constraints: ParsedConstraints | None) -> str:
     }.get(scenario, "本地生活半日执行计划")
 
 
-def plan_summary(constraints: ParsedConstraints | None) -> str:
+def plan_summary(constraints: ParsedConstraints | None, itinerary: list[ItineraryStep] | None = None) -> str:
     scenario = constraints.scenario if constraints else "family"
+    step_types = {step.type for step in itinerary or []}
+    activity_text = " ".join(step.title for step in itinerary or [] if step.type == "activity")
+    if any(keyword in activity_text for keyword in ["山", "徒步", "登山", "步道"]):
+        return "围绕户外徒步安排核心路线，去掉不必要的餐厅和甜品绕路。" if "restaurant" not in step_types else "户外徒步后只保留顺路补给，控制绕行和等待。"
+    if itinerary and "restaurant" not in step_types:
+        return {
+            "family": "只保留亲子活动和必要交通，适合短时间轻量出门。",
+            "friends": "只保留核心活动和必要交通，减少额外排队与绕路。",
+            "date": "只保留安静体验和必要交通，适合一小时左右的轻计划。",
+            "rainy_indoor": "只保留室内活动和必要交通，规避天气风险。",
+        }.get(scenario, "按当前时长只保留核心体验。")
+    if itinerary and "dessert_walk" not in step_types:
+        return {
+            "family": "活动后顺路用餐，不额外安排饭后散步。",
+            "friends": "活动和聚餐连在一起，控制总时长和路线绕行。",
+            "date": "安静体验后顺路用餐，减少等待和奔波。",
+            "rainy_indoor": "室内活动后顺路用餐，保持路线稳定。",
+        }.get(scenario, "围绕核心活动和用餐生成顺路计划。")
     return {
         "family": "亲子活动、健康轻食、饭后散步和确认后执行回执。",
         "friends": "室内活动、可拍照聊天餐厅、团购券和朋友群分享。",

@@ -53,6 +53,9 @@ class LocalToolRegistry:
         for slot in poi.get("availability", []):
             if slot.get("time") == time and int(slot.get("capacity", 0)) >= party_size:
                 return ToolResult("check_availability", {"available": bool(slot.get("available")), "slot": time, "party_size": party_size, "source": "mock_availability"})
+        for slot in poi.get("availability", []):
+            if bool(slot.get("available")) and int(slot.get("capacity", 0)) >= party_size:
+                return ToolResult("check_availability", {"available": True, "slot": slot.get("time"), "requested_slot": time, "party_size": party_size, "source": "mock_availability_nearest"})
         return ToolResult("check_availability", {"available": False, "slot": time, "party_size": party_size, "source": "mock_availability"})
 
     def optimize_route(self, waypoints: list[dict]) -> ToolResult:
@@ -69,14 +72,16 @@ class LocalToolRegistry:
             legs.append({"from_id": left["id"], "to_id": right["id"], **leg})
         return ToolResult("optimize_route", {"legs": legs, "total_travel_minutes": total_minutes, "walking_distance": f"{walking_km:.1f} 公里", "drive_time": f"约 {max(total_minutes, 12)} 分钟"})
 
-    def build_itinerary(self, constraints: ParsedConstraints, activity: dict, restaurant: dict, walk: dict) -> ToolResult:
-        budget = activity["avg_price"] + restaurant["avg_price"] + walk["avg_price"]
+    def build_itinerary(self, constraints: ParsedConstraints, activity: dict, restaurant: dict | None = None, walk: dict | None = None) -> ToolResult:
+        items = [item for item in [activity, restaurant, walk] if item]
+        budget = sum(int(item["avg_price"]) for item in items)
+        score = calculate_itinerary_score(items, constraints, budget)
         return ToolResult(
             "build_itinerary",
             {
-                "summary": f"{activity['name']} + {restaurant['name']} + {walk['name']}",
+                "summary": " + ".join(item["name"] for item in items),
                 "estimated_budget": budget,
-                "score": 91,
+                "score": score,
             },
         )
 
@@ -113,3 +118,31 @@ class LocalToolRegistry:
             },
             side_effect=True,
         )
+
+
+def calculate_itinerary_score(items: list[dict], constraints: ParsedConstraints, budget: int) -> int:
+    if not items:
+        return 60
+    avg_rating = sum(float(item.get("rating", 4.0)) for item in items) / len(items)
+    avg_distance = sum(float(item.get("distance_km", 5.0)) for item in items) / len(items)
+    avg_wait = sum(int(item.get("wait_minutes", 15)) for item in items) / len(items)
+    radius = max(float(constraints.constraints.get("radius_km", 5)), 1.0)
+    max_wait = max(int(constraints.constraints.get("max_wait_minutes", 15)), 1)
+    preferred_tags = set(constraints.preferences.get("activity", [])) | set(constraints.preferences.get("diet", []))
+    matched_tags = sum(len(preferred_tags & set(item.get("tags", []))) for item in items)
+
+    rating_score = (avg_rating / 5) * 40
+    distance_score = max(0.0, 1 - avg_distance / radius) * 18
+    wait_score = max(0.0, 1 - avg_wait / max_wait) * 14
+    preference_score = min(14, matched_tags * 3)
+    budget_score = budget_fit_score(str(constraints.preferences.get("budget_level", "medium")), budget)
+    score = round(30 + rating_score + distance_score + wait_score + preference_score + budget_score)
+    return max(60, min(98, score))
+
+
+def budget_fit_score(level: str, budget: int) -> int:
+    if level == "low":
+        return 8 if budget <= 500 else 3 if budget <= 800 else 0
+    if level == "high":
+        return 8 if budget <= 1600 else 4
+    return 8 if budget <= 1000 else 3 if budget <= 1400 else 0

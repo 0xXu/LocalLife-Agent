@@ -71,6 +71,10 @@ def create_app(service: PlanningService | None = None) -> FastAPI:
         plan = service.get_plan(plan_id)
         return {"planId": plan_id, "trace": service.get_trace(plan_id), "tool_calls": plan.get("tool_calls", [])}
 
+    @api.get("/api/plans")
+    async def list_plans(request: Request) -> dict[str, Any]:
+        return planning_service(request).list_plans()
+
     @api.get("/api/plans/{plan_id}")
     async def get_plan(plan_id: str, request: Request) -> dict[str, Any]:
         return planning_service(request).get_plan(plan_id)

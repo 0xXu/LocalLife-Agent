@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.136.1",
+    "langgraph>=1.1.10",
     "uvicorn[standard]>=0.46.0",
 ]
 
@@ -14,6 +15,9 @@ package = false
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+filterwarnings = [
+    "ignore:The default value of `allowed_objects` will change in a future version:langchain_core._api.deprecation.LangChainPendingDeprecationWarning",
+]
 
 [dependency-groups]
 dev = [

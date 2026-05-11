@@ -23,6 +23,7 @@ type Action =
   | { type: 'START_RECOVER' }
   | { type: 'RECOVER_LOADED'; result: PlanResponse }
   | { type: 'RECOVER_FAILED'; error: string }
+  | { type: 'ALTERNATIVES_LOADED'; result: PlanResponse }
   | { type: 'ALTERNATIVES_FAILED'; error: string }
   | { type: 'TOGGLE_ACTION'; key: string }
   | { type: 'SELECT_ALL_ACTIONS' }
@@ -102,6 +103,9 @@ function reducer(state: PlanState, action: Action): PlanState {
       };
     case 'RECOVER_FAILED':
       return { ...state, phase: 'results', error: action.error };
+    case 'ALTERNATIVES_LOADED':
+      if (!state.result) return state;
+      return { ...state, phase: 'results', result: mergePlanAlternatives(state.result, action.result), error: null };
     case 'ALTERNATIVES_FAILED':
       return { ...state, phase: 'results', error: action.error };
     case 'TOGGLE_ACTION': {
@@ -190,7 +194,7 @@ export function usePlanMachine() {
     if (!state.planId) return;
     try {
       const result = await buildAlternatives(state.planId);
-      dispatch({ type: 'PLAN_LOADED', result });
+      dispatch({ type: 'ALTERNATIVES_LOADED', result });
     } catch (err) {
       dispatch({ type: 'ALTERNATIVES_FAILED', error: err instanceof Error ? err.message : '备选方案加载失败' });
     }
@@ -229,5 +233,30 @@ export function usePlanMachine() {
     reset,
     setPhase,
     getActionKey,
+  };
+}
+
+export function mergePlanAlternatives(current: PlanResponse, alternativesResponse: PlanResponse): PlanResponse {
+  const incoming = ((alternativesResponse as any).variants ?? (alternativesResponse as any).alternatives ?? []) as any[];
+  const existing = (current.variants?.length ? current.variants : [current.plan]) as any[];
+  const seen = new Set<string>();
+  const variants = [...existing, ...incoming].filter((variant: any, index) => {
+    const key = String(variant.kind ?? variant.id ?? variant.title ?? index);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  return {
+    ...current,
+    ...alternativesResponse,
+    plan: current.plan,
+    constraints: current.constraints,
+    itinerary: current.itinerary,
+    pending_actions: current.pending_actions,
+    progress: current.progress,
+    trace: current.trace,
+    tool_calls: current.tool_calls,
+    variants,
   };
 }

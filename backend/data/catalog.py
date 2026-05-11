@@ -69,6 +69,8 @@ def build_pois() -> list[dict]:
         ("family_activity", "儿童手作乐园", ["family", "rainy_indoor"], ["child_friendly", "indoor", "craft"], "有亲子手作课，雨天也稳定。"),
         ("social_activity", "城市桌游咖啡馆", ["friends", "rainy_indoor"], ["social", "indoor", "group_friendly"], "适合朋友聊天和轻量桌游。"),
         ("social_activity", "复古拍照街区", ["friends", "date"], ["photo", "walkable", "social"], "拍照点密集，适合朋友或情侣。"),
+        ("social_activity", "山野徒步步道", ["friends", "date"], ["hiking", "outdoor", "nature", "walkable", "group_friendly"], "适合三五好友轻徒步，沿途有观景点和补给点。"),
+        ("social_activity", "近郊登山路线", ["friends", "family"], ["hiking", "mountain", "outdoor", "nature", "not_too_tiring"], "坡度适中，适合半天内完成的近郊登山。"),
         ("date_activity", "安静艺术展", ["date", "rainy_indoor"], ["quiet", "indoor", "romantic"], "安静、有氛围，排队风险低。"),
         ("indoor_activity", "商场室内体验馆", ["rainy_indoor", "family", "friends"], ["indoor", "rain_safe", "nearby"], "雨天可替代户外节点。"),
         ("restaurant", "绿荫轻食餐厅", ["family", "friends", "date", "rainy_indoor"], ["low_fat", "healthy", "booking_supported", "child_seat"], "低脂菜单和儿童座椅都可用。"),

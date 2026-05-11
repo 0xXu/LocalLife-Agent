@@ -23,7 +23,7 @@ export interface SavedPlansViewProps {
 }
 
 export function SavedPlansView({ onNavigateHome }: SavedPlansViewProps) {
-  const { plans, loading, error, refetch, update, remove } = usePlans();
+  const { plans, loading, error, refetch, update, remove, execute } = usePlans();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingPlan, setEditingPlan] = useState<PlanSummary | null>(null);
@@ -36,6 +36,11 @@ export function SavedPlansView({ onNavigateHome }: SavedPlansViewProps) {
   });
 
   const selected = plans.find((p) => p.id === selectedId) ?? null;
+
+  const handleExecute = async (plan: PlanSummary) => {
+    setSelectedId(plan.id);
+    await execute(plan.id);
+  };
 
   if (loading) {
     return (
@@ -75,7 +80,7 @@ export function SavedPlansView({ onNavigateHome }: SavedPlansViewProps) {
             {filtered.map((plan, i) => (
               <PlanCard key={plan.id} plan={plan} index={i} selected={plan.id === selectedId}
                 onSelect={() => setSelectedId(plan.id)} onEdit={() => setEditingPlan(plan)}
-                onExecute={() => onNavigateHome?.()} onDelete={() => remove(plan.id)} />
+                onExecute={() => { void handleExecute(plan); }} onDelete={() => remove(plan.id)} />
             ))}
           </div>
           {selected && <PlanDetailPanel plan={selected} onClose={() => setSelectedId(null)} />}

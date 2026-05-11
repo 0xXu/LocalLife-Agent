@@ -104,6 +104,23 @@ class BackendApiTest(unittest.TestCase):
         self.assertGreaterEqual(len(traces["trace"]), 1)
         self.assertIn("tool_calls", traces)
 
+    def test_plan_list_endpoint_returns_executable_real_backend_plans(self):
+        status, built = self.request(
+            "POST",
+            "/api/plans/build",
+            {"goal": "今天下午朋友4个人出去玩，先活动再吃饭"},
+        )
+        self.assertEqual(status, 200)
+        plan_id = built["plan"]["id"]
+
+        status, listed = self.request("GET", "/api/plans")
+
+        self.assertEqual(status, 200)
+        self.assertEqual(listed["total"], 1)
+        self.assertEqual(listed["plans"][0]["id"], plan_id)
+        self.assertEqual(listed["plans"][0]["status"], "saved")
+        self.assertIn("title", listed["plans"][0])
+
     def test_invalid_json_returns_400_response(self):
         status, data = self.raw_request("POST", "/api/plans/build", "{bad json")
 

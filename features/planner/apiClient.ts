@@ -1,4 +1,5 @@
 import type { PlanResponse } from '../../types/weekendpilot';
+import type { PlanListResponse } from '../../types/api';
 import { apiRequest, resolveApiUrl } from '../../lib/api/client';
 
 export const scenarioPrompts = {
@@ -72,6 +73,10 @@ export async function buildPlanStream(
 
 export async function getPlan(planId: string) {
   return apiRequest<PlanResponse>(`/api/plans/${planId}`);
+}
+
+export async function listPlans() {
+  return apiRequest<PlanListResponse>('/api/plans');
 }
 
 export async function patchConstraints(planId: string, body: Record<string, unknown>) {
