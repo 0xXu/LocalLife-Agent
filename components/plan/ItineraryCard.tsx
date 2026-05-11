@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
-import { Car, DollarSign, Footprints, MapPin, Utensils, FlaskConical, TreePine, Timer } from 'lucide-react';
+import React, { useState } from 'react';
+import { Car, DollarSign, Footprints, MapPin, Utensils, FlaskConical, TreePine, Timer, RefreshCw, Loader2 } from 'lucide-react';
+import { NODE_TYPE_LABELS } from '../../lib/constants/nodeTypes';
 
 type ItineraryCardProps = {
   step: {
@@ -9,6 +10,7 @@ type ItineraryCardProps = {
     end?: string;
     type?: string;
     title: string;
+    place_id?: string;
     reason?: string;
     cost?: string;
     travel?: string;
@@ -18,19 +20,27 @@ type ItineraryCardProps = {
   };
   index: number;
   isLast: boolean;
+  onReplace?: () => void;
 };
 
 const typeIcons: Record<string, React.ComponentType<any>> = {
   transport: Car, activity: FlaskConical, restaurant: Utensils, dessert_walk: TreePine,
 };
 
-const typeLabels: Record<string, string> = {
-  transport: '交通', activity: '活动', restaurant: '餐厅', dessert_walk: '散步',
-};
-
-export function ItineraryCard({ step, index, isLast }: ItineraryCardProps) {
+export function ItineraryCard({ step, index, isLast, onReplace }: ItineraryCardProps) {
+  const [isReplacing, setIsReplacing] = useState(false);
   const Icon = (step.type ? typeIcons[step.type] : undefined) ?? MapPin;
-  const typeLabel = (step.type ? typeLabels[step.type] : undefined) ?? step.type ?? '';
+  const typeLabel = (step.type ? NODE_TYPE_LABELS[step.type] : undefined) ?? step.type ?? '';
+
+  const handleReplace = async () => {
+    if (!onReplace) return;
+    setIsReplacing(true);
+    try {
+      await onReplace();
+    } finally {
+      setIsReplacing(false);
+    }
+  };
 
   return (
     <div className="itinerary-card" style={{ animationDelay: `${index * 120}ms` }}>
@@ -44,12 +54,25 @@ export function ItineraryCard({ step, index, isLast }: ItineraryCardProps) {
             <span className="itinerary-type">{typeLabel}</span>
             <h3>{step.title}</h3>
           </div>
-          {(step.start || step.end) && (
-            <div className="itinerary-time">
-              {step.start && <span>{step.start}</span>}
-              {step.end && step.start && <span> - {step.end}</span>}
-            </div>
-          )}
+          <div className="itinerary-card-actions">
+            {(step.start || step.end) && (
+              <div className="itinerary-time">
+                {step.start && <span>{step.start}</span>}
+                {step.end && step.start && <span> - {step.end}</span>}
+              </div>
+            )}
+            {onReplace && step.type !== 'transport' && (
+              <button
+                className="itinerary-replace-btn"
+                onClick={handleReplace}
+                disabled={isReplacing}
+                title="换一个"
+              >
+                {isReplacing ? <Loader2 size={14} className="spin" /> : <RefreshCw size={14} />}
+                <span>换一个</span>
+              </button>
+            )}
+          </div>
         </div>
         {step.reason && <p className="itinerary-reason">{step.reason}</p>}
         <div className="itinerary-meta">
