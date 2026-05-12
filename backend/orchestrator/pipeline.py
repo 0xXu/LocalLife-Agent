@@ -26,6 +26,7 @@ from backend.models.schemas import (
     RecoveryDiff,
     TraceStep,
 )
+from backend.planning.candidates import build_itinerary_variants
 from backend.providers.local import confidence_for_tags, ground_place
 from backend.retrieval.ranker import rank_candidates
 from backend.tools import LocalToolRegistry
@@ -191,7 +192,14 @@ class PlanningPipeline:
             f"约 {build_result.output['estimated_budget']} 元",
             build_result.output["score"],
         )
-        state.variants = build_variants(state.itinerary, build_result.output["estimated_budget"], constraints, build_result.output["score"])
+        state.variants = build_itinerary_variants(
+            state.itinerary,
+            state.ranked.get("activities", []),
+            state.ranked.get("restaurants", []),
+            state.ranked.get("walks", []),
+            constraints,
+            build_result.output["score"],
+        )
         state.status = "itinerary_built"
         state.add_trace(TraceStep("RouteSchedulerAgent", "optimize_route", "ok", "按用户时长生成可执行时间轴和顺路路线。", {}, route, 220))
         emit_progress(graph_state, "生成时间轴和路线", "按用户时长生成可执行时间轴和顺路路线。")

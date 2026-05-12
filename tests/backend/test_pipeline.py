@@ -172,6 +172,16 @@ class PlanningPipelineTest(unittest.TestCase):
         message_action = next(action for action in result["pending_actions"] if action["type"] == "message")
         self.assertEqual(message_action["target"], "朋友群聊")
 
+    def test_variants_use_different_place_combinations_not_copies(self):
+        result = self.service.build_plan("今天下午朋友4个人出去玩，先活动再吃饭，预算适中")
+
+        variant_place_sets = {
+            tuple(step["place_id"] for step in variant["itinerary"] if step.get("place_id") and step["place_id"] != "origin_home")
+            for variant in result["plan"]["variants"]
+        }
+
+        self.assertGreaterEqual(len(variant_place_sets), 2)
+
     def test_multiple_builds_keep_independent_plan_state(self):
         family = self.service.build_plan("今天下午想和老婆孩子出去玩几个小时，孩子5岁，老婆减脂，别太远")
         friends = self.service.build_plan("今天下午朋友4个人出去玩，2男2女，别太远")
