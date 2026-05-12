@@ -30,6 +30,7 @@ from backend.planning.candidates import build_itinerary_variants
 from backend.providers.local import confidence_for_tags, ground_place
 from backend.retrieval.ranker import rank_candidates
 from backend.tools import LocalToolRegistry
+from backend.validation.rules import validate_itinerary
 
 
 class LLMIntentParsingError(RuntimeError):
@@ -218,6 +219,11 @@ class PlanningPipeline:
             state.add_tool_result(availability_result, {"place_id": restaurant["id"], "party_size": party_size})
             available = bool(availability_result.output["available"])
         validation = self.tools.validate_plan(available, route["total_travel_minutes"], build_result["estimated_budget"]).output
+        lookup = {item["id"]: item for group in state.ranked.values() for item in group}
+        detailed_report = validate_itinerary(state.itinerary, constraints, lookup, state.context.get("weather", {}), route)
+        state.validation_issues = detailed_report.issues
+        validation["valid"] = validation["valid"] and detailed_report.valid
+        validation["issues"] = unique_list([*validation.get("issues", []), *[issue["code"] for issue in detailed_report.issues]])
         state.status = "pending_confirmation" if validation["valid"] else "recovering"
         state.add_trace(TraceStep("PlanValidatorAgent", "validate_plan", "ok" if validation["valid"] else "warning", "校验营业时间、路线、预算和可订性。", {}, validation, 170))
         emit_progress(graph_state, "校验可订性和约束", "校验营业时间、路线、预算和可订性。")

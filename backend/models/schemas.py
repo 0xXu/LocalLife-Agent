@@ -246,6 +246,7 @@ class PlanState:
     diff: RecoveryDiff | None = None
     recovery_history: list[RecoveryDiff] = field(default_factory=list)
     adjustment: dict[str, str] = field(default_factory=dict)
+    validation_issues: list[dict[str, Any]] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
 
     def add_trace(self, trace: TraceStep) -> None:
@@ -425,6 +426,7 @@ def state_response(state: PlanState) -> dict[str, Any]:
         "tool_calls": [to_dict(call) for call in state.tool_calls],
         "candidate_sets": state.candidate_sets,
         "rejected_candidates": state.rejected_candidates,
+        "validation_issues": state.validation_issues,
         "itinerary": state.plan_dict()["itinerary"],
         "pending_actions": [action_dict(action) for action in state.pending_actions],
         "plan": state.plan_dict(),
