@@ -420,6 +420,15 @@ def frontend_overview(overview: PlanOverview | None) -> dict[str, Any]:
 
 
 def state_response(state: PlanState) -> dict[str, Any]:
+    if state.status == "needs_clarification":
+        return {
+            "status": "needs_clarification",
+            "plan_id": state.plan_id,
+            "missing_fields": state.context.get("missing_fields", []),
+            "clarifying_questions": state.context.get("clarifying_questions", []),
+            "trace": [to_dict(step) for step in state.trace],
+            "tool_calls": [to_dict(call) for call in state.tool_calls],
+        }
     response = {
         "constraints": to_dict(state.constraints),
         "progress": progress_from_trace(state.trace),

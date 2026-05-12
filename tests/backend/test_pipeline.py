@@ -172,6 +172,14 @@ class PlanningPipelineTest(unittest.TestCase):
         message_action = next(action for action in result["pending_actions"] if action["type"] == "message")
         self.assertEqual(message_action["target"], "朋友群聊")
 
+    def test_underspecified_goal_returns_clarification_instead_of_low_confidence_plan(self):
+        result = self.service.build_plan("周末安排一下")
+
+        self.assertEqual(result["status"], "needs_clarification")
+        self.assertGreaterEqual(len(result["clarifying_questions"]), 2)
+        self.assertIn("time_window", result["missing_fields"])
+        self.assertNotIn("plan", result)
+
     def test_variants_use_different_place_combinations_not_copies(self):
         result = self.service.build_plan("今天下午朋友4个人出去玩，先活动再吃饭，预算适中")
 

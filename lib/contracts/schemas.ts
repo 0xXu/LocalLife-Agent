@@ -311,3 +311,15 @@ export const PlanRevisionResponseSchema = z.object({
   }),
   learned_preferences: z.array(UserPreferenceSchema).default([]),
 }).passthrough();
+
+export const ClarificationResponseSchema = z.object({
+  status: z.literal('needs_clarification'),
+  plan_id: z.string(),
+  missing_fields: z.array(z.string()).default([]),
+  clarifying_questions: z.array(z.object({
+    field: z.string(),
+    question: z.string(),
+  })).default([]),
+  trace: z.array(TraceSpanSchema).default([]),
+  tool_calls: z.array(ToolCallSchema).default([]),
+});

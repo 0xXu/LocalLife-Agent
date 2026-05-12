@@ -54,6 +54,10 @@ class BuildGraphState(TypedDict, total=False):
     validation: dict[str, Any]
 
 
+def should_continue_after_parse(graph_state: BuildGraphState) -> str:
+    return "clarify" if graph_state["state"].status == "needs_clarification" else "continue"
+
+
 class PlanningPipeline:
     def __init__(self, catalog: LocalDataCatalog | None = None, llm_config: LLMConfig | None = None) -> None:
         self.catalog = catalog or LocalDataCatalog()
@@ -77,7 +81,7 @@ class PlanningPipeline:
         graph.add_node("validate_plan", self._validate_plan_node)
         graph.add_node("prepare_confirmation", self._prepare_confirmation_node)
         graph.add_edge(START, "parse_intent")
-        graph.add_edge("parse_intent", "build_context")
+        graph.add_conditional_edges("parse_intent", should_continue_after_parse, {"continue": "build_context", "clarify": END})
         graph.add_edge("build_context", "search_candidates")
         graph.add_edge("search_candidates", "rank_candidates")
         graph.add_edge("rank_candidates", "build_itinerary")
@@ -97,6 +101,13 @@ class PlanningPipeline:
             constraints = merge_profile_into_goal_context(constraints, profile)
             state.context["user_profile"] = profile.as_dict()
         state.constraints = constraints
+        missing = missing_required_fields(state.goal, constraints)
+        if missing:
+            state.status = "needs_clarification"
+            state.context["missing_fields"] = missing
+            state.context["clarifying_questions"] = clarifying_questions_for(missing)
+            state.add_trace(TraceStep("IntentParserAgent", "clarify_goal", "warning", "目标信息不足，返回澄清问题。", {}, {"missing_fields": missing}, 80))
+            return {"state": state}
         state.status = "constraints_parsed"
         state.add_trace(
             TraceStep(
@@ -589,6 +600,29 @@ def infer_intent_label(goal: str, constraints: ParsedConstraints) -> str:
             return label
     scenario = constraints.scenario.replace("_", " ").strip()
     return scenario if re.search(r"[\u4e00-\u9fff]", scenario) else "本地生活"
+
+
+def missing_required_fields(goal: str, constraints: ParsedConstraints) -> list[str]:
+    missing: list[str] = []
+    activity_present = bool(constraints.preferences.get("activity"))
+    if goal.strip() in {"周末安排一下", "帮我安排一下"} or (len(goal.strip()) < 8 and not activity_present):
+        missing.extend(["time_window", "activity_intent"])
+    if not activity_present:
+        missing.append("activity_intent")
+    if constraints.people.get("adults", 0) <= 0:
+        missing.append("people")
+    return list(dict.fromkeys(missing))
+
+
+def clarifying_questions_for(missing: list[str]) -> list[dict[str, str]]:
+    questions = []
+    if "time_window" in missing:
+        questions.append({"field": "time_window", "question": "你想安排今天、周六还是周日？大概几小时？"})
+    if "activity_intent" in missing:
+        questions.append({"field": "activity_intent", "question": "你更想户外走走、室内放松、吃饭聚会，还是亲子活动？"})
+    if "people" in missing:
+        questions.append({"field": "people", "question": "这次几个人一起去？有没有孩子、老人或宠物？"})
+    return questions
 
 
 def is_hiking_goal(goal: str) -> bool:

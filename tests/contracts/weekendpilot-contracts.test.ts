@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  ClarificationResponseSchema,
   ParsedConstraintsSchema,
   PoiSchema,
   PlanResponseSchema,
@@ -315,4 +316,20 @@ test('Plan revision response includes diff and learned preferences', () => {
   });
 
   assert.equal(response.revision.revision_id, 'rev_001');
+});
+
+test('ClarificationResponse represents underspecified goals', () => {
+  const parsed = ClarificationResponseSchema.parse({
+    status: 'needs_clarification',
+    plan_id: 'plan_clarify_001',
+    missing_fields: ['time_window', 'activity_intent'],
+    clarifying_questions: [
+      { field: 'time_window', question: '你想安排今天、周六还是周日？大概几小时？' },
+      { field: 'activity_intent', question: '你更想户外走走、室内放松、吃饭聚会，还是亲子活动？' },
+    ],
+    trace: [],
+    tool_calls: [],
+  });
+
+  assert.equal(parsed.status, 'needs_clarification');
 });
