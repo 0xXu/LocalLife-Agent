@@ -9,6 +9,8 @@ export type PlanPhase =
   | 'completed'      // execution done, viewing receipts
   | 'recovering';    // recoverPlan in progress
 
+export type LoadingAction = 'constraints' | 'feedback' | 'replace' | 'alternatives' | null;
+
 export type PlanState = {
   phase: PlanPhase;
   goal: string;
@@ -21,4 +23,6 @@ export type PlanState = {
   progress: string[];
   currentStep: number;
   streamingText: string;
+  loadingAction: LoadingAction;
+  loadingMessage: string;
 };

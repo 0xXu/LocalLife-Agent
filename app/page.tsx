@@ -47,6 +47,18 @@ export default function WeekendPilotApp() {
     machine.setPhase('results');
   }
 
+  function handlePatchConstraints(updates: Record<string, any>) {
+    machine.updateConstraints(updates);
+  }
+
+  function handleRegenerateWithFeedback(feedback: string) {
+    machine.regenerateWithFeedback(feedback);
+  }
+
+  function handleReplaceNode(nodeType: string, nodeId: string) {
+    machine.replaceNode(nodeType, nodeId);
+  }
+
   const planContent = (() => {
     switch (state.phase) {
       case 'idle':
@@ -77,7 +89,12 @@ export default function WeekendPilotApp() {
             onConfirm={handleConfirm}
             onRecover={handleRecover}
             onLoadAlternatives={machine.loadAlternatives}
+            onPatchConstraints={handlePatchConstraints}
+            onRegenerateWithFeedback={handleRegenerateWithFeedback}
+            onReplaceNode={handleReplaceNode}
             error={state.error}
+            loadingAction={state.loadingAction}
+            loadingMessage={state.loadingMessage}
           />
         );
 

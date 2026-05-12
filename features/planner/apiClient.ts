@@ -56,8 +56,11 @@ export async function buildPlanStream(
         });
         processNext();
       } else if (data.type === 'done') {
-        es.close();
-        resolve(data.result);
+        queue.push(async () => {
+          es.close();
+          resolve(data.result);
+        });
+        processNext();
       } else if (data.type === 'error') {
         es.close();
         reject(new Error(data.message));
@@ -65,8 +68,12 @@ export async function buildPlanStream(
     };
 
     es.onerror = () => {
-      es.close();
-      reject(new Error('SSE connection failed'));
+      // EventSource 会自动重连，只有在连接彻底关闭后才 reject
+      if (es.readyState === EventSource.CLOSED) {
+        es.close();
+        reject(new Error('SSE connection failed'));
+      }
+      // readyState === CONNECTING (0) 时，EventSource 会自动重连，不做处理
     };
   });
 }
