@@ -27,7 +27,7 @@ export type RouteProviderResult = {
   walking_distance_km: number;
   drive_time_minutes: number;
   polyline: { type: 'LineString'; coordinates: Array<[number, number]> };
-  provider: 'local' | 'amap' | 'google';
+  provider: 'local' | 'local_seed_route_matrix' | 'amap' | 'google' | string;
 };
 
 export type RouteProvider = {

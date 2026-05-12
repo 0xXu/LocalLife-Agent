@@ -29,9 +29,9 @@ export function VariantSelector({ variants, activeIndex, onSelect, onLoadMore, l
             type="button"
             onClick={() => onSelect(index)}
           >
-            <strong>{VARIANT_KIND_LABELS[variant.kind] ?? variant.title ?? `方案${index + 1}`}</strong>
+            <strong>{variant.title ?? VARIANT_KIND_LABELS[variant.kind] ?? `方案${index + 1}`}</strong>
             {variant.summary && <span className="variant-desc">{variant.summary}</span>}
-            {variant.overview?.score && <span className="variant-score">{variant.overview.score}分</span>}
+            {(variant.overview?.score ?? variant.score) && <span className="variant-score">{variant.overview?.score ?? variant.score}分</span>}
             {variant.estimated_budget && <span className="variant-budget">约 ¥{variant.estimated_budget}</span>}
           </button>
         ))}

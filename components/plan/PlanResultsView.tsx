@@ -39,9 +39,13 @@ export function PlanResultsView({
   const [isEditingConstraints, setIsEditingConstraints] = useState(false);
 
   const plan = recoveredPlan ?? result.plan;
-  const displayItinerary = activeVariant === 0
-    ? (plan.itinerary ?? [])
-    : (result.variants?.[activeVariant]?.itinerary ?? plan.itinerary ?? []);
+  const variants = result.variants?.length
+    ? result.variants
+    : plan.variants?.length
+      ? plan.variants
+      : [plan];
+  const activePlanVariant = variants[activeVariant] ?? variants[0] ?? plan;
+  const displayItinerary = activePlanVariant?.itinerary ?? plan.itinerary ?? [];
 
   const isLoading = loadingAction !== null;
 
@@ -90,6 +94,18 @@ export function PlanResultsView({
       {error && <div className="plan-error-banner" role="alert">{error}</div>}
       {result.diff && <RecoveryBanner diff={result.diff} adjustment={result.adjustment} />}
 
+      <header className="plan-results-header">
+        <div>
+          <h1>{plan.title}</h1>
+          {plan.summary && <p>{plan.summary}</p>}
+        </div>
+        {plan.badges?.length > 0 && (
+          <div className="plan-badges" aria-label="方案标签">
+            {plan.badges.map((badge) => <span key={badge}>{badge}</span>)}
+          </div>
+        )}
+      </header>
+
       {/* 约束卡片 - 可编辑 */}
       <div className={`constraint-section ${loadingAction === 'constraints' ? 'section-loading' : ''}`}>
         <div className="constraint-header">
@@ -110,12 +126,15 @@ export function PlanResultsView({
         />
       </div>
 
-      <OverviewCard overview={plan.overview ?? {}} />
+      <OverviewCard
+        overview={activePlanVariant?.overview ?? plan.overview ?? {}}
+        constraintFit={activePlanVariant?.constraint_fit ?? plan.constraint_fit}
+      />
 
       {/* 备选方案 - 更明显的入口 */}
       <div className={loadingAction === 'alternatives' ? 'section-loading' : ''}>
         <VariantSelector
-          variants={result.variants?.length ? result.variants : [plan]}
+          variants={variants}
           activeIndex={activeVariant}
           onSelect={setActiveVariant}
           onLoadMore={handleLoadAlternatives}

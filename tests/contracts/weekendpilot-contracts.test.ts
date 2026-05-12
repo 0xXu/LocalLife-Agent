@@ -134,6 +134,85 @@ test('PlanResponse contains variants, tool calls, constraint fit, actions, and r
   assert.equal(response.plan.constraint_fit.distance, 0.95);
 });
 
+test('PlanResponse accepts the open-domain Python backend response contract', () => {
+  const response = PlanResponseSchema.parse({
+    constraints: {
+      scenario: 'pet_friendly_walk',
+      origin: { type: 'current_location', label: 'home', lat: 38.2601, lng: 140.8824 },
+      time_window: { date: 'today', start: '14:00', duration_hours: 3, flexible: true },
+      people: { adults: 1, children: [], relationship: 'solo' },
+      preferences: {
+        distance: 'nearby',
+        diet: [],
+        activity: ['pet', 'outdoor', 'walkable'],
+        budget_level: 'medium',
+        intent_label: '宠物散步',
+      },
+      constraints: { radius_km: 8, max_wait_minutes: 15, avoid: ['long_queue'] },
+      required_actions: ['send_plan_message', 'create_calendar_event'],
+    },
+    progress: [],
+    trace: [],
+    tool_calls: [],
+    route: {
+      legs: [],
+      total_travel_minutes: 0,
+      walking_distance_km: 0,
+      drive_time_minutes: 12,
+      polyline: { type: 'LineString', coordinates: [[140.8791, 38.2618], [140.8811, 38.2638]] },
+      provider: 'local_seed_route_matrix',
+    },
+    pending_actions: [{
+      id: 'send_plan_message_同行人',
+      type: 'message',
+      tool: 'send_plan_message',
+      label: '发送计划',
+      target: '同行人',
+      detail: '发送时间轴、路线和预算摘要。',
+      requires_confirmation: true,
+      requiresConfirmation: true,
+      payload: { recipient: '同行人' },
+    }],
+    plan: {
+      id: 'plan_open_001',
+      status: 'pending_confirmation',
+      title: '宠物散步短计划',
+      summary: '围绕“宠物散步”选择本地供给，按时间、距离、预算和可执行动作生成计划。',
+      constraint_fit: { distance: 0.95, time: 1, budget: 0.92 },
+      itinerary: [{
+        start: '14:00',
+        end: '15:50',
+        type: 'activity',
+        title: '宠物友好河岸公园1号店',
+        place_id: 'poi_007',
+        reason: '允许牵绳宠物进入。',
+        cost: '约 325 元',
+        travel: '到达活动点',
+        score: 95,
+        risk: '风险低。',
+      }],
+      overview: { theme: '下午 · pet friendly walk · 可执行', totalDuration: '3 小时', driveTime: '约 12 分钟', walkingDistance: '0.0 公里', estimatedCost: '约 325 元', score: 98 },
+      actions: [],
+      variants: [{
+        id: 'variant_main',
+        kind: 'main',
+        title: '主方案',
+        summary: '综合距离、可订性和偏好匹配。',
+        score: 98,
+        estimated_budget: 325,
+        constraint_fit: { distance: 0.95, time: 1, budget: 0.92 },
+        itinerary: [],
+      }],
+      receipts: [],
+      badges: ['宠物散步', 'pet', 'outdoor', '轻量短计划'],
+    },
+  });
+
+  assert.equal(response.route?.provider, 'local_seed_route_matrix');
+  assert.equal(response.plan.itinerary[0].risk, '风险低。');
+  assert.equal(response.pending_actions[0].requires_confirmation, true);
+});
+
 test('Receipt and RecoveryDiff match execution and recovery contract', () => {
   const receipt = ReceiptSchema.parse({
     type: 'restaurant_reservation',
