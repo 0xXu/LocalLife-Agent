@@ -2,24 +2,32 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import UTC, datetime
+from pathlib import Path
 
 from backend.actions.ledger import ActionLedger, ledger_from_actions
 from backend.data.catalog import LocalDataCatalog
 from backend.llm import LLMConfig
 from backend.models.schemas import PlanState, action_dict, state_response, to_dict, variant_dict
 from backend.orchestrator import PlanningPipeline
+from backend.storage.repository import PlanRepository
 from backend.tools import LocalToolRegistry, TraceStore
 
 
 class PlanningService:
-    def __init__(self, catalog: LocalDataCatalog | None = None, llm_config: LLMConfig | None = None) -> None:
+    def __init__(self, catalog: LocalDataCatalog | None = None, llm_config: LLMConfig | None = None, repository_path: Path | str | None = None) -> None:
         self.catalog = catalog or LocalDataCatalog()
         self.pipeline = PlanningPipeline(self.catalog, llm_config)
         self.tool_registry = LocalToolRegistry(self.catalog)
         self.trace_store = TraceStore()
+        self.repository = PlanRepository(repository_path) if repository_path else None
         self._plans: dict[str, PlanState] = {}
         self._checkpoints: dict[str, dict] = {}
         self._ledgers: dict[str, ActionLedger] = {}
+        if self.repository:
+            for state in self.repository.list_states():
+                self._plans[state.plan_id] = state
+                self._checkpoints[state.plan_id] = to_dict(state.checkpoint())
+                self.trace_store.save(state.plan_id, state.trace)
 
     def build_plan(self, goal: str, on_progress: Callable[[str, str], None] | None = None, on_token: Callable[[str], None] | None = None) -> dict:
         if not goal.strip():
@@ -103,6 +111,8 @@ class PlanningService:
         self._plans[state.plan_id] = state
         self.trace_store.save(state.plan_id, state.trace)
         self._checkpoints[state.plan_id] = to_dict(state.checkpoint())
+        if self.repository:
+            self.repository.save_state(state.plan_id, state)
 
     def _require_plan(self, plan_id: str) -> PlanState:
         if plan_id not in self._plans:

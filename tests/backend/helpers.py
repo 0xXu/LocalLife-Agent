@@ -42,7 +42,7 @@ class RuleBasedLLMClient:
         yield json.dumps(to_dict(constraints), ensure_ascii=False)
 
 
-def planning_service_with_fake_llm() -> PlanningService:
-    service = PlanningService(llm_config=configured_test_llm_config())
+def planning_service_with_fake_llm(db_path=None) -> PlanningService:
+    service = PlanningService(llm_config=configured_test_llm_config(), repository_path=db_path)
     service.pipeline.llm = RuleBasedLLMClient()
     return service
