@@ -426,13 +426,13 @@ def state_response(state: PlanState) -> dict[str, Any]:
             "plan_id": state.plan_id,
             "missing_fields": state.context.get("missing_fields", []),
             "clarifying_questions": state.context.get("clarifying_questions", []),
-            "trace": [to_dict(step) for step in state.trace],
+            "trace": [trace_dict(step) for step in state.trace],
             "tool_calls": [to_dict(call) for call in state.tool_calls],
         }
     response = {
         "constraints": to_dict(state.constraints),
         "progress": progress_from_trace(state.trace),
-        "trace": [to_dict(step) for step in state.trace],
+        "trace": [trace_dict(step) for step in state.trace],
         "tool_calls": [to_dict(call) for call in state.tool_calls],
         "candidate_sets": state.candidate_sets,
         "rejected_candidates": state.rejected_candidates,
@@ -450,6 +450,19 @@ def state_response(state: PlanState) -> dict[str, Any]:
         response["diff"] = state.diff.as_frontend_dict()
         response["adjustment"] = state.adjustment
     return response
+
+
+def trace_dict(step: TraceStep) -> dict[str, Any]:
+    data = to_dict(step)
+    span_data = {}
+    if isinstance(data.get("output_summary"), dict):
+        output_summary = dict(data["output_summary"])
+        span_data = output_summary.pop("_span", {}) or {}
+        data["output_summary"] = output_summary
+    data["span_id"] = span_data.get("span_id", "")
+    data["kind"] = span_data.get("kind", "planning")
+    data["metadata"] = span_data.get("metadata", {})
+    return data
 
 
 def constraint_fit_dict(constraints: ParsedConstraints | None, itinerary: list[ItineraryStep], overview: PlanOverview | None) -> dict[str, float]:

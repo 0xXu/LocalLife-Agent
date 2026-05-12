@@ -146,8 +146,10 @@ export const ToolCallSchema = z.object({
 });
 
 export const TraceSpanSchema = z.object({
+  span_id: z.string().optional(),
   id: z.string().optional(),
   name: z.string().optional(),
+  kind: z.enum(['llm', 'tool', 'validation', 'planning', 'execution', 'recovery']).optional(),
   agent: z.string(),
   tool: z.string().optional(),
   message: z.string().optional(),

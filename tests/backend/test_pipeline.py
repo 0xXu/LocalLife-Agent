@@ -180,6 +180,16 @@ class PlanningPipelineTest(unittest.TestCase):
         self.assertIn("time_window", result["missing_fields"])
         self.assertNotIn("plan", result)
 
+    def test_trace_spans_include_kind_timing_model_and_provider_context(self):
+        result = self.service.build_plan("想带狗狗找个能散步的地方，别太吵")
+
+        span = result["trace"][0]
+        self.assertIn("span_id", span)
+        self.assertIn("kind", span)
+        self.assertIn(span["kind"], {"llm", "tool", "validation", "planning", "execution", "recovery"})
+        self.assertIn("duration_ms", span)
+        self.assertIn("metadata", span)
+
     def test_variants_use_different_place_combinations_not_copies(self):
         result = self.service.build_plan("今天下午朋友4个人出去玩，先活动再吃饭，预算适中")
 

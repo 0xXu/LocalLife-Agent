@@ -24,8 +24,8 @@ from backend.models.schemas import (
     PlanVariant,
     Receipt,
     RecoveryDiff,
-    TraceStep,
 )
+from backend.observability.spans import span
 from backend.planning.candidates import build_itinerary_variants
 from backend.profile.resolver import merge_profile_into_goal_context
 from backend.providers.local import confidence_for_tags, ground_place
@@ -106,18 +106,20 @@ class PlanningPipeline:
             state.status = "needs_clarification"
             state.context["missing_fields"] = missing
             state.context["clarifying_questions"] = clarifying_questions_for(missing)
-            state.add_trace(TraceStep("IntentParserAgent", "clarify_goal", "warning", "目标信息不足，返回澄清问题。", {}, {"missing_fields": missing}, 80))
+            state.add_trace(span("IntentParserAgent", "clarify_goal", "warning", "目标信息不足，返回澄清问题。", "llm", {}, {"missing_fields": missing}, 80, {"model": self.llm_config.model}))
             return {"state": state}
         state.status = "constraints_parsed"
         state.add_trace(
-            TraceStep(
+            span(
                 "IntentParserAgent",
                 "parse_user_goal",
                 "ok",
                 "解析自然语言目标为结构化约束。",
+                "llm",
                 {"goal_length": len(state.goal)},
                 {"scenario": constraints.scenario, "llm_fallback": llm_fallback},
                 140,
+                {"model": self.llm_config.model},
             )
         )
         emit_progress(graph_state, "理解出行需求", "解析自然语言目标为结构化约束。")
@@ -130,7 +132,7 @@ class PlanningPipeline:
         weather = self.tools.get_weather(rainy).output
         state.context = {**state.context, "weather": weather, "profile": "local_demo_user", "privacy": "minimal"}
         state.status = "context_ready"
-        state.add_trace(TraceStep("ContextBuilderAgent", "get_weather", "ok", "补全天气、位置和用户偏好上下文。", {}, weather, 120))
+        state.add_trace(span("ContextBuilderAgent", "get_weather", "ok", "补全天气、位置和用户偏好上下文。", "tool", {}, weather, 120, {"provider": "local_weather_seed"}))
         emit_progress(graph_state, "补全场景上下文", "补全天气、位置和用户偏好上下文。")
         return {"state": state}
 
@@ -151,7 +153,7 @@ class PlanningPipeline:
             "walks": self.catalog.search_pois("dessert_walk", None, radius, ["walkable"])[:6] or walk_result.output["items"],
         }
         state.status = "candidates_ready"
-        state.add_trace(TraceStep("CandidateSearchAgent", "search_places", "ok", "检索活动、餐厅、甜品散步点和本地供给。", {}, {key: len(value) for key, value in state.candidates.items()}, 260))
+        state.add_trace(span("CandidateSearchAgent", "search_places", "ok", "检索活动、餐厅、甜品散步点和本地供给。", "tool", {}, {key: len(value) for key, value in state.candidates.items()}, 260, {"provider": "local_seed_catalog"}))
         emit_progress(graph_state, "筛选本地供给", "检索活动、餐厅、甜品散步点和本地供给。")
         return {"state": state}
 
@@ -180,7 +182,7 @@ class PlanningPipeline:
         state.candidate_sets = candidate_sets
         state.rejected_candidates = rejected
         state.status = "ranked"
-        state.add_trace(TraceStep("RankerAgent", "rank_candidates", "ok", "按语义、距离、质量、等待、预算、来源和风险排序。", {}, {key: [item["place"]["id"] for item in value[:3]] for key, value in candidate_sets.items()}, 180))
+        state.add_trace(span("RankerAgent", "rank_candidates", "ok", "按语义、距离、质量、等待、预算、来源和风险排序。", "planning", {}, {key: [item["place"]["id"] for item in value[:3]] for key, value in candidate_sets.items()}, 180))
         emit_progress(graph_state, "多目标排序", "按语义、距离、质量、等待、预算、来源和风险排序。")
         return {"state": state}
 
@@ -220,7 +222,7 @@ class PlanningPipeline:
             build_result.output["score"],
         )
         state.status = "itinerary_built"
-        state.add_trace(TraceStep("RouteSchedulerAgent", "optimize_route", "ok", "按用户时长生成可执行时间轴和顺路路线。", {}, route, 220))
+        state.add_trace(span("RouteSchedulerAgent", "optimize_route", "ok", "按用户时长生成可执行时间轴和顺路路线。", "tool", {}, route, 220, {"provider": route.get("provider", "local_seed_route_matrix")}))
         emit_progress(graph_state, "生成时间轴和路线", "按用户时长生成可执行时间轴和顺路路线。")
         return {"state": state, "activity": activity, "restaurant": restaurant, "walk": walk, "route": route, "build_result": build_result.output}
 
@@ -243,7 +245,7 @@ class PlanningPipeline:
         validation["valid"] = validation["valid"] and detailed_report.valid
         validation["issues"] = unique_list([*validation.get("issues", []), *[issue["code"] for issue in detailed_report.issues]])
         state.status = "pending_confirmation" if validation["valid"] else "recovering"
-        state.add_trace(TraceStep("PlanValidatorAgent", "validate_plan", "ok" if validation["valid"] else "warning", "校验营业时间、路线、预算和可订性。", {}, validation, 170))
+        state.add_trace(span("PlanValidatorAgent", "validate_plan", "ok" if validation["valid"] else "warning", "校验营业时间、路线、预算和可订性。", "validation", {}, validation, 170))
         emit_progress(graph_state, "校验可订性和约束", "校验营业时间、路线、预算和可订性。")
         return {"state": state, "validation": validation}
 
@@ -255,7 +257,7 @@ class PlanningPipeline:
         walk = graph_state.get("walk")
         state.pending_actions = build_pending_actions(activity, restaurant, walk, constraints)
         state.actions = list(state.pending_actions)
-        state.add_trace(TraceStep("ConfirmationAgent", "human_in_the_loop", "ok", "敏感动作已暂停，等待用户确认。", {}, {"pending_actions": len(state.pending_actions)}, 80))
+        state.add_trace(span("ConfirmationAgent", "human_in_the_loop", "ok", "敏感动作已暂停，等待用户确认。", "planning", {}, {"pending_actions": len(state.pending_actions)}, 80))
         return {"state": state}
 
     def execute(self, state: PlanState) -> PlanState:
@@ -267,7 +269,7 @@ class PlanningPipeline:
             receipts.append(Receipt(action.type, action.tool, result.output["id"], result.output["status"], result.output["detail"]))
         state.receipts = receipts
         state.status = "completed"
-        state.add_trace(TraceStep("ExecutionAgent", "confirmed_side_effect_tools", "ok", "用户确认后执行预约、订座、领券、点单、消息和日历动作。", {}, {"receipts": [item.id for item in receipts]}, 320))
+        state.add_trace(span("ExecutionAgent", "confirmed_side_effect_tools", "ok", "用户确认后执行预约、订座、领券、点单、消息和日历动作。", "execution", {}, {"receipts": [item.id for item in receipts]}, 320))
         return state
 
     def revise(self, state: PlanState, delta: RevisionDelta, profile=None) -> PlanState:
@@ -379,7 +381,7 @@ class PlanningPipeline:
             "secondaryAction": "换另一个备选",
         }
         state.status = "recovered_pending_confirmation"
-        state.add_trace(TraceStep("RecoveryAgent", "compare_alternatives", "ok", "异常恢复只替换冲突节点并展示差异。", {"reason": reason}, diff.as_frontend_dict(), 210))
+        state.add_trace(span("RecoveryAgent", "compare_alternatives", "ok", "异常恢复只替换冲突节点并展示差异。", "recovery", {"reason": reason}, diff.as_frontend_dict(), 210))
         return state
 
     def parse_constraints(self, goal: str, on_token: Callable[[str], None] | None = None) -> tuple[ParsedConstraints, bool]:
