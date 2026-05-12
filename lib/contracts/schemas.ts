@@ -204,6 +204,25 @@ export const CandidateSetItemSchema = z.object({
   explanation: z.string(),
 });
 
+export const UserPreferenceSchema = z.object({
+  key: z.string(),
+  value: JsonSchema,
+  source: z.string(),
+  confidence: z.number().min(0).max(1),
+  scope: z.string(),
+  evidence: z.string(),
+  expires_at: z.string().default(''),
+  user_editable: z.boolean().default(true),
+  sensitive: z.boolean().default(false),
+});
+
+export const UserProfileSchema = z.object({
+  user_id: z.string(),
+  explicit_preferences: z.array(UserPreferenceSchema).default([]),
+  learned_preferences: z.array(UserPreferenceSchema).default([]),
+  session_preferences: z.array(UserPreferenceSchema).default([]),
+});
+
 export const PlanSchema = z.object({
   id: z.string(),
   status: z.string(),
@@ -250,6 +269,7 @@ export const PlanResponseSchema = z.object({
   pending_actions: z.array(PendingActionSchema).default([]),
   candidate_sets: z.record(z.string(), z.array(CandidateSetItemSchema)).default({}),
   rejected_candidates: z.record(z.string(), z.array(z.record(z.string(), JsonSchema))).default({}),
+  user_profile: UserProfileSchema.optional(),
   route: z.object({
     legs: z.array(z.object({
       from: z.string(),

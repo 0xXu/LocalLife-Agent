@@ -240,6 +240,12 @@ test('PlanResponse exposes candidate sets with score breakdowns', () => {
       }],
     },
     rejected_candidates: {},
+    user_profile: {
+      user_id: 'user_1',
+      explicit_preferences: [{ key: 'pace', value: 'slow', source: 'explicit', confidence: 1, scope: 'long_term', evidence: '用户主动选择慢节奏' }],
+      learned_preferences: [],
+      session_preferences: [],
+    },
     itinerary: [],
     pending_actions: [],
     plan: {
@@ -256,6 +262,7 @@ test('PlanResponse exposes candidate sets with score breakdowns', () => {
   });
 
   assert.equal((response as any).candidate_sets.activities[0].place.provenance.source, 'local_seed_catalog');
+  assert.equal(response.user_profile?.explicit_preferences[0].key, 'pace');
 });
 
 test('Receipt and RecoveryDiff match execution and recovery contract', () => {

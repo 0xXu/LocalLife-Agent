@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from backend.llm import LLMConfig
+from backend.profile.models import UserPreference, UserProfile
 from backend.services import PlanningService
 
 
@@ -65,6 +66,21 @@ def create_app(service: PlanningService | None = None) -> FastAPI:
     async def tool_schemas(request: Request) -> dict[str, Any]:
         return planning_service(request).tool_schemas()
 
+    @api.get("/api/users/{user_id}/profile")
+    async def get_user_profile(user_id: str, request: Request) -> dict[str, Any]:
+        return planning_service(request).get_user_profile(user_id)
+
+    @api.post("/api/users/{user_id}/profile")
+    async def save_user_profile(user_id: str, request: Request) -> dict[str, Any]:
+        body = await read_json_object(request)
+        profile = UserProfile(
+            user_id=user_id,
+            explicit_preferences=[UserPreference(**item) for item in body.get("explicit_preferences", [])],
+            learned_preferences=[UserPreference(**item) for item in body.get("learned_preferences", [])],
+            session_preferences=[UserPreference(**item) for item in body.get("session_preferences", [])],
+        )
+        return planning_service(request).save_user_profile(profile)
+
     @api.get("/api/traces/{plan_id}")
     async def traces(plan_id: str, request: Request) -> dict[str, Any]:
         service = planning_service(request)
@@ -82,7 +98,7 @@ def create_app(service: PlanningService | None = None) -> FastAPI:
     @api.post("/api/plans/build")
     async def build_plan(request: Request) -> dict[str, Any]:
         body = await read_json_object(request)
-        return planning_service(request).build_plan(str(body.get("goal", "")))
+        return planning_service(request).build_plan(str(body.get("goal", "")), user_id=str(body.get("user_id", "local_demo_user")))
 
     @api.get("/api/plans/build/stream")
     async def build_plan_stream(goal: str, request: Request) -> StreamingResponse:

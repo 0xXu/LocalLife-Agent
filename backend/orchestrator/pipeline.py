@@ -27,6 +27,7 @@ from backend.models.schemas import (
     TraceStep,
 )
 from backend.planning.candidates import build_itinerary_variants
+from backend.profile.resolver import merge_profile_into_goal_context
 from backend.providers.local import confidence_for_tags, ground_place
 from backend.retrieval.ranker import rank_candidates
 from backend.tools import LocalToolRegistry
@@ -42,6 +43,7 @@ class BuildGraphState(TypedDict, total=False):
     overrides: dict | None
     on_progress: Callable[[str, str], None] | None
     on_token: Callable[[str], None] | None
+    profile: Any | None
     llm_fallback: bool
     activity: dict | None
     restaurant: dict | None
@@ -59,9 +61,9 @@ class PlanningPipeline:
         self.llm = LLMClient(self.llm_config)
         self.graph = self._compile_graph()
 
-    def build(self, goal: str, overrides: dict | None = None, on_progress: Callable[[str, str], None] | None = None, on_token: Callable[[str], None] | None = None) -> PlanState:
+    def build(self, goal: str, overrides: dict | None = None, on_progress: Callable[[str, str], None] | None = None, on_token: Callable[[str], None] | None = None, profile=None) -> PlanState:
         state = PlanState(goal=goal, plan_id=f"plan_{uuid4().hex[:10]}", status="input_received")
-        result = self.graph.invoke({"state": state, "overrides": overrides, "on_progress": on_progress, "on_token": on_token})
+        result = self.graph.invoke({"state": state, "overrides": overrides, "on_progress": on_progress, "on_token": on_token, "profile": profile})
         return result["state"]
 
     def _compile_graph(self):
@@ -89,6 +91,10 @@ class PlanningPipeline:
         overrides = graph_state.get("overrides")
         if overrides:
             constraints = apply_constraint_overrides(constraints, overrides)
+        profile = graph_state.get("profile")
+        if profile:
+            constraints = merge_profile_into_goal_context(constraints, profile)
+            state.context["user_profile"] = profile.as_dict()
         state.constraints = constraints
         state.status = "constraints_parsed"
         state.add_trace(
@@ -110,7 +116,7 @@ class PlanningPipeline:
         constraints = require_constraints(state)
         rainy = constraints.scenario == "rainy_indoor" or "下雨" in state.goal or "雨" in state.goal
         weather = self.tools.get_weather(rainy).output
-        state.context = {"weather": weather, "profile": "local_demo_user", "privacy": "minimal"}
+        state.context = {**state.context, "weather": weather, "profile": "local_demo_user", "privacy": "minimal"}
         state.status = "context_ready"
         state.add_trace(TraceStep("ContextBuilderAgent", "get_weather", "ok", "补全天气、位置和用户偏好上下文。", {}, weather, 120))
         emit_progress(graph_state, "补全场景上下文", "补全天气、位置和用户偏好上下文。")

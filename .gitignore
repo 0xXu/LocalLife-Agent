@@ -55,3 +55,4 @@ temp/
 .codex-run/
 *.tmp
 *.bak
+.weekendpilot/
