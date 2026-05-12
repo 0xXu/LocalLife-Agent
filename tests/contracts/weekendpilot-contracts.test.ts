@@ -4,6 +4,7 @@ import {
   ParsedConstraintsSchema,
   PoiSchema,
   PlanResponseSchema,
+  PlanRevisionResponseSchema,
   ReceiptSchema,
   RecoveryDiffSchema,
 } from '../../lib/contracts/schemas';
@@ -286,4 +287,32 @@ test('Receipt and RecoveryDiff match execution and recovery contract', () => {
 
   assert.match(receipt.id, /^RES-/);
   assert.deepEqual(diff.preserved, ['亲子科学馆', '河畔低糖甜品散步']);
+});
+
+test('Plan revision response includes diff and learned preferences', () => {
+  const response = PlanRevisionResponseSchema.parse({
+    revision: {
+      revision_id: 'rev_001',
+      feedback_text: '太赶了，餐厅不想去了',
+      constraint_updates: { pace: 'slow', meal_required: false },
+    },
+    diff: {
+      kept: ['宠物友好河岸公园'],
+      removed: [{ id: 'poi_019', title: '绿荫轻食餐厅', reason: 'user_feedback' }],
+      added: [{ id: 'poi_008', title: '自习咖啡馆' }],
+      changed_constraints: { pace: ['medium', 'slow'] },
+    },
+    learned_preferences: [{
+      key: 'pace',
+      value: 'slow',
+      source: 'feedback',
+      confidence: 0.72,
+      scope: 'long_term',
+      evidence: '太赶了',
+      user_editable: true,
+      sensitive: false,
+    }],
+  });
+
+  assert.equal(response.revision.revision_id, 'rev_001');
 });

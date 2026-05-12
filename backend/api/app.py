@@ -180,6 +180,20 @@ def create_app(service: PlanningService | None = None) -> FastAPI:
         body = await read_json_object(request)
         return planning_service(request).recover_plan(plan_id, str(body.get("reason", "restaurant_unavailable")))
 
+    @api.post("/api/plans/{plan_id}/feedback")
+    async def plan_feedback(plan_id: str, request: Request) -> dict[str, Any]:
+        body = await read_json_object(request)
+        return planning_service(request).revise_plan(plan_id, body)
+
+    @api.post("/api/plans/{plan_id}/revise")
+    async def revise_plan(plan_id: str, request: Request) -> dict[str, Any]:
+        body = await read_json_object(request)
+        return planning_service(request).revise_plan(plan_id, body)
+
+    @api.get("/api/plans/{plan_id}/revisions")
+    async def plan_revisions(plan_id: str, request: Request) -> dict[str, Any]:
+        return planning_service(request).list_revisions(plan_id)
+
     @api.patch("/api/plans/{plan_id}/constraints")
     async def patch_constraints(plan_id: str, request: Request) -> dict[str, Any]:
         body = await read_json_object(request)

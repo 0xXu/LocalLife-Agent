@@ -9,8 +9,10 @@ from backend.data.catalog import LocalDataCatalog
 from backend.llm import LLMConfig
 from backend.models.schemas import PlanState, action_dict, state_response, to_dict, variant_dict
 from backend.orchestrator import PlanningPipeline
-from backend.profile.models import UserProfile
+from backend.profile.models import UserPreference, UserProfile
 from backend.profile.store import UserProfileStore
+from backend.revision.diff import build_plan_diff
+from backend.revision.parser import feedback_to_delta
 from backend.storage.repository import PlanRepository
 from backend.tools import LocalToolRegistry, TraceStore
 
@@ -113,9 +115,41 @@ class PlanningService:
         self._save(state)
         return state_response(state)
 
+    def revise_plan(self, plan_id: str, body: dict) -> dict:
+        state = self._require_plan(plan_id)
+        before = state.plan_dict()
+        delta = feedback_to_delta(body)
+        profile = self.profile_store.get(delta.user_id) if self.profile_store else None
+        revised = self.pipeline.revise(state, delta, profile=profile)
+        after = revised.plan_dict()
+        diff = build_plan_diff(before, after, changed_constraints_for_revision(state, delta.constraint_updates))
+        learned = []
+        if delta.save_to_profile and self.profile_store:
+            profile = self.profile_store.get(delta.user_id)
+            for key, value in delta.constraint_updates.items():
+                pref = UserPreference(key, value, "feedback", 0.72, "long_term", delta.feedback_text)
+                profile.learned_preferences.append(pref)
+                learned.append(pref.as_dict())
+            self.profile_store.save(profile)
+        self._save(revised)
+        response = state_response(revised)
+        response["revision"] = {
+            "revision_id": delta.revision_id,
+            "feedback_text": delta.feedback_text,
+            "constraint_updates": delta.constraint_updates,
+        }
+        response["diff"] = diff
+        response["learned_preferences"] = learned
+        return response
+
     def get_trace(self, plan_id: str) -> list[dict]:
         self._require_plan(plan_id)
         return self.trace_store.get(plan_id)
+
+    def list_revisions(self, plan_id: str) -> dict:
+        state = self._require_plan(plan_id)
+        revision = state.context.get("revision", {})
+        return {"plan_id": plan_id, "revisions": [revision] if revision else []}
 
     def tool_schemas(self) -> dict:
         return {"tools": self.tool_registry.schemas()}
@@ -183,3 +217,17 @@ class PlanningService:
                 for entry in ledger.entries
             ]
         }
+
+
+def changed_constraints_for_revision(state: PlanState, updates: dict) -> dict:
+    constraints = state.constraints
+    changed = {}
+    for key, value in updates.items():
+        if key not in {"pace", "budget_level", "meal_required", "duration_hours"}:
+            continue
+        if key == "duration_hours":
+            before = constraints.time_window.get("duration_hours", "medium") if constraints else "medium"
+        else:
+            before = constraints.preferences.get(key, "medium") if constraints else "medium"
+        changed[key] = [before, value]
+    return changed

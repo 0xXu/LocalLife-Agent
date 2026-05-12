@@ -296,3 +296,18 @@ export const PlanResponseSchema = z.object({
   diff: RecoveryDiffSchema.optional(),
   adjustment: AdjustmentSchema.optional(),
 });
+
+export const PlanRevisionResponseSchema = z.object({
+  revision: z.object({
+    revision_id: z.string(),
+    feedback_text: z.string(),
+    constraint_updates: z.record(z.string(), JsonSchema),
+  }),
+  diff: z.object({
+    kept: z.array(z.string()).default([]),
+    removed: z.array(z.record(z.string(), JsonSchema)).default([]),
+    added: z.array(z.record(z.string(), JsonSchema)).default([]),
+    changed_constraints: z.record(z.string(), JsonSchema).default({}),
+  }),
+  learned_preferences: z.array(UserPreferenceSchema).default([]),
+}).passthrough();

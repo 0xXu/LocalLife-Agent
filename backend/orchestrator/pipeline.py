@@ -30,6 +30,7 @@ from backend.planning.candidates import build_itinerary_variants
 from backend.profile.resolver import merge_profile_into_goal_context
 from backend.providers.local import confidence_for_tags, ground_place
 from backend.retrieval.ranker import rank_candidates
+from backend.revision.models import RevisionDelta
 from backend.tools import LocalToolRegistry
 from backend.validation.rules import validate_itinerary
 
@@ -257,6 +258,38 @@ class PlanningPipeline:
         state.status = "completed"
         state.add_trace(TraceStep("ExecutionAgent", "confirmed_side_effect_tools", "ok", "用户确认后执行预约、订座、领券、点单、消息和日历动作。", {}, {"receipts": [item.id for item in receipts]}, 320))
         return state
+
+    def revise(self, state: PlanState, delta: RevisionDelta, profile=None) -> PlanState:
+        updates = dict(delta.constraint_updates)
+        if updates.get("meal_required") is False:
+            updates["required_actions"] = [
+                action for action in as_list(require_constraints(state).required_actions)
+                if action not in {"restaurant_reservation", "claim_coupon", "create_order"}
+            ]
+        rebuilt = self.build(state.goal, updates, profile=profile)
+        locked = set(delta.locked_nodes)
+        if locked:
+            locked_steps = {step.place_id: step for step in state.itinerary if step.place_id in locked}
+            for index, step in enumerate(rebuilt.itinerary):
+                previous = next((old for old in locked_steps.values() if old.type == step.type), None)
+                if previous:
+                    rebuilt.itinerary[index] = previous
+        removed = set(delta.removed_nodes)
+        if removed:
+            rebuilt.itinerary = [step for step in rebuilt.itinerary if step.place_id not in removed]
+            rebuilt.pending_actions = [
+                action for action in rebuilt.pending_actions
+                if action.payload.get("place_id") not in removed and action.payload.get("shop_id") not in removed
+            ]
+            rebuilt.actions = list(rebuilt.pending_actions)
+        rebuilt.plan_id = state.plan_id
+        rebuilt.status = "pending_confirmation"
+        rebuilt.context["revision"] = {
+            "revision_id": delta.revision_id,
+            "feedback_text": delta.feedback_text,
+            "constraint_updates": delta.constraint_updates,
+        }
+        return rebuilt
 
     def recover(self, state: PlanState, reason: str) -> PlanState:
         state.status = "recovering"
@@ -731,6 +764,8 @@ def required_actions_of(constraints: ParsedConstraints) -> set[str]:
 
 
 def should_include_restaurant(constraints: ParsedConstraints) -> bool:
+    if constraints.preferences.get("meal_required") is False:
+        return False
     required = required_actions_of(constraints)
     if required & {"restaurant_reservation", "claim_coupon", "create_order"}:
         return True
@@ -765,6 +800,17 @@ def apply_constraint_overrides(constraints: ParsedConstraints, overrides: dict) 
         if duration <= 0:
             raise ValueError("validation_error")
         constraints.time_window["duration_hours"] = duration
+    if "pace" in overrides:
+        constraints.preferences["pace"] = str(overrides["pace"])
+    if "meal_required" in overrides:
+        constraints.preferences["meal_required"] = bool(overrides["meal_required"])
+        if overrides["meal_required"] is False:
+            constraints.required_actions = [
+                action for action in constraints.required_actions
+                if action not in {"restaurant_reservation", "claim_coupon", "create_order"}
+            ]
+    if "required_actions" in overrides:
+        constraints.required_actions = as_list(overrides["required_actions"])
     return constraints
 
 
