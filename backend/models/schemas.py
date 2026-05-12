@@ -246,6 +246,7 @@ class PlanState:
     diff: RecoveryDiff | None = None
     recovery_history: list[RecoveryDiff] = field(default_factory=list)
     adjustment: dict[str, str] = field(default_factory=dict)
+    action_ledger: dict[str, Any] = field(default_factory=dict)
     validation_issues: list[dict[str, Any]] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
 
@@ -429,6 +430,7 @@ def state_response(state: PlanState) -> dict[str, Any]:
         "validation_issues": state.validation_issues,
         "itinerary": state.plan_dict()["itinerary"],
         "pending_actions": [action_dict(action) for action in state.pending_actions],
+        "action_ledger": state.action_ledger,
         "plan": state.plan_dict(),
     }
     if state.route:

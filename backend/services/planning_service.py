@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import UTC, datetime
 
+from backend.actions.ledger import ActionLedger, ledger_from_actions
 from backend.data.catalog import LocalDataCatalog
 from backend.llm import LLMConfig
 from backend.models.schemas import PlanState, action_dict, state_response, to_dict, variant_dict
@@ -18,6 +19,7 @@ class PlanningService:
         self.trace_store = TraceStore()
         self._plans: dict[str, PlanState] = {}
         self._checkpoints: dict[str, dict] = {}
+        self._ledgers: dict[str, ActionLedger] = {}
 
     def build_plan(self, goal: str, on_progress: Callable[[str, str], None] | None = None, on_token: Callable[[str], None] | None = None) -> dict:
         if not goal.strip():
@@ -52,18 +54,35 @@ class PlanningService:
             raise PermissionError("confirmation_required")
         state = self._require_plan(plan_id)
         state.status = "confirmed"
+        self._ensure_ledger(state)
         self._save(state)
         response = state_response(state)
         response["pending_actions"] = [action_dict(action) for action in state.pending_actions]
         return response
 
-    def execute_plan(self, plan_id: str, confirmed: bool) -> dict:
+    def execute_plan(self, plan_id: str, confirmed: bool, selected_action_ids: list[str] | None = None, idempotency_key: str = "") -> dict:
         if not confirmed:
             raise PermissionError("confirmation_required")
         state = self._require_plan(plan_id)
-        if state.status not in {"confirmed", "pending_confirmation", "recovered_pending_confirmation"}:
+        if state.status not in {"confirmed", "pending_confirmation", "recovered_pending_confirmation", "completed"}:
             raise ValueError("validation_error")
+        ledger = self._ensure_ledger(state)
+        all_action_ids = [entry.action_id for entry in ledger.entries]
+        selected = selected_action_ids if selected_action_ids is not None else all_action_ids
+        if not idempotency_key:
+            idempotency_key = f"{plan_id}:{','.join(selected or ['none'])}"
+        entries = ledger.mark_executing(selected, idempotency_key)
+        if not entries:
+            self._save(state)
+            return state_response(state)
+        state.pending_actions = [entry.action for entry in entries]
         state = self.pipeline.execute(state)
+        for receipt in state.receipts:
+            for entry in entries:
+                if entry.action.tool == receipt.tool:
+                    ledger.mark_succeeded(entry.action_id, receipt.id)
+                    break
+        self._sync_ledger_state(state, ledger)
         self._save(state)
         return state_response(state)
 
@@ -110,4 +129,27 @@ class PlanningService:
             "location": f"{constraints.constraints.get('radius_km', 5):g} 公里内" if constraints else "本地",
             "estimated_cost": plan.get("overview", {}).get("estimatedCost"),
             "itinerary_count": len(state.itinerary),
+        }
+
+    def _ensure_ledger(self, state: PlanState) -> ActionLedger:
+        ledger = self._ledgers.get(state.plan_id)
+        if ledger is None:
+            ledger = ledger_from_actions(state.plan_id, state.pending_actions)
+            self._ledgers[state.plan_id] = ledger
+        self._sync_ledger_state(state, ledger)
+        return ledger
+
+    def _sync_ledger_state(self, state: PlanState, ledger: ActionLedger) -> None:
+        state.action_ledger = {
+            "entries": [
+                {
+                    "action_id": entry.action_id,
+                    "status": entry.status,
+                    "tool": entry.action.tool,
+                    "target": entry.action.target,
+                    "receipt_id": entry.receipt_id,
+                    "error": entry.error,
+                }
+                for entry in ledger.entries
+            ]
         }

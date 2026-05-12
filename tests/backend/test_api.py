@@ -121,6 +121,21 @@ class BackendApiTest(unittest.TestCase):
         self.assertEqual(listed["plans"][0]["status"], "saved")
         self.assertIn("title", listed["plans"][0])
 
+    def test_execute_accepts_selected_action_ids(self):
+        status, built = self.request("POST", "/api/plans/build", {"goal": "我想找个地方写代码一小时"})
+        self.assertEqual(status, 200)
+        plan_id = built["plan"]["id"]
+        action_id = next(action["id"] for action in built["pending_actions"] if action["tool"] == "send_plan_message")
+
+        status, executed = self.request(
+            "POST",
+            f"/api/plans/{plan_id}/execute",
+            {"confirmed": True, "selected_action_ids": [action_id], "idempotency_key": "test-idem-1"},
+        )
+
+        self.assertEqual(status, 200)
+        self.assertEqual([receipt["tool"] for receipt in executed["receipts"]], ["send_plan_message"])
+
     def test_invalid_json_returns_400_response(self):
         status, data = self.raw_request("POST", "/api/plans/build", "{bad json")
 

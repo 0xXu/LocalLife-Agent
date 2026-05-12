@@ -151,7 +151,13 @@ def create_app(service: PlanningService | None = None) -> FastAPI:
     @api.post("/api/plans/{plan_id}/execute")
     async def execute_plan(plan_id: str, request: Request) -> dict[str, Any]:
         body = await read_json_object(request)
-        return planning_service(request).execute_plan(plan_id, bool(body.get("confirmed")))
+        selected_action_ids = body.get("selected_action_ids")
+        return planning_service(request).execute_plan(
+            plan_id,
+            bool(body.get("confirmed")),
+            selected_action_ids=selected_action_ids if isinstance(selected_action_ids, list) else None,
+            idempotency_key=str(body.get("idempotency_key", "")),
+        )
 
     @api.post("/api/plans/{plan_id}/recover")
     async def recover_plan(plan_id: str, request: Request) -> dict[str, Any]:
