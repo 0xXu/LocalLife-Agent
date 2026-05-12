@@ -213,6 +213,51 @@ test('PlanResponse accepts the open-domain Python backend response contract', ()
   assert.equal(response.pending_actions[0].requires_confirmation, true);
 });
 
+test('PlanResponse exposes candidate sets with score breakdowns', () => {
+  const response = PlanResponseSchema.parse({
+    constraints: {
+      scenario: 'pet_friendly_walk',
+      origin: { type: 'current_location', label: 'home', lat: 38.26, lng: 140.88 },
+      time_window: { date: 'today', start: '14:00', duration_hours: 2, flexible: true },
+      people: { adults: 1, children: [], relationship: 'solo' },
+      preferences: { distance: 'nearby', diet: [], activity: ['pet'], budget_level: 'medium' },
+      constraints: { radius_km: 8, max_wait_minutes: 15, avoid: [] },
+      required_actions: ['send_plan_message'],
+    },
+    progress: [],
+    trace: [],
+    tool_calls: [],
+    candidate_sets: {
+      activities: [{
+        place: {
+          id: 'poi_007',
+          name: '宠物友好河岸公园',
+          provenance: { source: 'local_seed_catalog', freshness: 'seed_static', confidence: 0.9 },
+        },
+        total_score: 0.86,
+        score_breakdown: { semantic: 0.27, distance: 0.18, quality: 0.19, wait: 0.1, budget: 0.12 },
+        explanation: '偏好匹配高。',
+      }],
+    },
+    rejected_candidates: {},
+    itinerary: [],
+    pending_actions: [],
+    plan: {
+      id: 'plan_1',
+      status: 'pending_confirmation',
+      title: '宠物散步短计划',
+      summary: '本地生活计划',
+      constraint_fit: { distance: 0.9, time: 1, budget: 0.92 },
+      itinerary: [],
+      overview: { theme: '下午', totalDuration: '2 小时', driveTime: '约 12 分钟', walkingDistance: '0 公里', estimatedCost: '约 120 元', score: 90 },
+      actions: [],
+      variants: [],
+    },
+  });
+
+  assert.equal((response as any).candidate_sets.activities[0].place.provenance.source, 'local_seed_catalog');
+});
+
 test('Receipt and RecoveryDiff match execution and recovery contract', () => {
   const receipt = ReceiptSchema.parse({
     type: 'restaurant_reservation',

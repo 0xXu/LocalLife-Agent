@@ -197,6 +197,13 @@ export const PlanVariantSchema = z.object({
   actions: z.array(PlanActionSchema).default([]),
 });
 
+export const CandidateSetItemSchema = z.object({
+  place: z.record(z.string(), JsonSchema),
+  total_score: z.number(),
+  score_breakdown: z.record(z.string(), z.number()),
+  explanation: z.string(),
+});
+
 export const PlanSchema = z.object({
   id: z.string(),
   status: z.string(),
@@ -241,6 +248,8 @@ export const PlanResponseSchema = z.object({
   trace: z.array(TraceSpanSchema).default([]),
   tool_calls: z.array(ToolCallSchema).default([]),
   pending_actions: z.array(PendingActionSchema).default([]),
+  candidate_sets: z.record(z.string(), z.array(CandidateSetItemSchema)).default({}),
+  rejected_candidates: z.record(z.string(), z.array(z.record(z.string(), JsonSchema))).default({}),
   route: z.object({
     legs: z.array(z.object({
       from: z.string(),

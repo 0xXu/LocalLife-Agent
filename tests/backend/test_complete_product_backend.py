@@ -131,6 +131,17 @@ class CompleteBackendTest(unittest.TestCase):
         self.assertTrue(all("id" in action for action in result["pending_actions"]))
         self.assertTrue(all("requires_confirmation" in action for action in result["pending_actions"]))
 
+    def test_plan_response_includes_candidate_sets_and_score_breakdown(self):
+        result = self.service.build_plan("想带狗狗找个安静散步的地方，别太吵")
+
+        self.assertIn("candidate_sets", result)
+        self.assertIn("activities", result["candidate_sets"])
+        first = result["candidate_sets"]["activities"][0]
+        self.assertIn("score_breakdown", first)
+        self.assertIn("explanation", first)
+        self.assertIn("provenance", first["place"])
+        self.assertGreaterEqual(result["plan"]["constraint_fit"]["distance"], 0)
+
     def test_recover_short_open_domain_plan_without_restaurant(self):
         service = PlanningService(llm_config=configured_test_llm_config())
         service.pipeline.llm = OpenDomainLLMClient(

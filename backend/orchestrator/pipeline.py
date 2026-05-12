@@ -26,6 +26,8 @@ from backend.models.schemas import (
     RecoveryDiff,
     TraceStep,
 )
+from backend.providers.local import confidence_for_tags, ground_place
+from backend.retrieval.ranker import rank_candidates
 from backend.tools import LocalToolRegistry
 
 
@@ -136,10 +138,30 @@ class PlanningPipeline:
     def _rank_candidates_node(self, graph_state: BuildGraphState) -> BuildGraphState:
         state = graph_state["state"]
         constraints = require_constraints(state)
-        state.ranked = {key: rank_items(items, constraints) for key, items in state.candidates.items()}
+        ranked: dict[str, list[dict]] = {}
+        candidate_sets: dict[str, list[dict[str, Any]]] = {}
+        rejected: dict[str, list[dict[str, Any]]] = {}
+        preferred_tags = list(constraints.preferences.get("activity", [])) + list(constraints.preferences.get("diet", []))
+        for key, items in state.candidates.items():
+            grounded = [ground_place(item, confidence_for_tags(item, preferred_tags)) for item in items]
+            result = rank_candidates(grounded, constraints)
+            ranked[key] = [candidate.place.as_poi_dict() for candidate in result.items]
+            candidate_sets[key] = [
+                {
+                    "place": candidate.place.as_poi_dict(),
+                    "total_score": candidate.total_score,
+                    "score_breakdown": candidate.breakdown,
+                    "explanation": candidate.explanation,
+                }
+                for candidate in result.items
+            ]
+            rejected[key] = result.rejected
+        state.ranked = ranked
+        state.candidate_sets = candidate_sets
+        state.rejected_candidates = rejected
         state.status = "ranked"
-        state.add_trace(TraceStep("RankerAgent", "rank_candidates", "ok", "按距离、评分、可订性、预算和场景匹配排序。", {}, {key: [item["id"] for item in value[:3]] for key, value in state.ranked.items()}, 180))
-        emit_progress(graph_state, "多目标排序", "按距离、评分、可订性、预算和场景匹配排序。")
+        state.add_trace(TraceStep("RankerAgent", "rank_candidates", "ok", "按语义、距离、质量、等待、预算、来源和风险排序。", {}, {key: [item["place"]["id"] for item in value[:3]] for key, value in candidate_sets.items()}, 180))
+        emit_progress(graph_state, "多目标排序", "按语义、距离、质量、等待、预算、来源和风险排序。")
         return {"state": state}
 
     def _build_itinerary_node(self, graph_state: BuildGraphState) -> BuildGraphState:

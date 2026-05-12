@@ -231,6 +231,8 @@ class PlanState:
     constraints: ParsedConstraints | None = None
     context: dict[str, Any] = field(default_factory=dict)
     candidates: dict[str, list[POI]] = field(default_factory=dict)
+    candidate_sets: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
+    rejected_candidates: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
     ranked: dict[str, list[POI]] = field(default_factory=dict)
     itinerary: list[ItineraryStep] = field(default_factory=list)
     route: dict[str, Any] = field(default_factory=dict)
@@ -421,6 +423,8 @@ def state_response(state: PlanState) -> dict[str, Any]:
         "progress": progress_from_trace(state.trace),
         "trace": [to_dict(step) for step in state.trace],
         "tool_calls": [to_dict(call) for call in state.tool_calls],
+        "candidate_sets": state.candidate_sets,
+        "rejected_candidates": state.rejected_candidates,
         "itinerary": state.plan_dict()["itinerary"],
         "pending_actions": [action_dict(action) for action in state.pending_actions],
         "plan": state.plan_dict(),
