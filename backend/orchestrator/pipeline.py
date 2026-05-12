@@ -150,6 +150,7 @@ class PlanningPipeline:
         walk = state.ranked["walks"][0] if should_include_walk(constraints, restaurant) and state.ranked.get("walks") else None
         waypoints = [item for item in [activity, restaurant, walk] if item]
         route = self.tools.optimize_route(waypoints).output
+        state.route = frontend_route(waypoints, route)
         state.itinerary = build_steps(activity, restaurant, walk, constraints)
         build_result = self.tools.build_itinerary(constraints, activity, restaurant, walk)
         state.add_tool_result(
@@ -217,29 +218,77 @@ class PlanningPipeline:
 
     def recover(self, state: PlanState, reason: str) -> PlanState:
         state.status = "recovering"
-        old_restaurant = next(step for step in state.itinerary if step.type == "restaurant")
-        restaurants = [item for item in state.ranked.get("restaurants", []) if item["id"] != old_restaurant.place_id]
-        fallback = restaurants[0] if restaurants else self.catalog.search_pois("restaurant", state.constraints.scenario, 8, ["fallback"])[0]
-        restaurant_index = next(index for index, step in enumerate(state.itinerary) if step.type == "restaurant")
-        state.itinerary[restaurant_index] = ItineraryStep("15:50", "16:50", "restaurant", fallback["name"], fallback["id"], fallback["reason"], f"约 {fallback['avg_price']} 元", "从上一站步行 7 分钟", 88, "已替换无位餐厅")
-        activity_step = next(step for step in state.itinerary if step.type == "activity")
-        walk_step = next(step for step in state.itinerary if step.type == "dessert_walk")
-        state.pending_actions = build_pending_actions(self.catalog.get_poi(activity_step.place_id), fallback, self.catalog.get_poi(walk_step.place_id), state.constraints)
+        constraints = require_constraints(state)
+        old_restaurant = find_step(state.itinerary, "restaurant")
+        if old_restaurant:
+            restaurants = [item for item in state.ranked.get("restaurants", []) if item["id"] != old_restaurant.place_id]
+            fallback = restaurants[0] if restaurants else self.catalog.search_pois("restaurant", constraints.scenario, 8, ["fallback"])[0]
+            restaurant_index = next(index for index, step in enumerate(state.itinerary) if step.type == "restaurant")
+            state.itinerary[restaurant_index] = ItineraryStep(
+                old_restaurant.start,
+                old_restaurant.end,
+                "restaurant",
+                fallback["name"],
+                fallback["id"],
+                fallback["reason"],
+                f"约 {fallback['avg_price']} 元",
+                "从上一站步行 7 分钟",
+                88,
+                "已替换无位餐厅",
+            )
+            changed = "restaurant"
+            from_value = old_restaurant.title
+            to_value = fallback["name"]
+            cost_delta = "+约 40 元"
+            travel_delta = "+步行 2 分钟"
+        else:
+            old_activity = find_step(state.itinerary, "activity")
+            if old_activity is None:
+                raise ValueError("validation_error")
+            activities = [item for item in state.ranked.get("activities", []) if item["id"] != old_activity.place_id]
+            fallback = activities[0] if activities else self.catalog.search_pois(None, None, 8, constraints.preferences.get("activity", []))[0]
+            activity_index = next(index for index, step in enumerate(state.itinerary) if step.type == "activity")
+            state.itinerary[activity_index] = ItineraryStep(
+                old_activity.start,
+                old_activity.end,
+                "activity",
+                fallback["name"],
+                fallback["id"],
+                fallback["reason"],
+                f"约 {fallback['avg_price']} 元",
+                old_activity.travel,
+                score_step(fallback, constraints),
+                "已替换不可用活动",
+            )
+            changed = "activity"
+            from_value = old_activity.title
+            to_value = fallback["name"]
+            cost_delta = "按新活动价格调整"
+            travel_delta = "路线保持相近"
+        activity_step = find_step(state.itinerary, "activity")
+        restaurant_step = find_step(state.itinerary, "restaurant")
+        walk_step = find_step(state.itinerary, "dessert_walk")
+        activity = self.catalog.get_poi(activity_step.place_id) if activity_step else fallback
+        restaurant = self.catalog.get_poi(restaurant_step.place_id) if restaurant_step else None
+        walk = self.catalog.get_poi(walk_step.place_id) if walk_step else None
+        waypoints = [item for item in [activity, restaurant, walk] if item]
+        state.route = frontend_route(waypoints, self.tools.optimize_route(waypoints).output)
+        state.pending_actions = build_pending_actions(activity, restaurant, walk, constraints)
         state.actions = list(state.pending_actions)
         diff = RecoveryDiff(
-            "restaurant",
+            changed,
             reason,
-            old_restaurant.title,
-            fallback["name"],
-            "+约 40 元",
-            "+步行 2 分钟",
-            [state.itinerary[0].title, state.itinerary[2].title],
+            from_value,
+            to_value,
+            cost_delta,
+            travel_delta,
+            [step.title for step in state.itinerary if step.title not in {to_value}],
         )
         state.diff = diff
         state.recovery_history.append(diff)
         state.adjustment = {
-            "headline": "餐厅临时不可用，已保留其他节点并替换餐厅",
-            "message": f"{old_restaurant.title} 当前不可用，已切换到 {fallback['name']}，活动和饭后安排保持不变。",
+            "headline": f"{'餐厅' if changed == 'restaurant' else '活动'}临时不可用，已只替换冲突节点",
+            "message": f"{from_value} 当前不可用，已切换到 {to_value}，其他安排保持不变。",
             "primaryAction": "重新确认执行",
             "secondaryAction": "换另一个备选",
         }
@@ -585,6 +634,10 @@ def require_constraints(state: PlanState) -> ParsedConstraints:
     return state.constraints
 
 
+def find_step(steps: list[ItineraryStep], step_type: str) -> ItineraryStep | None:
+    return next((step for step in steps if step.type == step_type), None)
+
+
 def emit_progress(graph_state: BuildGraphState, label: str, detail: str) -> None:
     on_progress = graph_state.get("on_progress")
     if on_progress:
@@ -596,6 +649,35 @@ def format_duration_hours(value) -> str:
     if hours.is_integer():
         return f"{int(hours)} 小时"
     return f"{hours:g} 小时"
+
+
+def frontend_route(waypoints: list[dict], route: dict[str, Any]) -> dict[str, Any]:
+    coordinates = [[float(item["lng"]), float(item["lat"])] for item in waypoints]
+    if len(coordinates) == 1:
+        lng, lat = coordinates[0]
+        coordinates.append([lng + 0.002, lat + 0.002])
+    if not coordinates:
+        coordinates = [[140.8824, 38.2601], [140.8844, 38.2621]]
+    legs = [
+        {
+            "from": leg.get("from_id", "origin"),
+            "to": leg.get("to_id", "destination"),
+            "mode": leg.get("mode", "taxi"),
+            "duration_minutes": int(leg.get("minutes", 0)),
+            "distance_km": float(leg.get("distance_km", 0)),
+            "route_summary": "本地 seed 路线矩阵估算",
+        }
+        for leg in route.get("legs", [])
+    ]
+    walking_km = sum(float(leg.get("distance_km", 0)) for leg in route.get("legs", []) if leg.get("mode") == "walk")
+    return {
+        "legs": legs,
+        "total_travel_minutes": int(route.get("total_travel_minutes", 0)),
+        "walking_distance_km": round(walking_km, 2),
+        "drive_time_minutes": int(route.get("total_travel_minutes", 0)) or 12,
+        "polyline": {"type": "LineString", "coordinates": coordinates},
+        "provider": "local_seed_route_matrix",
+    }
 
 
 def duration_hours_of(constraints: ParsedConstraints) -> float:
@@ -636,6 +718,11 @@ def apply_constraint_overrides(constraints: ParsedConstraints, overrides: dict) 
         constraints.preferences["budget_level"] = str(overrides["budget_level"])
     if "start" in overrides:
         constraints.time_window["start"] = str(overrides["start"])
+    if "duration_hours" in overrides:
+        duration = float(overrides["duration_hours"])
+        if duration <= 0:
+            raise ValueError("validation_error")
+        constraints.time_window["duration_hours"] = duration
     return constraints
 
 

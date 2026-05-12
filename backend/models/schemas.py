@@ -233,6 +233,7 @@ class PlanState:
     candidates: dict[str, list[POI]] = field(default_factory=dict)
     ranked: dict[str, list[POI]] = field(default_factory=dict)
     itinerary: list[ItineraryStep] = field(default_factory=list)
+    route: dict[str, Any] = field(default_factory=dict)
     overview: PlanOverview | None = None
     actions: list[PlanAction] = field(default_factory=list)
     pending_actions: list[PlanAction] = field(default_factory=list)
@@ -272,16 +273,20 @@ class PlanState:
         )
 
     def plan_dict(self) -> dict[str, Any]:
+        fit = constraint_fit_dict(self.constraints, self.itinerary, self.overview)
         return {
             "id": self.plan_id,
             "status": self.status,
             "title": plan_title(self.constraints, self.itinerary),
             "summary": plan_summary(self.constraints, self.itinerary),
             "constraints": to_dict(self.constraints),
+            "constraint_fit": fit,
             "itinerary": [step_dict(step) for step in self.itinerary],
             "overview": frontend_overview(self.overview),
             "actions": [action_dict(action) for action in self.actions],
-            "variants": [variant_dict(variant) for variant in self.variants],
+            "variants": [variant_dict(variant, fit) for variant in self.variants],
+            "receipts": [to_dict(receipt) for receipt in self.receipts],
+            "badges": plan_badges(self.constraints, self.itinerary),
         }
 
 
@@ -363,25 +368,37 @@ def step_dict(step: ItineraryStep) -> dict[str, Any]:
 
 
 def action_dict(action: PlanAction) -> dict[str, Any]:
+    payload = dict(action.payload)
+    place_id = payload.get("place_id") or payload.get("shop_id")
     return {
+        "id": action_id(action),
         "type": action.type,
+        "place_id": place_id,
         "label": action.label,
         "target": action.target,
         "detail": action.detail,
+        "requires_confirmation": action.requires_confirmation,
         "requiresConfirmation": action.requires_confirmation,
         "tool": action.tool,
-        "payload": dict(action.payload),
+        "payload": payload,
     }
 
 
-def variant_dict(variant: PlanVariant) -> dict[str, Any]:
+def action_id(action: PlanAction) -> str:
+    target = str(action.target).strip().replace(" ", "_")
+    return f"{action.tool or action.type}_{target or 'default'}"
+
+
+def variant_dict(variant: PlanVariant, fit: dict[str, float] | None = None) -> dict[str, Any]:
     return {
+        "id": f"variant_{variant.kind}",
         "kind": variant.kind,
         "title": variant.title,
         "summary": variant.summary,
         "score": variant.score,
         "estimated_budget": variant.estimated_budget,
         "itinerary": [step_dict(step) for step in variant.itinerary],
+        "constraint_fit": fit or {},
     }
 
 
@@ -408,12 +425,61 @@ def state_response(state: PlanState) -> dict[str, Any]:
         "pending_actions": [action_dict(action) for action in state.pending_actions],
         "plan": state.plan_dict(),
     }
+    if state.route:
+        response["route"] = state.route
     if state.receipts:
         response["receipts"] = [to_dict(receipt) for receipt in state.receipts]
     if state.diff:
         response["diff"] = state.diff.as_frontend_dict()
         response["adjustment"] = state.adjustment
     return response
+
+
+def constraint_fit_dict(constraints: ParsedConstraints | None, itinerary: list[ItineraryStep], overview: PlanOverview | None) -> dict[str, float]:
+    if not constraints:
+        return {"distance": 1, "time": 1, "budget": 1}
+    radius = max(float(constraints.constraints.get("radius_km", 5)), 1)
+    max_score = max((step.score for step in itinerary if step.type != "transport"), default=90)
+    distance_fit = max(0.0, min(1.0, max_score / 100))
+    time_fit = 1.0 if overview and overview.total_duration else 0.85
+    budget_fit = 0.92
+    if overview:
+        estimated = parse_money(overview.estimated_cost)
+        level = str(constraints.preferences.get("budget_level", "medium"))
+        limit = 500 if level == "low" else 1600 if level == "high" else 1000
+        budget_fit = max(0.0, min(1.0, 1 - max(0, estimated - limit) / max(limit, 1)))
+    result = {
+        "distance": round(distance_fit if radius else 1.0, 2),
+        "time": round(time_fit, 2),
+        "budget": round(budget_fit, 2),
+    }
+    if constraints.people.get("children"):
+        result["child_friendly"] = 1.0 if any(step.type == "activity" for step in itinerary) else 0.6
+    if constraints.preferences.get("diet"):
+        result["diet"] = 0.9 if any(step.type == "restaurant" for step in itinerary) else 0.7
+    return result
+
+
+def parse_money(value: str) -> int:
+    digits = "".join(ch for ch in value if ch.isdigit())
+    return int(digits or "0")
+
+
+def plan_badges(constraints: ParsedConstraints | None, itinerary: list[ItineraryStep]) -> list[str]:
+    if not constraints:
+        return ["本地生活"]
+    labels = {
+        "family": "家庭",
+        "friends": "朋友",
+        "date": "约会",
+        "rainy_indoor": "雨天",
+    }
+    intent = str(constraints.preferences.get("intent_label", "")).strip()
+    badges = [labels.get(constraints.scenario, intent or "开放域")]
+    badges.extend(str(tag) for tag in constraints.preferences.get("activity", [])[:2])
+    if "restaurant" not in {step.type for step in itinerary}:
+        badges.append("轻量短计划")
+    return list(dict.fromkeys(badges))
 
 
 def progress_from_trace(trace: list[TraceStep]) -> list[dict[str, str]]:
