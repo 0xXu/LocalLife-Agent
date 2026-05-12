@@ -46,6 +46,27 @@ test('ParsedConstraints uses rainy_indoor as the canonical rainy scenario id', (
   assert.equal(parsed.scenario, 'rainy_indoor');
 });
 
+test('ParsedConstraints accepts open-domain scenario labels from the LLM', () => {
+  const parsed = ParsedConstraintsSchema.parse({
+    scenario: 'pet_friendly_walk',
+    origin: { type: 'current_location', label: 'home', lat: 38.26, lng: 140.88 },
+    time_window: { date: 'today', start: '14:00', duration_hours: 2, flexible: true },
+    people: { adults: 1, children: [], relationship: 'solo' },
+    preferences: {
+      distance: 'nearby',
+      diet: [],
+      activity: ['pet', 'walkable'],
+      budget_level: 'low',
+      intent_label: '宠物散步',
+    },
+    constraints: { radius_km: 5, max_wait_minutes: 15, avoid: [] },
+    required_actions: ['send_plan_message'],
+  });
+
+  assert.equal(parsed.scenario, 'pet_friendly_walk');
+  assert.equal((parsed.preferences as any).intent_label, '宠物散步');
+});
+
 test('POI requires source, place id, availability, rating, review count, and risk fields', () => {
   const poi = PoiSchema.parse({
     id: 'r_014',
@@ -62,7 +83,7 @@ test('POI requires source, place id, availability, rating, review count, and ris
     wait_minutes: 8,
     booking_supported: true,
     availability: [{ time: '18:10', available: true, capacity: 4 }],
-    supported_scenarios: ['family'],
+    supported_scenarios: ['pet_friendly_walk', 'family'],
     source: 'seed_verified',
     reason: '低脂套餐和儿童座椅都可用。',
     risk_tags: ['weekend_queue'],

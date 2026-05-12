@@ -1,3 +1,4 @@
+import json
 import unittest
 
 from backend.llm.config import LLMConfig
@@ -76,6 +77,34 @@ class MisclassifiedHikingLLMClient:
           "required_actions": ["activity_reservation", "restaurant_reservation", "claim_coupon", "create_order", "send_plan_message", "create_calendar_event"]
         }
         """
+
+
+class OpenDomainLLMClient:
+    def __init__(self, scenario: str, label: str, activity_tags: list[str], goal_actions: list[str] | None = None):
+        self.scenario = scenario
+        self.label = label
+        self.activity_tags = activity_tags
+        self.goal_actions = goal_actions or ["send_plan_message", "create_calendar_event"]
+
+    def chat_stream(self, _messages):
+        yield json.dumps(
+            {
+                "scenario": self.scenario,
+                "origin": {"type": "current_location", "label": "home", "lat": 38.2601, "lng": 140.8824},
+                "time_window": {"date": "today", "start": "14:00", "duration_hours": 3, "flexible": True},
+                "people": {"adults": 1, "children": [], "relationship": "solo"},
+                "preferences": {
+                    "distance": "nearby",
+                    "diet": [],
+                    "activity": self.activity_tags,
+                    "budget_level": "medium",
+                    "intent_label": self.label,
+                },
+                "constraints": {"radius_km": 8, "max_wait_minutes": 15, "avoid": ["long_queue"]},
+                "required_actions": self.goal_actions,
+            },
+            ensure_ascii=False,
+        )
 
 
 class PlanningPipelineTest(unittest.TestCase):
@@ -257,9 +286,19 @@ class PlanningPipelineTest(unittest.TestCase):
         self.assertEqual(constraints.constraints["max_wait_minutes"], 15)
         self.assertEqual(constraints.constraints["avoid"], ["long_queue"])
 
-    def test_constraints_from_llm_rejects_invalid_scenario_enum(self):
-        with self.assertRaisesRegex(ValueError, "invalid_scenario"):
-            constraints_from_dict({"scenario": "family|friends|date|rainy_indoor"})
+    def test_constraints_from_llm_accepts_open_domain_scenario(self):
+        constraints = constraints_from_dict(
+            {
+                "scenario": "pet_friendly_walk",
+                "people": {"adults": 1, "children": [], "relationship": "solo"},
+                "preferences": {"activity": ["pet", "walkable"], "intent_label": "宠物散步"},
+                "constraints": {"radius_km": 5, "max_wait_minutes": 15, "avoid": []},
+                "time_window": {"date": "today", "start": "14:00", "duration_hours": 2, "flexible": True},
+            }
+        )
+
+        self.assertEqual(constraints.scenario, "pet_friendly_walk")
+        self.assertEqual(constraints.preferences["intent_label"], "宠物散步")
 
     def test_overview_duration_reflects_llm_time_window(self):
         pipeline = PlanningPipeline(
@@ -335,6 +374,41 @@ class PlanningPipelineTest(unittest.TestCase):
         self.assertNotIn("dessert_walk", [step.type for step in result.itinerary])
         self.assertNotIn("restaurant", [step.type for step in result.itinerary])
         self.assertIn("户外", result.plan_dict()["title"])
+
+    def test_open_domain_pet_walk_generates_grounded_plan_without_enum_mapping(self):
+        pipeline = PlanningPipeline(
+            llm_config=LLMConfig(
+                base_url="https://token-plan-sgp.xiaomimimo.com/v1",
+                api_key="secret-key-value",
+                model="MiMo-V2.5-Pro",
+                remote_enabled=True,
+            )
+        )
+        pipeline.llm = OpenDomainLLMClient("pet_friendly_walk", "宠物散步", ["pet", "outdoor", "walkable"])
+
+        result = pipeline.build("想带狗狗找个能散步的地方，别太吵")
+
+        self.assertEqual(result.constraints.scenario, "pet_friendly_walk")
+        self.assertIn("pet", result.constraints.preferences["activity"])
+        self.assertIn("pet", result.ranked["activities"][0]["tags"])
+        self.assertIn("宠物", result.plan_dict()["title"])
+
+    def test_open_domain_work_cafe_generates_grounded_plan_without_enum_mapping(self):
+        pipeline = PlanningPipeline(
+            llm_config=LLMConfig(
+                base_url="https://token-plan-sgp.xiaomimimo.com/v1",
+                api_key="secret-key-value",
+                model="MiMo-V2.5-Pro",
+                remote_enabled=True,
+            )
+        )
+        pipeline.llm = OpenDomainLLMClient("deep_work_cafe", "写代码自习", ["work", "quiet", "cafe", "wifi"])
+
+        result = pipeline.build("我想找个地方写代码三小时，顺便喝咖啡")
+
+        self.assertEqual(result.constraints.scenario, "deep_work_cafe")
+        self.assertTrue({"work", "cafe"} <= set(result.ranked["activities"][0]["tags"]))
+        self.assertIn("写代码", result.plan_dict()["title"])
 
 
 if __name__ == "__main__":

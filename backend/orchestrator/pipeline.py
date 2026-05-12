@@ -255,10 +255,11 @@ class PlanningPipeline:
                 "role": "system",
                 "content": (
                     "Extract planning info as one JSON object only. Do not use markdown, prose, or reasoning.\n"
-                    "The scenario value must be exactly one of: family, friends, date, rainy_indoor. Never return the enum list itself.\n"
-                    "Use family only for children/family trips, friends only for explicit friends/groups, rainy_indoor only for rainy or indoor-first requests, and date for couples, solo quiet plans, bookstores, art, calm walks, or low-noise experiences.\n"
-                    "For hiking, climbing, mountain, trail, trekking, or outdoor nature requests, use friends unless the user explicitly mentions children/family/date/rain. Put hiking/outdoor/nature in preferences.activity. Do not copy restaurant/coupon/order actions unless the user asks to eat or book a meal.\n"
-                    '{"scenario":"family","origin":{"type":"current_location","label":"home","lat":38.26,"lng":140.88},"time_window":{"date":"today","start":"HH:MM","duration_hours":4.5,"flexible":true},"people":{"adults":2,"children":[{"age":5}],"relationship":"family"},"preferences":{"distance":"nearby","diet":[],"activity":[],"budget_level":"medium"},"constraints":{"radius_km":5,"max_wait_minutes":15,"avoid":[]},"required_actions":["activity_reservation","restaurant_reservation","claim_coupon","create_order","send_plan_message","create_calendar_event"]}'
+                    "Do not force the user's goal into a fixed enum. The scenario value should be a short open-domain snake_case label such as hiking, pet_friendly_walk, deep_work_cafe, birthday_surprise, badminton, museum_day, ktv_night, parent_child_science, rainy_indoor, or family_picnic.\n"
+                    "preferences.activity must be 3-8 concrete retrieval tags for tools, using natural English tags like hiking, outdoor, pet, quiet, cafe, wifi, work, sports, badminton, basketball, birthday, photo, museum, art, cinema, shopping, wellness, spa, ktv, nightlife, child_friendly, indoor, rain_safe, walkable.\n"
+                    "preferences.intent_label should be a short Chinese display label, for example 宠物散步, 写代码自习, 羽毛球运动, 生日惊喜, 雨天室内.\n"
+                    "Only include restaurant/coupon/order actions when the user asks for eating, dining, booking a meal, coupons, or ordering. Always include send_plan_message and create_calendar_event.\n"
+                    '{"scenario":"open_domain_label","origin":{"type":"current_location","label":"home","lat":38.26,"lng":140.88},"time_window":{"date":"today","start":"HH:MM","duration_hours":3,"flexible":true},"people":{"adults":1,"children":[],"relationship":"solo"},"preferences":{"distance":"nearby","diet":[],"activity":["tag1","tag2"],"budget_level":"medium","intent_label":"中文短标签"},"constraints":{"radius_km":8,"max_wait_minutes":15,"avoid":["long_queue"]},"required_actions":["send_plan_message","create_calendar_event"]}'
                 ),
             },
             {"role": "user", "content": goal},
@@ -320,7 +321,9 @@ def detect_scenario(goal: str) -> str:
         return "date"
     if "朋友" in goal or re.search(r"\d+\s*男\s*\d+\s*女", goal):
         return "friends"
-    return "family"
+    if re.search(r"孩子|小孩|亲子|老婆孩子|family|child|kid", goal, re.I):
+        return "family"
+    return "local_life"
 
 
 def parse_child_age(goal: str) -> int | None:
@@ -344,9 +347,7 @@ def parse_adult_count(goal: str, child_age: int | None, scenario: str) -> int:
 
 def constraints_from_dict(data: dict) -> ParsedConstraints:
     fallback = deterministic_constraints("")
-    scenario = data.get("scenario", fallback.scenario)
-    if scenario not in {"family", "friends", "date", "rainy_indoor"}:
-        raise ValueError(f"invalid_scenario:{scenario}")
+    scenario = normalize_scenario_label(data.get("scenario", fallback.scenario))
     people = normalize_people(data.get("people", fallback.people), fallback.people)
     time_window = normalize_time_window(data.get("time_window", fallback.time_window), fallback.time_window)
     preferences = normalize_preferences(data.get("preferences", fallback.preferences), fallback.preferences)
@@ -364,7 +365,7 @@ def constraints_from_dict(data: dict) -> ParsedConstraints:
 
 def normalize_constraints_for_goal(goal: str, constraints: ParsedConstraints) -> ParsedConstraints:
     if not is_hiking_goal(goal):
-        return constraints
+        return enrich_constraints_for_goal(goal, constraints)
 
     if not has_family_signal(goal) and not has_date_signal(goal) and constraints.scenario != "rainy_indoor":
         constraints.scenario = "friends"
@@ -387,7 +388,83 @@ def normalize_constraints_for_goal(goal: str, constraints: ParsedConstraints) ->
             action for action in as_list(constraints.required_actions)
             if action not in {"restaurant_reservation", "claim_coupon", "create_order"}
         ]
+    return enrich_constraints_for_goal(goal, constraints)
+
+
+def enrich_constraints_for_goal(goal: str, constraints: ParsedConstraints) -> ParsedConstraints:
+    tags = unique_list([*infer_activity_tags(goal), *as_list(constraints.preferences.get("activity", []))])
+    if tags:
+        constraints.preferences["activity"] = tags
+    if "intent_label" not in constraints.preferences or not str(constraints.preferences.get("intent_label", "")).strip():
+        constraints.preferences["intent_label"] = infer_intent_label(goal, constraints)
+    party_size = parse_party_size(goal)
+    if party_size:
+        constraints.people["adults"] = party_size
+        if not has_family_signal(goal):
+            constraints.people["children"] = []
+    if has_food_signal(goal):
+        constraints.required_actions = unique_list([*as_list(constraints.required_actions), "restaurant_reservation", "claim_coupon", "create_order"])
+    else:
+        constraints.required_actions = [
+            action for action in as_list(constraints.required_actions)
+            if action not in {"restaurant_reservation", "claim_coupon", "create_order"}
+        ]
     return constraints
+
+
+def normalize_scenario_label(value) -> str:
+    label = str(value or "local_life").strip()
+    if not label or "|" in label or "," in label:
+        return "local_life"
+    normalized = re.sub(r"\s+", "_", label.lower())
+    normalized = re.sub(r"[^0-9a-zA-Z_\-\u4e00-\u9fff]", "", normalized)
+    return normalized or "local_life"
+
+
+def infer_activity_tags(goal: str) -> list[str]:
+    patterns = [
+        (r"爬山|登山|徒步|山野|步道|hiking?|mountain|trail|trek", ["hiking", "outdoor", "nature", "walkable"]),
+        (r"狗|宠物|猫|pet|dog|cat", ["pet", "outdoor", "walkable"]),
+        (r"写代码|自习|学习|办公|工作|电脑|咖啡|coffee|cafe|work|study", ["work", "quiet", "cafe", "wifi"]),
+        (r"羽毛球|篮球|足球|网球|运动|健身|badminton|basketball|sports|fitness", ["sports", "group_friendly"]),
+        (r"生日|惊喜|纪念日|庆祝|birthday|celebration", ["birthday", "celebration", "photo"]),
+        (r"展|博物馆|美术馆|艺术|museum|gallery|art", ["museum", "art", "quiet", "indoor"]),
+        (r"电影|影院|cinema|movie", ["cinema", "indoor", "low_noise"]),
+        (r"逛街|商场|买东西|shopping|mall", ["shopping", "indoor", "walkable"]),
+        (r"KTV|酒吧|夜生活|唱歌|bar|nightlife", ["ktv", "nightlife", "group_friendly"]),
+        (r"按摩|spa|放松|疗愈|wellness|relax", ["wellness", "spa", "quiet"]),
+        (r"密室|剧本杀|escape|mystery", ["immersive", "mystery", "group_friendly"]),
+        (r"孩子|小孩|亲子|family|child|kid", ["child_friendly", "not_too_tiring"]),
+        (r"雨|下雨|室内|rain|indoor", ["indoor", "rain_safe"]),
+    ]
+    tags: list[str] = []
+    for pattern, values in patterns:
+        if re.search(pattern, goal, re.I):
+            tags.extend(values)
+    return unique_list(tags)
+
+
+def infer_intent_label(goal: str, constraints: ParsedConstraints) -> str:
+    tag_labels = [
+        ({"pet"}, "宠物散步"),
+        ({"work", "cafe"}, "写代码自习"),
+        ({"hiking"}, "户外徒步"),
+        ({"sports"}, "运动计划"),
+        ({"birthday"}, "生日惊喜"),
+        ({"museum", "art"}, "看展计划"),
+        ({"cinema"}, "电影计划"),
+        ({"shopping"}, "逛街计划"),
+        ({"ktv", "nightlife"}, "夜生活聚会"),
+        ({"wellness", "spa"}, "放松疗愈"),
+        ({"child_friendly"}, "亲子活动"),
+        ({"rain_safe"}, "雨天室内"),
+    ]
+    tags = set(constraints.preferences.get("activity", [])) | set(infer_activity_tags(goal))
+    for required, label in tag_labels:
+        if required <= tags:
+            return label
+    scenario = constraints.scenario.replace("_", " ").strip()
+    return scenario if re.search(r"[\u4e00-\u9fff]", scenario) else "本地生活"
 
 
 def is_hiking_goal(goal: str) -> bool:
@@ -403,7 +480,7 @@ def has_date_signal(goal: str) -> bool:
 
 
 def has_food_signal(goal: str) -> bool:
-    return bool(re.search(r"吃饭|用餐|聚餐|餐厅|晚饭|午饭|早饭|饭|dinner|lunch|restaurant|meal", goal, re.I))
+    return bool(re.search(r"吃饭|吃点|吃个|吃些|用餐|聚餐|餐厅|晚饭|午饭|早饭|饭|dinner|lunch|restaurant|meal|dining", goal, re.I))
 
 
 def has_explicit_duration(goal: str) -> bool:
@@ -533,7 +610,7 @@ def should_include_restaurant(constraints: ParsedConstraints) -> bool:
     required = required_actions_of(constraints)
     if required & {"restaurant_reservation", "claim_coupon", "create_order"}:
         return True
-    if set(constraints.preferences.get("activity", [])) & {"hiking", "outdoor", "nature"}:
+    if set(constraints.preferences.get("activity", [])) & {"hiking", "outdoor", "nature", "pet", "work", "sports"}:
         return False
     return duration_hours_of(constraints) >= 2.25
 
@@ -684,11 +761,13 @@ def risk_text(poi: dict) -> str:
 
 
 def build_variants(steps: list[ItineraryStep], budget: int, constraints: ParsedConstraints, base_score: int) -> list[PlanVariant]:
+    experience_title = "孩子优先版" if constraints.scenario == "family" else "体验优先版"
+    experience_kind = "child_first" if constraints.scenario == "family" else "experience_first"
     return [
         PlanVariant("main", "主方案", "综合距离、可订性和偏好匹配。", base_score, budget, [copy_step(step) for step in steps]),
         PlanVariant("budget", "省钱版", "优先使用团购券和低客单价餐厅。", max(60, base_score - 5), max(300, budget - 120), [copy_step(step) for step in steps]),
         PlanVariant("comfort", "舒适版", "减少步行和等待，优先高评分点位。", min(98, base_score + 2), budget + 160, [copy_step(step) for step in steps]),
-        PlanVariant("child_first", "孩子优先版" if constraints.scenario == "family" else "体验优先版", "优先照顾活动体验和节奏。", max(60, min(98, base_score - 1)), budget + 60, [copy_step(step) for step in steps]),
+        PlanVariant(experience_kind, experience_title, "优先照顾活动体验和节奏。", max(60, min(98, base_score - 1)), budget + 60, [copy_step(step) for step in steps]),
     ]
 
 
@@ -698,7 +777,8 @@ def copy_step(step: ItineraryStep) -> ItineraryStep:
 
 def build_pending_actions(activity: dict, restaurant: dict | None, walk: dict | None, constraints: ParsedConstraints) -> list[PlanAction]:
     people = party_size_of(constraints)
-    recipient = "家庭群聊" if constraints.scenario == "family" else "朋友群聊" if constraints.scenario == "friends" else "同行人"
+    relationship = str(constraints.people.get("relationship", constraints.scenario))
+    recipient = "家庭群聊" if constraints.scenario == "family" or relationship == "family" else "朋友群聊" if constraints.scenario == "friends" or relationship == "friends" else "同行人"
     actions = [
         PlanAction("activity_reservation", "预约活动", activity["name"], f"{people} 人名额，14:00 到 15:30。", True, "reserve_activity", {"place_id": activity["id"], "people": people}),
     ]
@@ -724,9 +804,10 @@ def party_size_of(constraints: ParsedConstraints) -> int:
 
 
 def scenario_theme(scenario: str) -> str:
+    label = scenario.replace("_", " ").strip()
     return {
         "family": "下午 · 家庭 · 健康轻松",
         "friends": "下午 · 朋友 · 轻量聚会",
         "date": "下午 · 约会 · 安静有氛围",
         "rainy_indoor": "下午 · 雨天 · 室内稳定",
-    }.get(scenario, "下午 · 本地生活 · 可执行")
+    }.get(scenario, f"下午 · {label or '本地生活'} · 可执行")

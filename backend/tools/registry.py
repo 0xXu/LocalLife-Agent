@@ -35,16 +35,35 @@ class LocalToolRegistry:
         return ToolResult("get_weather", dict(self.catalog.weather[key]))
 
     def search_places(self, scenario: str, radius_km: float, tags: list[str]) -> ToolResult:
-        category = {
+        legacy_category = {
             "family": "family_activity",
             "friends": "social_activity",
             "date": "date_activity",
             "rainy_indoor": "indoor_activity",
-        }.get(scenario, "family_activity")
-        return ToolResult("search_places", {"items": self.catalog.search_pois(category, scenario, radius_km, tags)[:8]})
+        }.get(scenario)
+        broad_search = bool(set(tags) - {"child_friendly", "not_too_tiring", "social", "photo", "quiet", "romantic", "indoor", "rain_safe"})
+        scenario_filter = scenario if legacy_category and not broad_search else None
+        category_filter = legacy_category if legacy_category and not broad_search else None
+        items = self.catalog.search_pois(category_filter, scenario_filter, radius_km, tags)
+        activities = [item for item in items if item["category"] not in {"restaurant", "dessert_walk"}]
+        if not activities:
+            activities = [
+                item for item in self.catalog.search_pois(None, None, radius_km, tags)
+                if item["category"] not in {"restaurant", "dessert_walk"}
+            ]
+        if not activities:
+            activities = [
+                item for item in self.catalog.search_pois(None, None, radius_km, [])
+                if item["category"] not in {"restaurant", "dessert_walk"}
+            ]
+        return ToolResult("search_places", {"items": activities[:8]})
 
     def search_restaurants(self, scenario: str, radius_km: float, tags: list[str]) -> ToolResult:
-        return ToolResult("search_restaurants", {"items": self.catalog.search_pois("restaurant", scenario, radius_km, tags)[:8]})
+        scenario_filter = scenario if scenario in {"family", "friends", "date", "rainy_indoor"} else None
+        items = self.catalog.search_pois("restaurant", scenario_filter, radius_km, tags)
+        if not items and scenario_filter:
+            items = self.catalog.search_pois("restaurant", None, radius_km, tags)
+        return ToolResult("search_restaurants", {"items": items[:8]})
 
     def check_availability(self, place_id: str, time: str, party_size: int) -> ToolResult:
         poi = self.catalog.get_poi(place_id)

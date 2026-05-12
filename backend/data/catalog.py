@@ -71,8 +71,18 @@ def build_pois() -> list[dict]:
         ("social_activity", "复古拍照街区", ["friends", "date"], ["photo", "walkable", "social"], "拍照点密集，适合朋友或情侣。"),
         ("social_activity", "山野徒步步道", ["friends", "date"], ["hiking", "outdoor", "nature", "walkable", "group_friendly"], "适合三五好友轻徒步，沿途有观景点和补给点。"),
         ("social_activity", "近郊登山路线", ["friends", "family"], ["hiking", "mountain", "outdoor", "nature", "not_too_tiring"], "坡度适中，适合半天内完成的近郊登山。"),
+        ("social_activity", "宠物友好河岸公园", ["pet_friendly_walk", "friends", "family"], ["pet", "outdoor", "walkable", "quiet", "nature"], "允许牵绳宠物进入，路面平缓，适合低噪音散步。"),
+        ("social_activity", "自习咖啡馆", ["deep_work_cafe", "date", "friends"], ["work", "quiet", "cafe", "wifi", "indoor"], "有插座、Wi-Fi 和安静座位，适合写代码或自习。"),
+        ("restaurant", "运动补给轻食吧", ["sports", "badminton", "friends", "family"], ["healthy", "protein", "low_fat", "booking_supported", "group_friendly"], "运动后适合补充蛋白质，座位周转快。"),
+        ("social_activity", "社区羽毛球馆", ["badminton", "sports", "friends"], ["sports", "badminton", "indoor", "group_friendly"], "可预约场地，适合朋友运动和轻量出汗。"),
+        ("social_activity", "生日布置拍照馆", ["birthday_surprise", "celebration", "date", "friends"], ["birthday", "celebration", "photo", "indoor"], "提供小型生日布置和拍照区域，适合惊喜安排。"),
+        ("social_activity", "沉浸式剧本空间", ["mystery_game", "friends"], ["immersive", "mystery", "group_friendly", "indoor"], "适合朋友组局，节奏完整且不受天气影响。"),
+        ("social_activity", "夜间KTV包厢", ["ktv_night", "nightlife", "friends"], ["ktv", "nightlife", "group_friendly", "indoor"], "夜间可订包厢，适合唱歌聚会。"),
         ("date_activity", "安静艺术展", ["date", "rainy_indoor"], ["quiet", "indoor", "romantic"], "安静、有氛围，排队风险低。"),
+        ("date_activity", "小型独立影院", ["cinema", "date", "rainy_indoor"], ["cinema", "indoor", "low_noise", "quiet"], "排片灵活，适合低噪音观影。"),
+        ("date_activity", "疗愈香氛SPA", ["wellness_spa", "date"], ["wellness", "spa", "quiet", "relax"], "节奏慢、私密度高，适合放松恢复。"),
         ("indoor_activity", "商场室内体验馆", ["rainy_indoor", "family", "friends"], ["indoor", "rain_safe", "nearby"], "雨天可替代户外节点。"),
+        ("indoor_activity", "综合购物中心", ["shopping", "rainy_indoor", "friends", "family"], ["shopping", "indoor", "walkable", "rain_safe"], "购物、餐饮和休息点集中，适合不确定天气。"),
         ("restaurant", "绿荫轻食餐厅", ["family", "friends", "date", "rainy_indoor"], ["low_fat", "healthy", "booking_supported", "child_seat"], "低脂菜单和儿童座椅都可用。"),
         ("restaurant", "轻碗健康餐厅", ["family", "friends", "rainy_indoor"], ["low_fat", "healthy", "fallback", "group_friendly"], "主餐厅无位时的健康备选。"),
         ("restaurant", "小巷氛围餐厅", ["date", "friends"], ["romantic", "quiet", "booking_supported"], "灯光安静，适合约会。"),
@@ -111,7 +121,7 @@ def build_pois() -> list[dict]:
                 }
             )
             idx += 1
-    return pois[:90]
+    return pois[:110]
 
 
 def build_coupons(pois: list[dict]) -> list[dict]:

@@ -288,7 +288,10 @@ class PlanState:
 def plan_title(constraints: ParsedConstraints | None, itinerary: list[ItineraryStep] | None = None) -> str:
     scenario = constraints.scenario if constraints else "family"
     step_types = {step.type for step in itinerary or []}
+    intent_label = str((constraints.preferences if constraints else {}).get("intent_label", "")).strip()
     activity_text = " ".join(step.title for step in itinerary or [] if step.type == "activity")
+    if intent_label and scenario not in {"family", "friends", "date", "rainy_indoor"}:
+        return f"{intent_label}短计划" if "restaurant" not in step_types else f"{intent_label} + 顺路用餐计划"
     if any(keyword in activity_text for keyword in ["山", "徒步", "登山", "步道"]):
         return "户外徒步短计划" if "restaurant" not in step_types else "户外徒步 + 顺路补给计划"
     if itinerary and "restaurant" not in step_types:
@@ -316,7 +319,10 @@ def plan_title(constraints: ParsedConstraints | None, itinerary: list[ItineraryS
 def plan_summary(constraints: ParsedConstraints | None, itinerary: list[ItineraryStep] | None = None) -> str:
     scenario = constraints.scenario if constraints else "family"
     step_types = {step.type for step in itinerary or []}
+    intent_label = str((constraints.preferences if constraints else {}).get("intent_label", "")).strip()
     activity_text = " ".join(step.title for step in itinerary or [] if step.type == "activity")
+    if intent_label and scenario not in {"family", "friends", "date", "rainy_indoor"}:
+        return f"围绕“{intent_label}”选择本地供给，按时间、距离、预算和可执行动作生成计划。"
     if any(keyword in activity_text for keyword in ["山", "徒步", "登山", "步道"]):
         return "围绕户外徒步安排核心路线，去掉不必要的餐厅和甜品绕路。" if "restaurant" not in step_types else "户外徒步后只保留顺路补给，控制绕行和等待。"
     if itinerary and "restaurant" not in step_types:

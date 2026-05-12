@@ -4,7 +4,7 @@ const JsonSchema: z.ZodType<unknown> = z.lazy(() =>
   z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(JsonSchema), z.record(z.string(), JsonSchema)]),
 );
 
-export const ScenarioSchema = z.enum(['family', 'friends', 'date', 'rainy_indoor']);
+export const ScenarioSchema = z.string().min(1);
 
 export const OriginSchema = z.object({
   type: z.enum(['current_location', 'address', 'poi', 'district']),
@@ -31,7 +31,7 @@ export const PreferencesSchema = z.object({
   diet: z.array(z.string()).default([]),
   activity: z.array(z.string()).default([]),
   budget_level: z.string(),
-});
+}).catchall(JsonSchema);
 
 export const ConstraintRulesSchema = z.object({
   radius_km: z.number().positive(),
@@ -76,7 +76,7 @@ export const PoiSchema = z.object({
   wait_minutes: z.number().int().nonnegative(),
   booking_supported: z.boolean(),
   availability: z.array(AvailabilitySlotSchema),
-  supported_scenarios: z.array(ScenarioSchema).default([]),
+  supported_scenarios: z.array(z.string()).default([]),
   source: z.string(),
   reason: z.string(),
   risk_tags: z.array(z.string()).default([]),
