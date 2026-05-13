@@ -281,11 +281,30 @@ class WorkflowRepository:
             if existing_action is not None:
                 if existing_action["idempotency_key"] != idempotency_key:
                     raise ValueError(f"action_id_conflict:{action_id}")
+                receipt_matches = existing_action["receipt_id"] == receipt_id
+                existing_receipt_was_recorded = False
+                if existing_action["receipt_id"] is not None:
+                    existing_receipt_was_recorded = (
+                        conn.execute(
+                            """
+                            select 1 from receipts
+                            where receipt_id = ? and action_id = ? and revision_id = ?
+                            """,
+                            (existing_action["receipt_id"], action_id, existing_action["revision_id"]),
+                        ).fetchone()
+                        is not None
+                    )
+                default_reseed_after_success = (
+                    receipt_id is None
+                    and status == "pending"
+                    and existing_action["status"] == "succeeded"
+                    and existing_receipt_was_recorded
+                )
                 if (
                     existing_action["revision_id"] != revision_id
                     or existing_action["tool"] != tool
                     or existing_action["payload_json"] != _json_dumps(payload)
-                    or (receipt_id is not None and existing_action["receipt_id"] != receipt_id)
+                    or (not receipt_matches and not default_reseed_after_success)
                     or (status != "pending" and existing_action["status"] != status)
                 ):
                     raise ValueError(f"action_seed_conflict:{action_id}")

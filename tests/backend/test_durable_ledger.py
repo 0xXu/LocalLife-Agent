@@ -172,6 +172,44 @@ def test_seed_actions_rejects_changed_tool_for_same_action_and_key(tmp_path: Pat
         )
 
 
+def test_seed_actions_rejects_missing_receipt_for_same_action_and_key(tmp_path: Path):
+    ledger = DurableActionLedger(_repository(tmp_path))
+    ledger.seed_actions(
+        "rev_1",
+        [
+            {
+                "action_id": "act_msg",
+                "tool": "messaging",
+                "idempotency_key": "idem_1",
+                "payload": {},
+                "receipt_id": "R1",
+            }
+        ],
+    )
+
+    with pytest.raises(ValueError, match="action_seed_conflict:act_msg"):
+        ledger.seed_actions(
+            "rev_1",
+            [{"action_id": "act_msg", "tool": "messaging", "idempotency_key": "idem_1", "payload": {}}],
+        )
+
+
+def test_seed_actions_rejects_changed_revision_for_same_action_and_key(tmp_path: Path):
+    repository = _repository(tmp_path)
+    repository.save_revision("rev_2", "plan_1", 2, "draft", "Goal", {}, {}, {})
+    ledger = DurableActionLedger(repository)
+    ledger.seed_actions(
+        "rev_1",
+        [{"action_id": "act_msg", "tool": "messaging", "idempotency_key": "idem_1", "payload": {}}],
+    )
+
+    with pytest.raises(ValueError, match="action_seed_conflict:act_msg"):
+        ledger.seed_actions(
+            "rev_2",
+            [{"action_id": "act_msg", "tool": "messaging", "idempotency_key": "idem_1", "payload": {}}],
+        )
+
+
 def test_mark_succeeded_finishes_action_when_receipt_already_exists(tmp_path: Path):
     repository = _repository(tmp_path)
     ledger = DurableActionLedger(repository)
