@@ -270,6 +270,25 @@ class WorkflowRepository:
             ).fetchall()
         return [self._action_from_row(row) for row in rows]
 
+    def get_action(self, action_id: str) -> dict[str, Any] | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                "select * from action_ledger where action_id = ?",
+                (action_id,),
+            ).fetchone()
+        return self._action_from_row(row) if row else None
+
+    def update_action_status(self, action_id: str, status: str, receipt_id: str | None = None) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                update action_ledger
+                set status = ?, receipt_id = ?, updated_at = ?
+                where action_id = ?
+                """,
+                (status, receipt_id, _now(), action_id),
+            )
+
     def get_action_by_idempotency_key(self, idempotency_key: str) -> dict[str, Any] | None:
         with self._connect() as conn:
             row = conn.execute(

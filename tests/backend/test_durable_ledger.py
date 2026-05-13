@@ -1,0 +1,78 @@
+from pathlib import Path
+
+import pytest
+
+from backend.actions.durable_ledger import DurableActionLedger
+from backend.storage.workflow_repository import WorkflowRepository
+
+
+def _repository(tmp_path: Path) -> WorkflowRepository:
+    repository = WorkflowRepository(tmp_path / "workflow.sqlite")
+    repository.save_revision("rev_1", "plan_1", 1, "draft", "Goal", {}, {}, {})
+    return repository
+
+
+def _seed_two_actions(ledger: DurableActionLedger) -> None:
+    ledger.seed_actions(
+        "rev_1",
+        [
+            {"action_id": "act_msg", "tool": "messaging", "payload": {"recipient": "traveler"}},
+            {"action_id": "act_cal", "tool": "calendar", "payload": {"title": "Dinner"}},
+        ],
+    )
+
+
+def test_ledger_executes_selected_actions_once_and_preserves_receipts(tmp_path: Path):
+    repository = _repository(tmp_path)
+    ledger = DurableActionLedger(repository)
+    _seed_two_actions(ledger)
+
+    executing = ledger.mark_executing("rev_1", ["act_msg"])
+    ledger.mark_succeeded("act_msg", "MSG-1", "Sent", {"provider": "line"})
+    repeated = ledger.mark_executing("rev_1", ["act_msg"])
+    next_executing = ledger.mark_executing("rev_1", ["act_cal"])
+
+    assert [action["action_id"] for action in executing] == ["act_msg"]
+    assert repeated == []
+    assert [action["action_id"] for action in next_executing] == ["act_cal"]
+    assert {action["action_id"]: action["status"] for action in ledger.list_actions("rev_1")} == {
+        "act_msg": "succeeded",
+        "act_cal": "executing",
+    }
+    assert [receipt["receipt_id"] for receipt in ledger.list_receipts("rev_1")] == ["MSG-1"]
+
+
+def test_ledger_survives_repository_reopen(tmp_path: Path):
+    db_path = tmp_path / "workflow.sqlite"
+    repository = WorkflowRepository(db_path)
+    repository.save_revision("rev_1", "plan_1", 1, "draft", "Goal", {}, {}, {})
+    ledger = DurableActionLedger(repository)
+    ledger.seed_actions("rev_1", [{"action_id": "act_msg", "tool": "messaging", "payload": {"body": "hello"}}])
+    ledger.mark_executing("rev_1", ["act_msg"])
+    ledger.mark_succeeded("act_msg", "MSG-1", "Sent", {"provider": "line"})
+
+    reopened = DurableActionLedger(WorkflowRepository(db_path))
+
+    assert reopened.mark_executing("rev_1", ["act_msg"]) == []
+    assert [receipt["receipt_id"] for receipt in reopened.list_receipts("rev_1")] == ["MSG-1"]
+
+
+def test_unknown_action_id_fails_validation(tmp_path: Path):
+    ledger = DurableActionLedger(_repository(tmp_path))
+    ledger.seed_actions("rev_1", [{"action_id": "act_msg", "tool": "messaging", "payload": {}}])
+
+    with pytest.raises(ValueError, match="unknown_action_id:act_missing"):
+        ledger.mark_executing("rev_1", ["act_missing"])
+    with pytest.raises(ValueError, match="unknown_action_id:act_missing"):
+        ledger.mark_succeeded("act_missing", "MSG-1", "Sent", {})
+
+
+def test_mark_succeeded_is_idempotent_for_same_receipt_id(tmp_path: Path):
+    ledger = DurableActionLedger(_repository(tmp_path))
+    ledger.seed_actions("rev_1", [{"action_id": "act_msg", "tool": "messaging", "payload": {"body": "hello"}}])
+    ledger.mark_executing("rev_1", ["act_msg"])
+
+    ledger.mark_succeeded("act_msg", "MSG-1", "Sent", {"provider": "line"})
+    ledger.mark_succeeded("act_msg", "MSG-1", "Sent", {"provider": "line"})
+
+    assert [receipt["receipt_id"] for receipt in ledger.list_receipts("rev_1")] == ["MSG-1"]
