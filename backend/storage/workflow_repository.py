@@ -84,8 +84,8 @@ class WorkflowRepository:
                     revision_id text not null,
                     tool text not null,
                     status text not null,
-                    message text not null,
-                    metadata_json text not null,
+                    detail text not null,
+                    payload_json text not null,
                     created_at text not null
                 );
                 """
@@ -272,16 +272,16 @@ class WorkflowRepository:
         revision_id: str,
         tool: str,
         status: str,
-        message: str,
-        metadata: dict[str, Any],
+        detail: str,
+        payload: dict[str, Any],
     ) -> None:
         with self._connect() as conn:
             conn.execute(
                 """
-                insert into receipts(receipt_id, action_id, revision_id, tool, status, message, metadata_json, created_at)
+                insert into receipts(receipt_id, action_id, revision_id, tool, status, detail, payload_json, created_at)
                 values (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (receipt_id, action_id, revision_id, tool, status, message, _json_dumps(metadata), _now()),
+                (receipt_id, action_id, revision_id, tool, status, detail, _json_dumps(payload), _now()),
             )
 
     def list_receipts(self, revision_id: str) -> list[dict[str, Any]]:
@@ -312,5 +312,5 @@ class WorkflowRepository:
 
     def _receipt_from_row(self, row: sqlite3.Row) -> dict[str, Any]:
         receipt = dict(row)
-        receipt["metadata"] = _json_loads(receipt.pop("metadata_json"))
+        receipt["payload"] = _json_loads(receipt.pop("payload_json"))
         return receipt

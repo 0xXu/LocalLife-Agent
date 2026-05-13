@@ -14,7 +14,7 @@ def test_repository_persists_thread_revision_ledger_and_receipt(tmp_path: Path):
     payload = {"booking": {"party_size": 4}, "notes": "窓側"}
     request = {"method": "POST", "body": {"slot": "18:00"}}
     response = {"status_code": 200, "body": {"message_id": "MSG-1"}}
-    metadata = {"provider": "line", "raw": {"message_id": "MSG-1"}}
+    receipt_payload = {"provider": "line", "raw": {"message_id": "MSG-1"}}
 
     repository.create_thread("thread_1", "run_1", "plan_1", "user_1", "planning")
     repository.save_revision(
@@ -29,7 +29,7 @@ def test_repository_persists_thread_revision_ledger_and_receipt(tmp_path: Path):
     )
     repository.upsert_action("act_1", "rev_1", "messaging", "pending", "idem_1", payload, None)
     repository.append_attempt("attempt_1", "act_1", "succeeded", request, response, None)
-    repository.append_receipt("MSG-1", "act_1", "rev_1", "messaging", "sent", "Sent", metadata)
+    repository.append_receipt("MSG-1", "act_1", "rev_1", "messaging", "sent", "Sent", receipt_payload)
 
     recreated = WorkflowRepository(db_path)
 
@@ -53,7 +53,21 @@ def test_repository_persists_thread_revision_ledger_and_receipt(tmp_path: Path):
 
     receipts = recreated.list_receipts("rev_1")
     assert receipts[0]["receipt_id"] == "MSG-1"
-    assert receipts[0]["metadata"] == metadata
+    assert receipts[0]["detail"] == "Sent"
+    assert receipts[0]["payload"] == receipt_payload
+
+    with sqlite3.connect(db_path) as conn:
+        receipt_columns = [row[1] for row in conn.execute("pragma table_info(receipts)").fetchall()]
+    assert receipt_columns == [
+        "receipt_id",
+        "action_id",
+        "revision_id",
+        "tool",
+        "status",
+        "detail",
+        "payload_json",
+        "created_at",
+    ]
 
 
 def test_repository_uses_json_not_pickle(tmp_path: Path):
