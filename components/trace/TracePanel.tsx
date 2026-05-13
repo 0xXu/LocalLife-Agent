@@ -27,6 +27,7 @@ export function TracePanel({ trace, toolCalls = [] }: TracePanelProps) {
               </div>
               <div className="trace-event-meta">
                 <span>{event.agent}</span>
+                {event.backend_kind ? <span className={`trace-kind trace-kind-${event.backend_kind}`}>{event.backend_kind}</span> : null}
                 {event.tool ? <span>{event.tool}</span> : null}
                 {event.duration_ms !== undefined ? <span>{event.duration_ms}ms</span> : null}
                 {event.side_effect ? <span className="side-effect-badge">side-effect</span> : null}

@@ -1,12 +1,12 @@
 .card {
-  background: var(--panel); border: 1.5px solid var(--line); border-radius: 16px;
-  padding: 16px; cursor: pointer;
+  background: linear-gradient(180deg, #fff, #fbfcff); border: 1.5px solid var(--line); border-radius: 16px;
+  padding: 16px; cursor: pointer; box-shadow: var(--shadow-sm);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   animation: card-slide-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   animation-delay: calc(var(--index, 0) * 60ms);
 }
-.card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-.card.selected { border-color: var(--blue); background: var(--blue-soft); }
+.card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--line-strong); }
+.card.selected { border-color: var(--blue); background: linear-gradient(180deg, #f9fbff, var(--blue-soft)); }
 .card.removing {
   opacity: 0; transform: scale(0.95); max-height: 0; padding: 0; margin: 0;
   overflow: hidden; transition: all 0.3s ease;
@@ -22,7 +22,7 @@
 .meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--subtle); margin-bottom: 10px; }
 .metaItem { display: inline-flex; align-items: center; gap: 4px; }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; }
-.tag { padding: 2px 8px; background: var(--surface-2); border-radius: 6px; font-size: 11px; font-weight: 600; color: var(--muted); }
+.tag { padding: 3px 8px; background: var(--surface-2); border-radius: 999px; font-size: 11px; font-weight: 700; color: var(--muted); }
 
 .footer { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 .footer button {

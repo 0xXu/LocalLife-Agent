@@ -3,6 +3,7 @@ export type ActiveTab = 'home' | 'plans' | 'activity' | 'settings';
 export type PlanPhase =
   | 'idle'           // no plan, on home screen
   | 'planning'       // buildPlan in progress
+  | 'clarifying'     // backend needs more information
   | 'results'        // plan generated, viewing itinerary
   | 'confirming'     // reviewing pending actions
   | 'executing'      // executePlan in progress
@@ -16,6 +17,7 @@ export type PlanState = {
   goal: string;
   planId: string | null;
   result: import('./weekendpilot').PlanResponse | null;
+  clarification: import('./weekendpilot').ClarificationResponse | null;
   recoveredPlan: import('./weekendpilot').PlanResponse['plan'] | null;
   receipts: import('./weekendpilot').PlanResponse['receipts'];
   error: string | null;

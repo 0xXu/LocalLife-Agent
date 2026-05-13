@@ -13,6 +13,7 @@ import {
   getTraces,
   patchConstraints,
   recoverPlan,
+  revisePlan,
 } from '../../features/planner/apiClient';
 
 type FetchCall = {
@@ -45,7 +46,9 @@ test('planner API client serializes request bodies and methods', async () => {
   await buildAlternatives('plan_client_001');
   await confirmPlan('plan_client_001');
   await executePlan('plan_client_001');
+  await executePlan('plan_client_001', ['send_plan_message_同行人']);
   await recoverPlan('plan_client_001', 'restaurant_unavailable');
+  await revisePlan('plan_client_001', { feedback_text: '太赶了，慢一点' });
   await getTraces('plan_client_001');
   await getToolSchemas();
   await getHealth();
@@ -58,7 +61,9 @@ test('planner API client serializes request bodies and methods', async () => {
     ['http://127.0.0.1:8787/api/plans/plan_client_001/alternatives', 'POST'],
     ['http://127.0.0.1:8787/api/plans/plan_client_001/confirm', 'POST'],
     ['http://127.0.0.1:8787/api/plans/plan_client_001/execute', 'POST'],
+    ['http://127.0.0.1:8787/api/plans/plan_client_001/execute', 'POST'],
     ['http://127.0.0.1:8787/api/plans/plan_client_001/recover', 'POST'],
+    ['http://127.0.0.1:8787/api/plans/plan_client_001/revise', 'POST'],
     ['http://127.0.0.1:8787/api/traces/plan_client_001', 'GET'],
     ['http://127.0.0.1:8787/api/tool-schemas', 'GET'],
     ['http://127.0.0.1:8787/api/health', 'GET'],
@@ -68,7 +73,9 @@ test('planner API client serializes request bodies and methods', async () => {
   assert.equal(calls[3].init?.body, JSON.stringify({ constraints: { radius_km: 4 } }));
   assert.equal(calls[5].init?.body, JSON.stringify({ confirmed: true }));
   assert.equal(calls[6].init?.body, JSON.stringify({ confirmed: true }));
-  assert.equal(calls[7].init?.body, JSON.stringify({ reason: 'restaurant_unavailable' }));
+  assert.equal(calls[7].init?.body, JSON.stringify({ confirmed: true, selected_action_ids: ['send_plan_message_同行人'], idempotency_key: 'plan_client_001:send_plan_message_同行人' }));
+  assert.equal(calls[8].init?.body, JSON.stringify({ reason: 'restaurant_unavailable' }));
+  assert.equal(calls[9].init?.body, JSON.stringify({ feedback_text: '太赶了，慢一点' }));
   assert.equal((calls[0].init?.headers as Record<string, string>)['content-type'], 'application/json');
 });
 

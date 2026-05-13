@@ -64,7 +64,13 @@ export function SettingsView() {
 
   return (
     <section className={styles.view}>
-      <h1 className={styles.title}>设置</h1>
+      <div className={styles.header}>
+        <div>
+          <span className={styles.kicker}>User profile</span>
+          <h1 className={styles.title}>偏好设置</h1>
+          <p className={styles.subtitle}>这些信息会参与后端用户画像和计划修订。</p>
+        </div>
+      </div>
       <SegmentedControl options={TAB_OPTIONS} value={activeTab} onChange={setActiveTab} testIdPrefix="settings-tab" />
       <div className={styles.layout} data-testid="settings-content">
         {activeTab === 'profile' && (

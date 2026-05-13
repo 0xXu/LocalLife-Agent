@@ -28,6 +28,9 @@ test('plan results renders Python backend open-domain variants and fit metrics',
   assert.match(html, /距离/);
   assert.match(html, /预算/);
   assert.match(html, /local_seed_route_matrix/);
+  assert.match(html, /候选解释/);
+  assert.match(html, /偏好匹配高/);
+  assert.match(html, /对方案不满意/);
 });
 
 function makeOpenDomainResponse() {
@@ -56,6 +59,22 @@ function makeOpenDomainResponse() {
     progress: [],
     trace: [],
     tool_calls: [],
+    candidate_sets: {
+      activities: [{
+        place: {
+          id: 'poi_007',
+          name: '宠物友好河岸公园1号店',
+          distance_km: 1.2,
+          wait_minutes: 3,
+          source: 'local_seed_catalog',
+          provenance: { source: 'local_seed_catalog' },
+        },
+        total_score: 0.92,
+        score_breakdown: { semantic: 0.32, distance: 0.18, quality: 0.18, wait: 0.1, budget: 0.12, provenance: 0.06 },
+        explanation: '偏好匹配高。',
+      }],
+    },
+    validation_issues: [],
     route: {
       legs: [],
       total_travel_minutes: 0,

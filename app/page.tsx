@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { ChatView } from '@/components/chat/ChatView';
 import { PlanningProgress } from '@/components/planning/PlanningProgress';
+import { ClarificationView } from '@/components/clarification/ClarificationView';
 import { PlanResultsView } from '@/components/plan/PlanResultsView';
 import { ConfirmView } from '@/components/confirm/ConfirmView';
 import { ReceiptsView } from '@/components/receipts/ReceiptsView';
@@ -77,6 +78,16 @@ export default function WeekendPilotApp() {
             progress={state.progress}
             currentStep={state.currentStep}
             streamingText={state.streamingText}
+          />
+        );
+
+      case 'clarifying':
+        if (!state.clarification) return null;
+        return (
+          <ClarificationView
+            goal={state.goal}
+            clarification={state.clarification}
+            onSubmitGoal={handleSubmitGoal}
           />
         );
 

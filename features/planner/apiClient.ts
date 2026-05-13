@@ -1,4 +1,4 @@
-import type { PlanResponse } from '../../types/weekendpilot';
+import type { BuildPlanResponse, PlanResponse, PlanRevisionResponse } from '../../types/weekendpilot';
 import type { PlanListResponse } from '../../types/api';
 import { apiRequest, resolveApiUrl } from '../../lib/api/client';
 
@@ -10,7 +10,7 @@ export const scenarioPrompts = {
 };
 
 export async function buildPlan(goal: string) {
-  return apiRequest<PlanResponse>('/api/plans/build', { method: 'POST', body: { goal } });
+  return apiRequest<BuildPlanResponse>('/api/plans/build', { method: 'POST', body: { goal } });
 }
 
 export async function buildPlanStream(
@@ -20,10 +20,10 @@ export async function buildPlanStream(
     onToken?: (content: string) => void | Promise<void>;
     onProgress: (label: string, detail: string) => void | Promise<void>;
   },
-): Promise<PlanResponse> {
+): Promise<BuildPlanResponse> {
   const url = resolveApiUrl(`/api/plans/build/stream?goal=${encodeURIComponent(goal)}`);
 
-  return new Promise<PlanResponse>((resolve, reject) => {
+  return new Promise<BuildPlanResponse>((resolve, reject) => {
     const queue: Array<() => Promise<void>> = [];
     let processing = false;
 
@@ -98,12 +98,22 @@ export async function confirmPlan(planId: string) {
   return apiRequest<PlanResponse>(`/api/plans/${planId}/confirm`, { method: 'POST', body: { confirmed: true } });
 }
 
-export async function executePlan(planId: string) {
-  return apiRequest<PlanResponse>(`/api/plans/${planId}/execute`, { method: 'POST', body: { confirmed: true } });
+export async function executePlan(planId: string, selectedActionIds?: string[]) {
+  return apiRequest<PlanResponse>(`/api/plans/${planId}/execute`, {
+    method: 'POST',
+    body: {
+      confirmed: true,
+      ...(selectedActionIds ? { selected_action_ids: selectedActionIds, idempotency_key: `${planId}:${selectedActionIds.join(',') || 'none'}` } : {}),
+    },
+  });
 }
 
 export async function recoverPlan(planId: string, reason: string) {
   return apiRequest<PlanResponse>(`/api/plans/${planId}/recover`, { method: 'POST', body: { reason } });
+}
+
+export async function revisePlan(planId: string, body: Record<string, unknown>) {
+  return apiRequest<PlanRevisionResponse & PlanResponse>(`/api/plans/${planId}/revise`, { method: 'POST', body });
 }
 
 export async function getTraces(planId: string) {

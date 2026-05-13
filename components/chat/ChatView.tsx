@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
+import { Brain, ListChecks, ShieldCheck } from 'lucide-react';
 import { ChatBubble } from './ChatBubble';
 import { QuickActions } from './QuickActions';
 import { GoalInput } from './GoalInput';
@@ -13,6 +14,11 @@ type ChatViewProps = {
 
 export function ChatView({ onSubmitGoal, isPlanning, error }: ChatViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const qualitySignals = [
+    { label: '开放域规划', detail: '不用枚举场景，直接描述需求', icon: Brain },
+    { label: '偏好记忆', detail: '结合画像与本轮约束', icon: ShieldCheck },
+    { label: '可解释候选', detail: '展示候选来源与取舍', icon: ListChecks },
+  ];
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -26,7 +32,19 @@ export function ChatView({ onSubmitGoal, isPlanning, error }: ChatViewProps) {
         <div className="chat-header">
           <div className="chat-header-avatar"><span>AI</span></div>
           <h1>WeekendPilot</h1>
-          <p>告诉我你的周末计划，我来帮你安排。</p>
+          <p>说清楚你想要的体验，我会补齐约束、检索候选并生成可执行计划。</p>
+          <div className="chat-quality-signals" aria-label="规划质量信号">
+            {qualitySignals.map((signal) => {
+              const Icon = signal.icon;
+              return (
+                <div key={signal.label} className="chat-quality-card">
+                  <Icon size={17} />
+                  <strong>{signal.label}</strong>
+                  <span>{signal.detail}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <ChatBubble role="ai" animate>

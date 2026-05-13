@@ -13,6 +13,7 @@ import type {
   PlanActionSchema,
   PlanOverviewSchema,
   PlanResponseSchema,
+  PlanRevisionResponseSchema,
   PlanSchema,
   PlanVariantSchema,
   PoiSchema,
@@ -23,6 +24,7 @@ import type {
   TimeWindowSchema,
   ToolCallSchema,
   TraceSpanSchema,
+  ClarificationResponseSchema,
 } from '../lib/contracts/schemas';
 
 export type Scenario = z.infer<typeof ScenarioSchema>;
@@ -48,6 +50,9 @@ export type Plan = z.infer<typeof PlanSchema>;
 export type RecoveryDiff = z.infer<typeof RecoveryDiffSchema>;
 export type Adjustment = z.infer<typeof AdjustmentSchema>;
 export type PlanResponse = z.infer<typeof PlanResponseSchema>;
+export type PlanRevisionResponse = z.infer<typeof PlanRevisionResponseSchema>;
+export type ClarificationResponse = z.infer<typeof ClarificationResponseSchema>;
+export type BuildPlanResponse = PlanResponse | ClarificationResponse;
 
 export type PlanStatus =
   | 'draft'

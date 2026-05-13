@@ -10,7 +10,8 @@ import { VariantSelector } from './VariantSelector';
 import { RecoveryBanner } from '../recovery/RecoveryBanner';
 import { RouteMap } from '../map/RouteMap';
 import { TracePanel } from '../trace/TracePanel';
-import { MessageSquare, RefreshCw, Edit3, Loader2, Sparkles } from 'lucide-react';
+import { CandidateInsights } from './CandidateInsights';
+import { MessageSquare, Edit3, Loader2, Sparkles } from 'lucide-react';
 
 type PlanResultsViewProps = {
   result: PlanResponse;
@@ -46,6 +47,8 @@ export function PlanResultsView({
       : [plan];
   const activePlanVariant = variants[activeVariant] ?? variants[0] ?? plan;
   const displayItinerary = activePlanVariant?.itinerary ?? plan.itinerary ?? [];
+  const profile = (result as any).user_profile;
+  const revision = (result as any).revision;
 
   const isLoading = loadingAction !== null;
 
@@ -96,6 +99,7 @@ export function PlanResultsView({
 
       <header className="plan-results-header">
         <div>
+          <span className="plan-results-kicker">WeekendPilot grounded plan</span>
           <h1>{plan.title}</h1>
           {plan.summary && <p>{plan.summary}</p>}
         </div>
@@ -105,6 +109,27 @@ export function PlanResultsView({
           </div>
         )}
       </header>
+
+      <section className="plan-context-strip" aria-label="计划上下文">
+        <div>
+          <span>用户画像</span>
+          <strong>{profile?.explicit_preferences?.length || profile?.learned_preferences?.length ? '已应用偏好记忆' : '本次对话优先'}</strong>
+        </div>
+        <div>
+          <span>后端状态</span>
+          <strong>{plan.status}</strong>
+        </div>
+        <div>
+          <span>校验结果</span>
+          <strong>{(result as any).validation_issues?.length ? `${(result as any).validation_issues.length} 项需确认` : '无阻断风险'}</strong>
+        </div>
+        {revision ? (
+          <div>
+            <span>最近修订</span>
+            <strong>{revision.revision_id}</strong>
+          </div>
+        ) : null}
+      </section>
 
       {/* 约束卡片 - 可编辑 */}
       <div className={`constraint-section ${loadingAction === 'constraints' ? 'section-loading' : ''}`}>
@@ -129,6 +154,11 @@ export function PlanResultsView({
       <OverviewCard
         overview={activePlanVariant?.overview ?? plan.overview ?? {}}
         constraintFit={activePlanVariant?.constraint_fit ?? plan.constraint_fit}
+      />
+
+      <CandidateInsights
+        candidateSets={(result as any).candidate_sets}
+        validationIssues={(result as any).validation_issues ?? []}
       />
 
       {/* 备选方案 - 更明显的入口 */}
@@ -176,7 +206,7 @@ export function PlanResultsView({
           <div className="feedback-input-wrapper">
             <textarea
               className="feedback-input"
-              placeholder="例如：太赶了，能轻松点吗？/ 换一家安静的餐厅 / 预算控制在500以内"
+              placeholder="例如：太赶了，餐厅不想去了，换成轻松一点的散步和咖啡"
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
               rows={3}
@@ -192,7 +222,7 @@ export function PlanResultsView({
               ) : (
                 <Sparkles size={16} />
               )}
-              {loadingAction === 'feedback' ? '正在调整...' : '根据反馈重新生成'}
+              {loadingAction === 'feedback' ? '正在调整...' : '按反馈修订计划'}
             </button>
           </div>
         )}

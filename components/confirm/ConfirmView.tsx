@@ -20,6 +20,8 @@ export function ConfirmView({
   result, selectedActions, onToggleAction, onSelectAll, onDeselectAll, onExecute, onBack, executing,
 }: ConfirmViewProps) {
   const actions = result.plan.actions ?? [];
+  const selectedCount = selectedActions.size;
+  const totalCount = actions.length;
 
   return (
     <section className="confirm-view">
@@ -29,6 +31,12 @@ export function ConfirmView({
         <p>以下操作将在你确认后自动执行。点击可切换。</p>
       </div>
 
+      <div className="confirm-summary" aria-label="执行范围摘要">
+        <span>即将执行 {selectedCount} / {totalCount} 项</span>
+        <strong>仅执行已勾选的动作</strong>
+        <p>未选择的预约、消息或日历动作会被跳过，后端会按 action id 做幂等执行。</p>
+      </div>
+
       <div className="confirm-bulk-actions">
         <button type="button" onClick={onSelectAll}>全选</button>
         <button type="button" onClick={onDeselectAll}>全不选</button>
@@ -36,7 +44,7 @@ export function ConfirmView({
 
       <div className="confirm-actions-list">
         {actions.map((action) => {
-          const key = `${action.tool ?? action.type}_${action.label ?? action.place_id ?? 'default'}`;
+          const key = String(action.id ?? `${action.tool ?? action.type}_${action.target ?? action.label ?? action.place_id ?? 'default'}`);
           return (
             <ActionToggle key={key} action={action} selected={selectedActions.has(key)} onToggle={() => onToggleAction(key)} />
           );

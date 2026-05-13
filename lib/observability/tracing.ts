@@ -6,6 +6,7 @@ export type RawTraceInput = {
 export type NormalizedTraceEvent = {
   id: string;
   kind: 'trace' | 'tool_call';
+  backend_kind?: string;
   message: string;
   agent: string;
   tool?: string;
@@ -38,6 +39,7 @@ function normalizeEvent(event: Record<string, any>, kind: NormalizedTraceEvent['
   return {
     id: String(event.id ?? `${kind}_${tool ?? agent}_${index}`),
     kind,
+    backend_kind: typeof event.kind === 'string' && kind === 'trace' ? event.kind : undefined,
     message,
     agent,
     tool,

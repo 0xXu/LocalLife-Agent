@@ -52,7 +52,11 @@ export function ActivityView() {
   return (
     <section className={styles.view}>
       <div className={styles.header}>
-        <h1 className={styles.title}>执行记录</h1>
+        <div>
+          <span className={styles.kicker}>Execution ledger</span>
+          <h1 className={styles.title}>执行记录</h1>
+          <p className={styles.subtitle}>查看每次计划执行、回执和失败原因。</p>
+        </div>
         <div className={styles.controls}>
           <SearchInput value={search} onChange={setSearch} placeholder="搜索记录..." inputTestId="activity-search-input" />
         </div>
