@@ -47,6 +47,16 @@ def test_clarification_can_resume_planning():
     assert_transition_allowed(PHASE_NEEDS_CLARIFICATION, PHASE_PLANNING)
 
 
+def test_unknown_phases_fail_even_for_noop_transition():
+    with pytest.raises(WorkflowTransitionError, match="unknown_phase:typo"):
+        assert_transition_allowed("typo", "typo")
+
+
+def test_unknown_next_phase_fails_before_transition_check():
+    with pytest.raises(WorkflowTransitionError, match="unknown_phase:typo"):
+        assert_transition_allowed(PHASE_DRAFT, "typo")
+
+
 def test_generated_ids_have_stable_prefixes_and_are_unique():
     ids = {new_plan_id(), new_revision_id(), new_run_id(), new_thread_id(), new_action_id()}
     assert len(ids) == 5

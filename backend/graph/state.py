@@ -29,6 +29,20 @@ WorkflowPhase = Literal[
     "failed",
 ]
 
+KNOWN_PHASES: set[str] = {
+    PHASE_DRAFT,
+    PHASE_NEEDS_CLARIFICATION,
+    PHASE_PLANNING,
+    PHASE_VALIDATION_FAILED,
+    PHASE_PENDING_APPROVAL,
+    PHASE_APPROVED,
+    PHASE_EXECUTING,
+    PHASE_PARTIALLY_COMPLETED,
+    PHASE_COMPLETED,
+    PHASE_CANCELLED,
+    PHASE_FAILED,
+}
+
 
 class PlanGraphState(TypedDict, total=False):
     thread_id: str
@@ -81,6 +95,9 @@ ALLOWED_TRANSITIONS: set[tuple[str, str]] = {
 
 
 def assert_transition_allowed(current: str, next_phase: str) -> None:
+    for phase in (current, next_phase):
+        if phase not in KNOWN_PHASES:
+            raise WorkflowTransitionError(f"unknown_phase:{phase}")
     if current == next_phase:
         return
     if (current, next_phase) not in ALLOWED_TRANSITIONS:
