@@ -163,6 +163,7 @@ def test_policy_creates_restaurant_actions_only_when_requested_and_grounded():
                 "shop_id": "poi_restaurant",
                 "items": [{"id": "menu_1", "name": "低脂鸡胸沙拉"}],
                 "pickup_time": "16:00",
+                "party_size": 3,
             },
             "receipt_id": "",
         },

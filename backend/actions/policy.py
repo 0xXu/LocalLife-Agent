@@ -88,6 +88,7 @@ def build_executable_actions(
                         "shop_id": step.get("shop_id") or candidate.get("shop_id") or place_id,
                         "items": items,
                         "pickup_time": time,
+                        "party_size": party_size,
                     },
                 )
             )
