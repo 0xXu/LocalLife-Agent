@@ -1,6 +1,8 @@
 import sqlite3
 from pathlib import Path
 
+import pytest
+
 from backend.storage.workflow_repository import WorkflowRepository
 
 
@@ -83,3 +85,162 @@ def test_repository_uses_json_not_pickle(tmp_path: Path):
     with sqlite3.connect(db_path) as conn:
         row = conn.execute("select thread_id from plan_threads where thread_id = ?", ("thread_1",)).fetchone()
     assert row == ("thread_1",)
+
+
+def test_repository_migrates_legacy_receipts_schema_without_losing_rows(tmp_path: Path):
+    db_path = tmp_path / "workflow.sqlite"
+    legacy_payload = {"provider": "line", "raw": {"message_id": "MSG-legacy"}}
+    new_payload = {"provider": "line", "raw": {"message_id": "MSG-new"}}
+
+    with sqlite3.connect(db_path) as conn:
+        conn.executescript(
+            """
+            create table plan_revisions (
+                revision_id text primary key,
+                plan_id text not null,
+                version integer not null,
+                phase text not null,
+                goal text not null,
+                constraints_json text not null,
+                plan_json text not null,
+                validation_json text not null,
+                created_at text not null
+            );
+
+            create table action_ledger (
+                action_id text primary key,
+                revision_id text not null,
+                tool text not null,
+                status text not null,
+                idempotency_key text not null unique,
+                payload_json text not null,
+                receipt_id text,
+                created_at text not null,
+                updated_at text not null
+            );
+
+            create table receipts (
+                receipt_id text primary key,
+                action_id text not null,
+                revision_id text not null,
+                tool text not null,
+                status text not null,
+                message text not null,
+                metadata_json text not null,
+                created_at text not null
+            );
+            """
+        )
+        conn.execute(
+            """
+            insert into plan_revisions(
+                revision_id, plan_id, version, phase, goal, constraints_json, plan_json, validation_json, created_at
+            )
+            values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            ("rev_legacy", "plan_1", 1, "draft", "Goal", "{}", "{}", "{}", "2026-05-13T00:00:00+00:00"),
+        )
+        conn.execute(
+            """
+            insert into action_ledger(
+                action_id, revision_id, tool, status, idempotency_key, payload_json, receipt_id, created_at, updated_at
+            )
+            values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "act_legacy",
+                "rev_legacy",
+                "messaging",
+                "pending",
+                "idem_legacy",
+                "{}",
+                None,
+                "2026-05-13T00:00:00+00:00",
+                "2026-05-13T00:00:00+00:00",
+            ),
+        )
+        conn.execute(
+            """
+            insert into receipts(receipt_id, action_id, revision_id, tool, status, message, metadata_json, created_at)
+            values (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "MSG-legacy",
+                "act_legacy",
+                "rev_legacy",
+                "messaging",
+                "sent",
+                "Legacy sent",
+                '{"provider": "line", "raw": {"message_id": "MSG-legacy"}}',
+                "2026-05-13T00:00:00+00:00",
+            ),
+        )
+
+    repository = WorkflowRepository(db_path)
+    repository.append_receipt("MSG-new", "act_legacy", "rev_legacy", "messaging", "sent", "New sent", new_payload)
+
+    receipts = repository.list_receipts("rev_legacy")
+    assert receipts[0]["receipt_id"] == "MSG-legacy"
+    assert receipts[0]["detail"] == "Legacy sent"
+    assert receipts[0]["payload"] == legacy_payload
+    assert receipts[1]["receipt_id"] == "MSG-new"
+    assert receipts[1]["detail"] == "New sent"
+    assert receipts[1]["payload"] == new_payload
+
+    with sqlite3.connect(db_path) as conn:
+        receipt_columns = [row[1] for row in conn.execute("pragma table_info(receipts)").fetchall()]
+    assert "message" not in receipt_columns
+    assert "metadata_json" not in receipt_columns
+    assert "detail" in receipt_columns
+    assert "payload_json" in receipt_columns
+
+
+def test_upsert_action_reuses_existing_action_for_same_idempotency_key(tmp_path: Path):
+    repository = WorkflowRepository(tmp_path / "workflow.sqlite")
+    repository.save_revision("rev_1", "plan_1", 1, "draft", "Goal", {}, {}, {})
+
+    repository.upsert_action("act_original", "rev_1", "messaging", "pending", "idem_1", {"try": 1}, None)
+    repository.upsert_action("act_retry", "rev_1", "messaging", "succeeded", "idem_1", {"try": 2}, "MSG-1")
+
+    actions = repository.list_actions("rev_1")
+    assert len(actions) == 1
+    assert actions[0]["action_id"] == "act_original"
+    assert actions[0]["idempotency_key"] == "idem_1"
+    assert actions[0]["status"] == "succeeded"
+    assert actions[0]["payload"] == {"try": 2}
+    assert actions[0]["receipt_id"] == "MSG-1"
+
+
+def test_upsert_action_rejects_action_id_with_different_idempotency_key(tmp_path: Path):
+    repository = WorkflowRepository(tmp_path / "workflow.sqlite")
+    repository.save_revision("rev_1", "plan_1", 1, "draft", "Goal", {}, {}, {})
+
+    repository.upsert_action("act_1", "rev_1", "messaging", "pending", "idem_1", {}, None)
+
+    with pytest.raises(ValueError, match="action_id act_1 already exists with idempotency_key idem_1"):
+        repository.upsert_action("act_1", "rev_1", "messaging", "pending", "idem_2", {}, None)
+
+
+def test_repository_uses_stable_secondary_ordering_and_unique_plan_versions(tmp_path: Path):
+    db_path = tmp_path / "workflow.sqlite"
+    repository = WorkflowRepository(db_path)
+    repository.save_revision("rev_1", "plan_1", 1, "draft", "Goal", {}, {}, {})
+
+    with pytest.raises(sqlite3.IntegrityError):
+        repository.save_revision("rev_duplicate", "plan_1", 1, "draft", "Goal", {}, {}, {})
+
+    repository.upsert_action("act_b", "rev_1", "messaging", "pending", "idem_b", {}, None)
+    repository.upsert_action("act_a", "rev_1", "messaging", "pending", "idem_a", {}, None)
+    repository.append_attempt("attempt_b", "act_a", "failed", {}, {}, "timeout")
+    repository.append_attempt("attempt_a", "act_a", "succeeded", {}, {}, None)
+    repository.append_receipt("MSG-B", "act_a", "rev_1", "messaging", "sent", "B", {})
+    repository.append_receipt("MSG-A", "act_a", "rev_1", "messaging", "sent", "A", {})
+
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("update action_ledger set created_at = ?", ("2026-05-13T00:00:00+00:00",))
+        conn.execute("update action_attempts set created_at = ?", ("2026-05-13T00:00:00+00:00",))
+        conn.execute("update receipts set created_at = ?", ("2026-05-13T00:00:00+00:00",))
+
+    assert [action["action_id"] for action in repository.list_actions("rev_1")] == ["act_a", "act_b"]
+    assert [attempt["attempt_id"] for attempt in repository.list_attempts("act_a")] == ["attempt_a", "attempt_b"]
+    assert [receipt["receipt_id"] for receipt in repository.list_receipts("rev_1")] == ["MSG-A", "MSG-B"]

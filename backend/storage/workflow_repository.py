@@ -27,6 +27,7 @@ class WorkflowRepository:
 
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path)
+        conn.execute("pragma foreign_keys = ON")
         conn.row_factory = sqlite3.Row
         return conn
 
@@ -58,7 +59,7 @@ class WorkflowRepository:
 
                 create table if not exists action_ledger (
                     action_id text primary key,
-                    revision_id text not null,
+                    revision_id text not null references plan_revisions(revision_id),
                     tool text not null,
                     status text not null,
                     idempotency_key text not null unique,
@@ -70,7 +71,7 @@ class WorkflowRepository:
 
                 create table if not exists action_attempts (
                     attempt_id text primary key,
-                    action_id text not null,
+                    action_id text not null references action_ledger(action_id),
                     status text not null,
                     request_json text not null,
                     response_json text not null,
@@ -80,8 +81,8 @@ class WorkflowRepository:
 
                 create table if not exists receipts (
                     receipt_id text primary key,
-                    action_id text not null,
-                    revision_id text not null,
+                    action_id text not null references action_ledger(action_id),
+                    revision_id text not null references plan_revisions(revision_id),
                     tool text not null,
                     status text not null,
                     detail text not null,
@@ -90,6 +91,44 @@ class WorkflowRepository:
                 );
                 """
             )
+            self._migrate_receipts_schema(conn)
+            conn.execute(
+                """
+                create unique index if not exists idx_plan_revisions_plan_id_version
+                on plan_revisions(plan_id, version)
+                """
+            )
+
+    def _migrate_receipts_schema(self, conn: sqlite3.Connection) -> None:
+        columns = {row["name"] for row in conn.execute("pragma table_info(receipts)").fetchall()}
+        if "message" not in columns and "metadata_json" not in columns:
+            return
+        if "detail" in columns or "payload_json" in columns:
+            raise RuntimeError("receipts table has mixed legacy and current columns")
+
+        conn.execute("alter table receipts rename to receipts_legacy")
+        conn.execute(
+            """
+            create table receipts (
+                receipt_id text primary key,
+                action_id text not null references action_ledger(action_id),
+                revision_id text not null references plan_revisions(revision_id),
+                tool text not null,
+                status text not null,
+                detail text not null,
+                payload_json text not null,
+                created_at text not null
+            )
+            """
+        )
+        conn.execute(
+            """
+            insert into receipts(receipt_id, action_id, revision_id, tool, status, detail, payload_json, created_at)
+            select receipt_id, action_id, revision_id, tool, status, message, metadata_json, created_at
+            from receipts_legacy
+            """
+        )
+        conn.execute("drop table receipts_legacy")
 
     def create_thread(self, thread_id: str, run_id: str, plan_id: str, user_id: str, status: str) -> None:
         timestamp = _now()
@@ -160,7 +199,7 @@ class WorkflowRepository:
                 """
                 select * from plan_revisions
                 where plan_id = ?
-                order by version desc, created_at desc
+                order by version desc, created_at desc, revision_id desc
                 limit 1
                 """,
                 (plan_id,),
@@ -170,7 +209,11 @@ class WorkflowRepository:
     def list_revisions(self, plan_id: str) -> list[dict[str, Any]]:
         with self._connect() as conn:
             rows = conn.execute(
-                "select * from plan_revisions where plan_id = ? order by version asc, created_at asc",
+                """
+                select * from plan_revisions
+                where plan_id = ?
+                order by version asc, created_at asc, revision_id asc
+                """,
                 (plan_id,),
             ).fetchall()
         return [self._revision_from_row(row) for row in rows]
@@ -187,6 +230,16 @@ class WorkflowRepository:
     ) -> None:
         timestamp = _now()
         with self._connect() as conn:
+            existing_action = conn.execute(
+                "select action_id, idempotency_key from action_ledger where action_id = ?",
+                (action_id,),
+            ).fetchone()
+            if existing_action and existing_action["idempotency_key"] != idempotency_key:
+                raise ValueError(
+                    "action_id "
+                    f"{action_id} already exists with idempotency_key {existing_action['idempotency_key']}"
+                )
+
             conn.execute(
                 """
                 insert into action_ledger(
@@ -201,11 +254,10 @@ class WorkflowRepository:
                     updated_at
                 )
                 values (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                on conflict(action_id) do update set
+                on conflict(idempotency_key) do update set
                     revision_id = excluded.revision_id,
                     tool = excluded.tool,
                     status = excluded.status,
-                    idempotency_key = excluded.idempotency_key,
                     payload_json = excluded.payload_json,
                     receipt_id = excluded.receipt_id,
                     updated_at = excluded.updated_at
@@ -226,7 +278,11 @@ class WorkflowRepository:
     def list_actions(self, revision_id: str) -> list[dict[str, Any]]:
         with self._connect() as conn:
             rows = conn.execute(
-                "select * from action_ledger where revision_id = ? order by created_at asc",
+                """
+                select * from action_ledger
+                where revision_id = ?
+                order by created_at asc, action_id asc
+                """,
                 (revision_id,),
             ).fetchall()
         return [self._action_from_row(row) for row in rows]
@@ -260,7 +316,11 @@ class WorkflowRepository:
     def list_attempts(self, action_id: str) -> list[dict[str, Any]]:
         with self._connect() as conn:
             rows = conn.execute(
-                "select * from action_attempts where action_id = ? order by created_at asc",
+                """
+                select * from action_attempts
+                where action_id = ?
+                order by created_at asc, attempt_id asc
+                """,
                 (action_id,),
             ).fetchall()
         return [self._attempt_from_row(row) for row in rows]
@@ -287,7 +347,11 @@ class WorkflowRepository:
     def list_receipts(self, revision_id: str) -> list[dict[str, Any]]:
         with self._connect() as conn:
             rows = conn.execute(
-                "select * from receipts where revision_id = ? order by created_at asc",
+                """
+                select * from receipts
+                where revision_id = ?
+                order by created_at asc, receipt_id asc
+                """,
                 (revision_id,),
             ).fetchall()
         return [self._receipt_from_row(row) for row in rows]
