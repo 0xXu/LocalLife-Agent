@@ -195,6 +195,52 @@ def test_repository_migrates_legacy_receipts_schema_without_losing_rows(tmp_path
     assert "payload_json" in receipt_columns
 
 
+def test_repository_migrates_legacy_orphan_receipts_without_losing_rows(tmp_path: Path):
+    db_path = tmp_path / "workflow.sqlite"
+    orphan_payload = {"provider": "line", "raw": {"message_id": "MSG-orphan"}}
+
+    with sqlite3.connect(db_path) as conn:
+        conn.executescript(
+            """
+            create table receipts (
+                receipt_id text primary key,
+                action_id text not null,
+                revision_id text not null,
+                tool text not null,
+                status text not null,
+                message text not null,
+                metadata_json text not null,
+                created_at text not null
+            );
+            """
+        )
+        conn.execute(
+            """
+            insert into receipts(receipt_id, action_id, revision_id, tool, status, message, metadata_json, created_at)
+            values (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "MSG-orphan",
+                "act_missing",
+                "rev_missing",
+                "messaging",
+                "sent",
+                "Orphan sent",
+                '{"provider": "line", "raw": {"message_id": "MSG-orphan"}}',
+                "2026-05-13T00:00:00+00:00",
+            ),
+        )
+
+    repository = WorkflowRepository(db_path)
+
+    receipts = repository.list_receipts("rev_missing")
+    assert receipts[0]["receipt_id"] == "MSG-orphan"
+    assert receipts[0]["action_id"] == "act_missing"
+    assert receipts[0]["revision_id"] == "rev_missing"
+    assert receipts[0]["detail"] == "Orphan sent"
+    assert receipts[0]["payload"] == orphan_payload
+
+
 def test_upsert_action_reuses_existing_action_for_same_idempotency_key(tmp_path: Path):
     repository = WorkflowRepository(tmp_path / "workflow.sqlite")
     repository.save_revision("rev_1", "plan_1", 1, "draft", "Goal", {}, {}, {})

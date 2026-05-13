@@ -111,8 +111,8 @@ class WorkflowRepository:
             """
             create table receipts (
                 receipt_id text primary key,
-                action_id text not null references action_ledger(action_id),
-                revision_id text not null references plan_revisions(revision_id),
+                action_id text not null,
+                revision_id text not null,
                 tool text not null,
                 status text not null,
                 detail text not null,
@@ -121,6 +121,7 @@ class WorkflowRepository:
             )
             """
         )
+        # Legacy databases predate FK enforcement, so migrated receipts stay FK-free to preserve orphan audit rows.
         conn.execute(
             """
             insert into receipts(receipt_id, action_id, revision_id, tool, status, detail, payload_json, created_at)
