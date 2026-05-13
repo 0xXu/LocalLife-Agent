@@ -201,6 +201,24 @@ class WorkflowRepository:
             ).fetchall()
         return [self._revision_from_row(row) for row in rows]
 
+    def list_latest_revisions(self) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                select revisions.*
+                from plan_revisions revisions
+                join (
+                    select plan_id, max(version) as version
+                    from plan_revisions
+                    group by plan_id
+                ) latest
+                    on revisions.plan_id = latest.plan_id
+                    and revisions.version = latest.version
+                order by revisions.created_at desc, revisions.revision_id desc
+                """
+            ).fetchall()
+        return [self._revision_from_row(row) for row in rows]
+
     def upsert_action(
         self,
         action_id: str,
