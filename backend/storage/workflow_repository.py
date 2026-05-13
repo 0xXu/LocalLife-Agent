@@ -258,6 +258,46 @@ class WorkflowRepository:
                 ),
             )
 
+    def insert_action_if_absent(
+        self,
+        action_id: str,
+        revision_id: str,
+        tool: str,
+        status: str,
+        idempotency_key: str,
+        payload: dict[str, Any],
+        receipt_id: str | None,
+    ) -> None:
+        timestamp = _now()
+        with self._connect() as conn:
+            conn.execute(
+                """
+                insert or ignore into action_ledger(
+                    action_id,
+                    revision_id,
+                    tool,
+                    status,
+                    idempotency_key,
+                    payload_json,
+                    receipt_id,
+                    created_at,
+                    updated_at
+                )
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    action_id,
+                    revision_id,
+                    tool,
+                    status,
+                    idempotency_key,
+                    _json_dumps(payload),
+                    receipt_id,
+                    timestamp,
+                    timestamp,
+                ),
+            )
+
     def list_actions(self, revision_id: str) -> list[dict[str, Any]]:
         with self._connect() as conn:
             rows = conn.execute(
@@ -278,16 +318,112 @@ class WorkflowRepository:
             ).fetchone()
         return self._action_from_row(row) if row else None
 
-    def update_action_status(self, action_id: str, status: str, receipt_id: str | None = None) -> None:
+    def claim_action_for_execution(self, action_id: str) -> dict[str, Any] | None:
         with self._connect() as conn:
+            result = conn.execute(
+                """
+                update action_ledger
+                set status = 'executing', updated_at = ?
+                where action_id = ? and status = 'pending'
+                """,
+                (_now(), action_id),
+            )
+            if result.rowcount == 0:
+                return None
+            row = conn.execute(
+                "select * from action_ledger where action_id = ?",
+                (action_id,),
+            ).fetchone()
+        return self._action_from_row(row) if row else None
+
+    def record_action_succeeded(
+        self,
+        attempt_id: str,
+        action_id: str,
+        receipt_id: str,
+        detail: str,
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        with self._connect() as conn:
+            action = conn.execute(
+                "select * from action_ledger where action_id = ?",
+                (action_id,),
+            ).fetchone()
+            if action is None:
+                raise ValueError(f"unknown_action_id:{action_id}")
+
+            if action["status"] == "succeeded":
+                if action["receipt_id"] == receipt_id:
+                    return self._action_from_row(action)
+                raise ValueError(f"receipt_conflict:{action_id}")
+
+            receipt = conn.execute(
+                """
+                select action_id, revision_id from receipts
+                where receipt_id = ?
+                """,
+                (receipt_id,),
+            ).fetchone()
+            if receipt and (receipt["action_id"] != action_id or receipt["revision_id"] != action["revision_id"]):
+                raise ValueError(f"receipt_conflict:{action_id}")
+
+            timestamp = _now()
+            if receipt is None:
+                conn.execute(
+                    """
+                    insert into action_attempts(
+                        attempt_id,
+                        action_id,
+                        status,
+                        request_json,
+                        response_json,
+                        error,
+                        created_at
+                    )
+                    values (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        attempt_id,
+                        action_id,
+                        "succeeded",
+                        _json_dumps({"action_id": action_id, "payload": _json_loads(action["payload_json"])}),
+                        _json_dumps({"receipt_id": receipt_id, "detail": detail, "payload": payload}),
+                        None,
+                        timestamp,
+                    ),
+                )
+                conn.execute(
+                    """
+                    insert into receipts(receipt_id, action_id, revision_id, tool, status, detail, payload_json, created_at)
+                    values (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        receipt_id,
+                        action_id,
+                        action["revision_id"],
+                        action["tool"],
+                        "succeeded",
+                        detail,
+                        _json_dumps(payload),
+                        timestamp,
+                    ),
+                )
+
             conn.execute(
                 """
                 update action_ledger
-                set status = ?, receipt_id = ?, updated_at = ?
+                set status = 'succeeded', receipt_id = ?, updated_at = ?
                 where action_id = ?
                 """,
-                (status, receipt_id, _now(), action_id),
+                (receipt_id, _now(), action_id),
             )
+            updated = conn.execute(
+                "select * from action_ledger where action_id = ?",
+                (action_id,),
+            ).fetchone()
+            if updated is None:
+                raise ValueError(f"unknown_action_id:{action_id}")
+        return self._action_from_row(updated)
 
     def get_action_by_idempotency_key(self, idempotency_key: str) -> dict[str, Any] | None:
         with self._connect() as conn:

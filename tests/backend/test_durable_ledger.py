@@ -76,3 +76,54 @@ def test_mark_succeeded_is_idempotent_for_same_receipt_id(tmp_path: Path):
     ledger.mark_succeeded("act_msg", "MSG-1", "Sent", {"provider": "line"})
 
     assert [receipt["receipt_id"] for receipt in ledger.list_receipts("rev_1")] == ["MSG-1"]
+
+
+def test_duplicate_selected_ids_claim_once(tmp_path: Path):
+    ledger = DurableActionLedger(_repository(tmp_path))
+    ledger.seed_actions("rev_1", [{"action_id": "act_msg", "tool": "messaging", "payload": {"body": "hello"}}])
+
+    claimed = ledger.mark_executing("rev_1", ["act_msg", "act_msg"])
+
+    assert [action["action_id"] for action in claimed] == ["act_msg"]
+    assert ledger.mark_executing("rev_1", ["act_msg"]) == []
+
+
+def test_seed_actions_does_not_downgrade_existing_succeeded_action(tmp_path: Path):
+    ledger = DurableActionLedger(_repository(tmp_path))
+    action = {"action_id": "act_msg", "tool": "messaging", "payload": {"body": "hello"}}
+    ledger.seed_actions("rev_1", [action])
+    ledger.mark_executing("rev_1", ["act_msg"])
+    ledger.mark_succeeded("act_msg", "MSG-1", "Sent", {"provider": "line"})
+
+    ledger.seed_actions("rev_1", [action])
+
+    actions = ledger.list_actions("rev_1")
+    assert actions[0]["status"] == "succeeded"
+    assert actions[0]["receipt_id"] == "MSG-1"
+
+
+def test_mark_succeeded_finishes_action_when_receipt_already_exists(tmp_path: Path):
+    repository = _repository(tmp_path)
+    ledger = DurableActionLedger(repository)
+    ledger.seed_actions("rev_1", [{"action_id": "act_msg", "tool": "messaging", "payload": {"body": "hello"}}])
+    ledger.mark_executing("rev_1", ["act_msg"])
+    repository.append_receipt("MSG-1", "act_msg", "rev_1", "messaging", "succeeded", "Sent", {"provider": "line"})
+
+    ledger.mark_succeeded("act_msg", "MSG-1", "Sent", {"provider": "line"})
+
+    actions = ledger.list_actions("rev_1")
+    assert actions[0]["status"] == "succeeded"
+    assert actions[0]["receipt_id"] == "MSG-1"
+    assert [receipt["receipt_id"] for receipt in ledger.list_receipts("rev_1")] == ["MSG-1"]
+
+
+def test_mark_succeeded_rejects_conflicting_receipt(tmp_path: Path):
+    ledger = DurableActionLedger(_repository(tmp_path))
+    ledger.seed_actions("rev_1", [{"action_id": "act_msg", "tool": "messaging", "payload": {"body": "hello"}}])
+    ledger.mark_executing("rev_1", ["act_msg"])
+    ledger.mark_succeeded("act_msg", "MSG-1", "Sent", {"provider": "line"})
+
+    with pytest.raises(ValueError, match="receipt_conflict:act_msg"):
+        ledger.mark_succeeded("act_msg", "MSG-2", "Sent again", {"provider": "line"})
+
+    assert [receipt["receipt_id"] for receipt in ledger.list_receipts("rev_1")] == ["MSG-1"]
