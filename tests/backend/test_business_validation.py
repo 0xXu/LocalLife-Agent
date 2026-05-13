@@ -1,3 +1,5 @@
+from datetime import date, timedelta
+
 from backend.validation import validate_revision_for_approval
 
 
@@ -130,3 +132,138 @@ def test_robust_party_size_children_none_and_invalid_adults_do_not_crash_zero_pa
 
     assert not report["valid"]
     assert "party_size_missing" in _codes(report)
+
+
+def test_today_day_open_hours_and_non_zero_padded_visit_time_match():
+    candidates = _candidates()
+    candidates["poi_activity"]["open_hours"] = [{"day": "today", "start": "09:00", "end": "17:00"}]
+    constraints = _constraints()
+    constraints["time_window"]["date"] = "today"
+    plan = _plan(
+        steps=[
+            {"type": "activity", "title": "Pottery", "place_id": "poi_activity", "start": "9:00", "end": "10:00"},
+        ],
+        route={"legs": [{"from": "origin_home", "to": "poi_activity", "mode": "taxi"}]},
+    )
+
+    report = validate_revision_for_approval(plan, candidates, constraints, [], {"condition": "clear"})
+
+    assert "closed_at_visit_time" not in _codes(report)
+
+
+def test_relative_today_weekday_open_hours_match_only_today_weekday():
+    candidates = _candidates()
+    today_name = date.today().strftime("%A")
+    other_day_name = (date.today() + timedelta(days=1)).strftime("%A")
+    plan = _plan(
+        steps=[
+            {"type": "activity", "title": "Pottery", "place_id": "poi_activity", "start": "10:00", "end": "11:00"},
+        ],
+        route={"legs": [{"from": "origin_home", "to": "poi_activity", "mode": "taxi"}]},
+    )
+    constraints = _constraints()
+    constraints["time_window"]["date"] = "today"
+
+    candidates["poi_activity"]["open_hours"] = [{"day": today_name, "start": "09:00", "end": "17:00"}]
+    matching_report = validate_revision_for_approval(plan, candidates, constraints, [], {"condition": "clear"})
+
+    candidates["poi_activity"]["open_hours"] = [{"day": other_day_name, "start": "09:00", "end": "17:00"}]
+    mismatching_report = validate_revision_for_approval(plan, candidates, constraints, [], {"condition": "clear"})
+
+    assert "closed_at_visit_time" not in _codes(matching_report)
+    assert "closed_at_visit_time" in _codes(mismatching_report)
+
+
+def test_restaurant_empty_availability_blocks_slot_mismatch():
+    candidates = _candidates()
+    candidates["poi_restaurant"]["availability"] = []
+
+    report = validate_revision_for_approval(_plan(), candidates, _constraints(), _actions(), {"condition": "clear"})
+
+    assert not report["valid"]
+    assert "availability_slot_mismatch" in _codes(report)
+
+
+def test_send_plan_message_empty_payload_blocks_payload_missing():
+    actions = [{"tool": "send_plan_message", "idempotency_key": "rev_1:send_plan_message:abc", "payload": {}}]
+
+    report = validate_revision_for_approval(_plan(), _candidates(), _constraints(), actions, {"condition": "clear"})
+
+    assert not report["valid"]
+    assert "action_payload_missing" in _codes(report)
+
+
+def test_place_bound_action_missing_place_or_shop_id_blocks_ungrounded_action():
+    actions = [
+        {
+            "tool": "create_reservation",
+            "idempotency_key": "rev_1:create_reservation:missing-place",
+            "payload": {"time": "16:00", "party_size": 3},
+        }
+    ]
+
+    report = validate_revision_for_approval(_plan(), _candidates(), _constraints(), actions, {"condition": "clear"})
+
+    assert not report["valid"]
+    assert "ungrounded_action" in _codes(report)
+
+
+def test_leading_transport_step_from_origin_satisfies_origin_route_without_legs():
+    plan = _plan(
+        steps=[
+            {"type": "transport", "title": "Taxi", "from": "origin_home", "to": "poi_activity", "start": "13:40", "end": "14:00"},
+            {"type": "activity", "title": "Pottery", "place_id": "poi_activity", "start": "14:00", "end": "15:30"},
+            {"type": "restaurant", "title": "Cafe", "place_id": "poi_restaurant", "start": "16:00", "end": "17:00"},
+        ],
+        route={"legs": []},
+    )
+
+    report = validate_revision_for_approval(plan, _candidates(), _constraints(), _actions(), {"condition": "clear"})
+
+    assert "missing_origin_route_leg" not in _codes(report)
+
+
+def test_reservation_action_missing_party_size_blocks():
+    actions = [
+        {
+            "tool": "create_reservation",
+            "idempotency_key": "rev_1:create_reservation:no-party",
+            "payload": {"place_id": "poi_restaurant", "time": "16:00"},
+        }
+    ]
+
+    report = validate_revision_for_approval(_plan(), _candidates(), _constraints(), actions, {"condition": "clear"})
+
+    assert not report["valid"]
+    assert "action_party_size_missing" in _codes(report)
+
+
+def test_order_action_people_mismatch_blocks_against_computed_party_size():
+    actions = [
+        {
+            "tool": "create_order",
+            "idempotency_key": "rev_1:create_order:people-mismatch",
+            "payload": {"shop_id": "poi_restaurant", "pickup_time": "16:00", "people": 2},
+        }
+    ]
+
+    report = validate_revision_for_approval(_plan(), _candidates(), _constraints(), actions, {"condition": "clear"})
+
+    assert not report["valid"]
+    assert "action_party_size_mismatch" in _codes(report)
+
+
+def test_create_order_shop_id_from_candidate_alias_is_grounded():
+    candidates = _candidates()
+    candidates["poi_restaurant"]["shop_id"] = "shop_cafe"
+    actions = [
+        {
+            "tool": "create_order",
+            "idempotency_key": "rev_1:create_order:shop-alias",
+            "payload": {"shop_id": "shop_cafe", "pickup_time": "16:00", "party_size": 3},
+        }
+    ]
+
+    report = validate_revision_for_approval(_plan(), candidates, _constraints(), actions, {"condition": "clear"})
+
+    assert "ungrounded_action" not in _codes(report)
