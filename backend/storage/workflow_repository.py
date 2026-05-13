@@ -273,7 +273,7 @@ class WorkflowRepository:
             conn.execute("begin immediate")
             existing_action = conn.execute(
                 """
-                select action_id, idempotency_key from action_ledger
+                select * from action_ledger
                 where action_id = ?
                 """,
                 (action_id,),
@@ -281,6 +281,14 @@ class WorkflowRepository:
             if existing_action is not None:
                 if existing_action["idempotency_key"] != idempotency_key:
                     raise ValueError(f"action_id_conflict:{action_id}")
+                if (
+                    existing_action["revision_id"] != revision_id
+                    or existing_action["tool"] != tool
+                    or existing_action["payload_json"] != _json_dumps(payload)
+                    or (receipt_id is not None and existing_action["receipt_id"] != receipt_id)
+                    or (status != "pending" and existing_action["status"] != status)
+                ):
+                    raise ValueError(f"action_seed_conflict:{action_id}")
                 return
 
             existing_idempotency_key = conn.execute(
