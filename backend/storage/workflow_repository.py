@@ -33,6 +33,7 @@ class WorkflowRepository:
 
     def _init_schema(self) -> None:
         with self._connect() as conn:
+            self._reset_legacy_workflow_schema(conn)
             conn.executescript(
                 """
                 create table if not exists plan_threads (
@@ -91,7 +92,6 @@ class WorkflowRepository:
                 );
                 """
             )
-            self._migrate_receipts_schema(conn)
             conn.execute(
                 """
                 create unique index if not exists idx_plan_revisions_plan_id_version
@@ -99,37 +99,19 @@ class WorkflowRepository:
                 """
             )
 
-    def _migrate_receipts_schema(self, conn: sqlite3.Connection) -> None:
+    def _reset_legacy_workflow_schema(self, conn: sqlite3.Connection) -> None:
         columns = {row["name"] for row in conn.execute("pragma table_info(receipts)").fetchall()}
-        if "message" not in columns and "metadata_json" not in columns:
+        if not columns or ("message" not in columns and "metadata_json" not in columns):
             return
-        if "detail" in columns or "payload_json" in columns:
-            raise RuntimeError("receipts table has mixed legacy and current columns")
-
-        conn.execute("alter table receipts rename to receipts_legacy")
-        conn.execute(
+        conn.executescript(
             """
-            create table receipts (
-                receipt_id text primary key,
-                action_id text not null,
-                revision_id text not null,
-                tool text not null,
-                status text not null,
-                detail text not null,
-                payload_json text not null,
-                created_at text not null
-            )
+            drop table if exists receipts;
+            drop table if exists action_attempts;
+            drop table if exists action_ledger;
+            drop table if exists plan_revisions;
+            drop table if exists plan_threads;
             """
         )
-        # Legacy databases predate FK enforcement, so migrated receipts stay FK-free to preserve orphan audit rows.
-        conn.execute(
-            """
-            insert into receipts(receipt_id, action_id, revision_id, tool, status, detail, payload_json, created_at)
-            select receipt_id, action_id, revision_id, tool, status, message, metadata_json, created_at
-            from receipts_legacy
-            """
-        )
-        conn.execute("drop table receipts_legacy")
 
     def create_thread(self, thread_id: str, run_id: str, plan_id: str, user_id: str, status: str) -> None:
         timestamp = _now()

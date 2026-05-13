@@ -87,9 +87,8 @@ def test_repository_uses_json_not_pickle(tmp_path: Path):
     assert row == ("thread_1",)
 
 
-def test_repository_migrates_legacy_receipts_schema_without_losing_rows(tmp_path: Path):
+def test_repository_resets_legacy_receipts_schema(tmp_path: Path):
     db_path = tmp_path / "workflow.sqlite"
-    legacy_payload = {"provider": "line", "raw": {"message_id": "MSG-legacy"}}
     new_payload = {"provider": "line", "raw": {"message_id": "MSG-new"}}
 
     with sqlite3.connect(db_path) as conn:
@@ -177,68 +176,24 @@ def test_repository_migrates_legacy_receipts_schema_without_losing_rows(tmp_path
         )
 
     repository = WorkflowRepository(db_path)
-    repository.append_receipt("MSG-new", "act_legacy", "rev_legacy", "messaging", "sent", "New sent", new_payload)
-
-    receipts = repository.list_receipts("rev_legacy")
-    assert receipts[0]["receipt_id"] == "MSG-legacy"
-    assert receipts[0]["detail"] == "Legacy sent"
-    assert receipts[0]["payload"] == legacy_payload
-    assert receipts[1]["receipt_id"] == "MSG-new"
-    assert receipts[1]["detail"] == "New sent"
-    assert receipts[1]["payload"] == new_payload
+    assert repository.list_receipts("rev_legacy") == []
 
     with sqlite3.connect(db_path) as conn:
         receipt_columns = [row[1] for row in conn.execute("pragma table_info(receipts)").fetchall()]
+        action_count = conn.execute("select count(*) from action_ledger").fetchone()[0]
     assert "message" not in receipt_columns
     assert "metadata_json" not in receipt_columns
     assert "detail" in receipt_columns
     assert "payload_json" in receipt_columns
+    assert action_count == 0
 
-
-def test_repository_migrates_legacy_orphan_receipts_without_losing_rows(tmp_path: Path):
-    db_path = tmp_path / "workflow.sqlite"
-    orphan_payload = {"provider": "line", "raw": {"message_id": "MSG-orphan"}}
-
-    with sqlite3.connect(db_path) as conn:
-        conn.executescript(
-            """
-            create table receipts (
-                receipt_id text primary key,
-                action_id text not null,
-                revision_id text not null,
-                tool text not null,
-                status text not null,
-                message text not null,
-                metadata_json text not null,
-                created_at text not null
-            );
-            """
-        )
-        conn.execute(
-            """
-            insert into receipts(receipt_id, action_id, revision_id, tool, status, message, metadata_json, created_at)
-            values (?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                "MSG-orphan",
-                "act_missing",
-                "rev_missing",
-                "messaging",
-                "sent",
-                "Orphan sent",
-                '{"provider": "line", "raw": {"message_id": "MSG-orphan"}}',
-                "2026-05-13T00:00:00+00:00",
-            ),
-        )
-
-    repository = WorkflowRepository(db_path)
-
-    receipts = repository.list_receipts("rev_missing")
-    assert receipts[0]["receipt_id"] == "MSG-orphan"
-    assert receipts[0]["action_id"] == "act_missing"
-    assert receipts[0]["revision_id"] == "rev_missing"
-    assert receipts[0]["detail"] == "Orphan sent"
-    assert receipts[0]["payload"] == orphan_payload
+    repository.save_revision("rev_new", "plan_1", 1, "draft", "Goal", {}, {}, {})
+    repository.upsert_action("act_new", "rev_new", "messaging", "pending", "idem_new", {}, None)
+    repository.append_receipt("MSG-new", "act_new", "rev_new", "messaging", "sent", "New sent", new_payload)
+    receipts = repository.list_receipts("rev_new")
+    assert receipts[0]["receipt_id"] == "MSG-new"
+    assert receipts[0]["detail"] == "New sent"
+    assert receipts[0]["payload"] == new_payload
 
 
 def test_upsert_action_reuses_existing_action_for_same_idempotency_key(tmp_path: Path):
