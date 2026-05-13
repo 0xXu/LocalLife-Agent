@@ -35,7 +35,7 @@ The highest-risk business bugs are:
 4. Side effects are ledger entries. Receipts are append-only facts.
 5. LLMs propose intent and options; deterministic policy gates execution.
 6. Recovery creates a new validated revision or action retry, not silent mutation.
-7. The frontend talks to a durable run/thread, not to a stateless one-off stream.
+7. The backend protocol is the source of truth. The frontend must adapt to the backend workflow contract, not the other way around.
 
 ## Recommended Architecture
 
@@ -331,6 +331,8 @@ Resume payload:
 
 Replace one-off build and direct confirmation endpoints with run/thread APIs.
 
+This API can be a breaking change. Do not preserve old frontend-driven endpoint semantics if they conflict with the graph state machine. The only compatibility requirement is that every externally visible state transition is explicit, durable, and enforceable by the backend.
+
 ```text
 POST /api/plans/runs
 GET  /api/plans/runs/{run_id}/stream
@@ -391,20 +393,20 @@ receipts(receipt_id, action_id, revision_id, tool, status, detail, payload_json,
 trace_events(event_id, thread_id, revision_id, node, kind, status, input_json, output_json, created_at)
 ```
 
-## Frontend Contract
+## External Contract
 
-The frontend should stop treating `confirmPlan()` and `executePlan()` as independent API steps.
+The backend exposes a graph-run protocol. Any client, including the current frontend, must treat this protocol as authoritative.
 
-New frontend flow:
+Contract rules:
 
-1. Start run.
-2. Subscribe to run stream.
-3. Render progress updates.
-4. If stream yields an interrupt, render clarification or approval UI.
-5. Submit resume decision with selected action ids.
-6. Continue streaming execution and receipt updates.
+- Clients do not set plan status directly.
+- Clients do not call separate confirm and execute endpoints.
+- Clients resume graph interrupts with decisions.
+- Clients may request selected action ids, but the backend validates them against the current revision ledger.
+- Clients may request edits, but the backend decides whether the result is a new revision, a validation failure, or a new approval interrupt.
+- Clients display backend phases, validation results, action ledger entries, and receipts without inventing extra business state.
 
-The selected action set must be passed from the current UI state at submit time, not captured in a stale callback closure.
+This spec does not require compatibility with the current frontend state machine. If the current frontend cannot represent graph interrupts, revisions, or ledger-backed partial execution, it should be rewritten against this contract after the backend is implemented.
 
 ## Testing Strategy
 
@@ -424,18 +426,14 @@ Backend tests:
 - Origin-to-first-stop travel is included in route validation.
 - Clarification responses are not listed as saved executable plans.
 
-Frontend tests:
-
-- Approval UI submits the latest selected action ids.
-- Stream reconnect resumes a run instead of starting a new build.
-- Interrupt payloads render clarification, approval, edit, and reject states.
-- Completed receipts remain visible after partial retry.
-
 Contract tests:
 
 - Plan response includes plan id, revision id, phase, validation summary, actions, ledger, receipts, and interrupt state.
 - Action ids are stable and opaque.
 - Receipt ids are stable across process restarts.
+- Resume payloads are validated against the current interrupt type.
+- Run streams expose stable event ids and do not create new plans on reconnect.
+- Old direct confirm/execute semantics are not part of the new contract.
 
 ## Migration Plan
 
@@ -449,13 +447,13 @@ Implement in stages:
 6. Add revision model and make executed revisions immutable.
 7. Strengthen validation rules.
 8. Split the current large pipeline into focused nodes/modules.
-9. Deprecate old endpoints after frontend migration.
+9. Remove or hard-disable old direct confirmation and execution endpoints once the graph-run API is available.
 
 ## Non-Goals
 
 - Do not integrate live booking or payment providers in this redesign.
 - Do not introduce a fully autonomous multi-agent supervisor.
-- Do not rewrite the frontend visual design.
+- Do not preserve the current frontend API contract.
 - Do not preserve pickle repository compatibility beyond a temporary migration script if needed.
 
 ## References
