@@ -270,9 +270,32 @@ class WorkflowRepository:
     ) -> None:
         timestamp = _now()
         with self._connect() as conn:
+            conn.execute("begin immediate")
+            existing_action = conn.execute(
+                """
+                select action_id, idempotency_key from action_ledger
+                where action_id = ?
+                """,
+                (action_id,),
+            ).fetchone()
+            if existing_action is not None:
+                if existing_action["idempotency_key"] != idempotency_key:
+                    raise ValueError(f"action_id_conflict:{action_id}")
+                return
+
+            existing_idempotency_key = conn.execute(
+                """
+                select action_id, idempotency_key from action_ledger
+                where idempotency_key = ?
+                """,
+                (idempotency_key,),
+            ).fetchone()
+            if existing_idempotency_key is not None:
+                raise ValueError(f"idempotency_key_conflict:{idempotency_key}")
+
             conn.execute(
                 """
-                insert or ignore into action_ledger(
+                insert into action_ledger(
                     action_id,
                     revision_id,
                     tool,
@@ -345,6 +368,7 @@ class WorkflowRepository:
         payload: dict[str, Any],
     ) -> dict[str, Any]:
         with self._connect() as conn:
+            conn.execute("begin immediate")
             action = conn.execute(
                 "select * from action_ledger where action_id = ?",
                 (action_id,),
@@ -365,6 +389,9 @@ class WorkflowRepository:
                 (receipt_id,),
             ).fetchone()
             if receipt and (receipt["action_id"] != action_id or receipt["revision_id"] != action["revision_id"]):
+                raise ValueError(f"receipt_conflict:{action_id}")
+
+            if action["receipt_id"] is not None and action["receipt_id"] != receipt_id:
                 raise ValueError(f"receipt_conflict:{action_id}")
 
             timestamp = _now()
@@ -409,14 +436,16 @@ class WorkflowRepository:
                     ),
                 )
 
-            conn.execute(
+            result = conn.execute(
                 """
                 update action_ledger
                 set status = 'succeeded', receipt_id = ?, updated_at = ?
-                where action_id = ?
+                where action_id = ? and (receipt_id is null or receipt_id = ?)
                 """,
-                (receipt_id, _now(), action_id),
+                (receipt_id, _now(), action_id, receipt_id),
             )
+            if result.rowcount == 0:
+                raise ValueError(f"receipt_conflict:{action_id}")
             updated = conn.execute(
                 "select * from action_ledger where action_id = ?",
                 (action_id,),

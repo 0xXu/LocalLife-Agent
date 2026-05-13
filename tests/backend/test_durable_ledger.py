@@ -102,6 +102,34 @@ def test_seed_actions_does_not_downgrade_existing_succeeded_action(tmp_path: Pat
     assert actions[0]["receipt_id"] == "MSG-1"
 
 
+def test_seed_actions_rejects_action_id_conflict(tmp_path: Path):
+    ledger = DurableActionLedger(_repository(tmp_path))
+    ledger.seed_actions(
+        "rev_1",
+        [{"action_id": "act_msg", "tool": "messaging", "idempotency_key": "idem_1", "payload": {}}],
+    )
+
+    with pytest.raises(ValueError, match="action_id_conflict:act_msg"):
+        ledger.seed_actions(
+            "rev_1",
+            [{"action_id": "act_msg", "tool": "messaging", "idempotency_key": "idem_2", "payload": {}}],
+        )
+
+
+def test_seed_actions_rejects_idempotency_key_conflict(tmp_path: Path):
+    ledger = DurableActionLedger(_repository(tmp_path))
+    ledger.seed_actions(
+        "rev_1",
+        [{"action_id": "act_msg", "tool": "messaging", "idempotency_key": "idem_1", "payload": {}}],
+    )
+
+    with pytest.raises(ValueError, match="idempotency_key_conflict:idem_1"):
+        ledger.seed_actions(
+            "rev_1",
+            [{"action_id": "act_cal", "tool": "calendar", "idempotency_key": "idem_1", "payload": {}}],
+        )
+
+
 def test_mark_succeeded_finishes_action_when_receipt_already_exists(tmp_path: Path):
     repository = _repository(tmp_path)
     ledger = DurableActionLedger(repository)
@@ -126,4 +154,22 @@ def test_mark_succeeded_rejects_conflicting_receipt(tmp_path: Path):
     with pytest.raises(ValueError, match="receipt_conflict:act_msg"):
         ledger.mark_succeeded("act_msg", "MSG-2", "Sent again", {"provider": "line"})
 
+    actions = ledger.list_actions("rev_1")
+    assert actions[0]["status"] == "succeeded"
+    assert actions[0]["receipt_id"] == "MSG-1"
     assert [receipt["receipt_id"] for receipt in ledger.list_receipts("rev_1")] == ["MSG-1"]
+
+
+def test_mark_succeeded_rejects_receipt_id_owned_by_another_action(tmp_path: Path):
+    repository = _repository(tmp_path)
+    ledger = DurableActionLedger(repository)
+    _seed_two_actions(ledger)
+    ledger.mark_executing("rev_1", ["act_msg"])
+    repository.append_receipt("MSG-1", "act_cal", "rev_1", "calendar", "succeeded", "Booked", {})
+
+    with pytest.raises(ValueError, match="receipt_conflict:act_msg"):
+        ledger.mark_succeeded("act_msg", "MSG-1", "Sent", {"provider": "line"})
+
+    actions = {action["action_id"]: action for action in ledger.list_actions("rev_1")}
+    assert actions["act_msg"]["status"] == "executing"
+    assert actions["act_msg"]["receipt_id"] is None
