@@ -16,6 +16,7 @@ export function NotificationSection({ executionReminder, planChange, weeklyDiges
   return (
     <div className={styles.section}>
       <h2 className={styles.sectionTitle}><Bell size={18} /> 通知设置</h2>
+      <p className={styles.sectionLead}>控制执行动作后的提醒、计划变更和周期摘要。</p>
       <Toggle checked={executionReminder} onChange={() => onToggle('execution_reminder')}
         label="执行前提醒" description="计划执行前 30 分钟发送提醒" testId="notif-execution" />
       <Toggle checked={planChange} onChange={() => onToggle('plan_change')}

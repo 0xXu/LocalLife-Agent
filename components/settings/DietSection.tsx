@@ -16,6 +16,7 @@ export function DietSection({ fitnessFriendly, vegetarian, glutenFree, onToggle 
   return (
     <div className={styles.section}>
       <h2 className={styles.sectionTitle}><Utensils size={18} /> 饮食偏好</h2>
+      <p className={styles.sectionLead}>这些标签会参与餐厅候选检索、预算判断和计划修订。</p>
       <Toggle checked={fitnessFriendly} onChange={() => onToggle('fitness_friendly')}
         label="减脂友好" description="优先推荐低热量、高蛋白的餐厅选项" testId="preference-fitness" />
       <Toggle checked={vegetarian} onChange={() => onToggle('vegetarian')}

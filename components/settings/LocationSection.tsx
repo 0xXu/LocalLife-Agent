@@ -13,6 +13,7 @@ export function LocationSection({ radiusKm, onChange }: LocationSectionProps) {
   return (
     <div className={styles.section}>
       <h2 className={styles.sectionTitle}><MapPin size={18} /> 位置偏好</h2>
+      <p className={styles.sectionLead}>活动半径会影响候选检索范围、交通时间和路线校验。</p>
       <div className={styles.sliderContainer}>
         <div className={styles.sliderHeader}>
           <span className={styles.preferenceLabel}>活动半径</span>

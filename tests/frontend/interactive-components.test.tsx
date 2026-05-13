@@ -16,6 +16,7 @@ const { PlanEditModal } = await import('../../components/saved/PlanEditModal');
 const { SavedPlansView } = await import('../../components/saved/SavedPlansView');
 const { DietSection } = await import('../../components/settings/DietSection');
 const { LocationSection } = await import('../../components/settings/LocationSection');
+const { SettingsView } = await import('../../components/settings/SettingsView');
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -151,6 +152,16 @@ test('settings preference toggles and radius slider update visible state', async
   const slider = byTestId<HTMLInputElement>(container, 'radius-slider');
   await changeInput(slider, '8');
   assert.match(container.textContent ?? '', /8/);
+});
+
+test('settings view presents preferences as an AI profile workspace', async () => {
+  const { container } = render(<SettingsView />);
+
+  await waitFor(() => {
+    assert.match(container.textContent ?? '', /画像记忆/);
+    assert.match(container.textContent ?? '', /偏好完成度/);
+    assert.match(container.textContent ?? '', /计划修订/);
+  });
 });
 
 function render(element: React.ReactElement) {
