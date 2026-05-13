@@ -44,7 +44,14 @@ def test_policy_creates_activity_reservation_with_party_size_payload():
             {"type": "activity", "title": "陶艺体验", "place_id": "poi_activity", "start": "14:00", "end": "15:30"},
         ]
     }
-    candidate_lookup = {"poi_activity": {"id": "poi_activity", "name": "陶艺体验", "booking_supported": True}}
+    candidate_lookup = {
+        "poi_activity": {
+            "id": "poi_activity",
+            "name": "陶艺体验",
+            "category": "social_activity",
+            "booking_supported": True,
+        }
+    }
 
     actions = _assert_deterministic("rev_1", plan, candidate_lookup, _constraints(["activity_reservation"]))
 
@@ -60,6 +67,45 @@ def test_policy_creates_activity_reservation_with_party_size_payload():
             "receipt_id": "",
         }
     ]
+
+
+def test_policy_omits_activity_reservation_when_candidate_category_is_restaurant():
+    plan = {
+        "itinerary": [
+            {"type": "activity", "title": "陶艺体验", "place_id": "poi_activity", "start": "14:00"},
+        ]
+    }
+    candidate_lookup = {
+        "poi_activity": {
+            "id": "poi_activity",
+            "name": "陶艺体验",
+            "category": "restaurant",
+            "booking_supported": True,
+        }
+    }
+
+    actions = _assert_deterministic("rev_1", plan, candidate_lookup, _constraints(["activity_reservation"]))
+
+    assert actions == []
+
+
+def test_policy_omits_activity_reservation_when_candidate_category_is_missing():
+    plan = {
+        "itinerary": [
+            {"type": "activity", "title": "陶艺体验", "place_id": "poi_activity", "start": "14:00"},
+        ]
+    }
+    candidate_lookup = {
+        "poi_activity": {
+            "id": "poi_activity",
+            "name": "陶艺体验",
+            "booking_supported": True,
+        }
+    }
+
+    actions = _assert_deterministic("rev_1", plan, candidate_lookup, _constraints(["activity_reservation"]))
+
+    assert actions == []
 
 
 def test_policy_creates_restaurant_actions_only_when_requested_and_grounded():
@@ -244,7 +290,7 @@ def test_policy_requires_restaurant_category_when_candidate_category_is_present(
     assert actions == []
 
 
-def test_policy_tolerates_missing_restaurant_category_when_identity_matches():
+def test_policy_omits_restaurant_actions_when_candidate_category_is_missing():
     plan = {
         "itinerary": [
             {"type": "restaurant", "title": "无分类餐厅", "place_id": "poi_restaurant", "start": "16:00"},
@@ -260,7 +306,7 @@ def test_policy_tolerates_missing_restaurant_category_when_identity_matches():
 
     actions = _assert_deterministic("rev_1", plan, candidate_lookup, _constraints(["restaurant_reservation"]))
 
-    assert [action["tool"] for action in actions] == ["create_reservation"]
+    assert actions == []
 
 
 def test_policy_requires_non_empty_string_deal_id_and_concrete_menu_items():
@@ -283,3 +329,117 @@ def test_policy_requires_non_empty_string_deal_id_and_concrete_menu_items():
             _constraints(["claim_coupon", "create_order"], user_id="user_1"),
         )
         assert actions == []
+
+
+def test_policy_action_id_and_idempotency_key_ignore_display_title_changes():
+    base_step = {"type": "restaurant", "title": "旧标题", "place_id": "poi_restaurant", "start": "16:00"}
+    plan = {"itinerary": [base_step]}
+    changed_title_plan = {"itinerary": [{**base_step, "title": "新标题"}]}
+    candidate_lookup = {
+        "poi_restaurant": {
+            "id": "poi_restaurant",
+            "name": "候选餐厅",
+            "category": "restaurant",
+            "booking_supported": True,
+        }
+    }
+    constraints = _constraints(["restaurant_reservation"])
+
+    original = _assert_deterministic("rev_1", plan, candidate_lookup, constraints)
+    changed_title = _assert_deterministic("rev_1", changed_title_plan, candidate_lookup, constraints)
+
+    assert original[0]["payload"] == changed_title[0]["payload"]
+    assert original[0]["action_id"] == changed_title[0]["action_id"]
+    assert original[0]["idempotency_key"] == changed_title[0]["idempotency_key"]
+
+
+def test_policy_action_id_and_idempotency_key_ignore_unrelated_earlier_non_action_step():
+    restaurant_step = {"type": "restaurant", "title": "绿荫轻食餐厅", "place_id": "poi_restaurant", "start": "16:00"}
+    plan = {"itinerary": [restaurant_step]}
+    inserted_step_plan = {
+        "itinerary": [
+            {"type": "activity", "title": "路过公园", "place_id": "poi_activity", "start": "15:00"},
+            restaurant_step,
+        ]
+    }
+    candidate_lookup = {
+        "poi_activity": {"id": "poi_activity", "name": "路过公园", "category": "activity", "booking_supported": False},
+        "poi_restaurant": {
+            "id": "poi_restaurant",
+            "name": "绿荫轻食餐厅",
+            "category": "restaurant",
+            "booking_supported": True,
+        },
+    }
+    constraints = _constraints(["restaurant_reservation"])
+
+    original = _assert_deterministic("rev_1", plan, candidate_lookup, constraints)
+    inserted = _assert_deterministic("rev_1", inserted_step_plan, candidate_lookup, constraints)
+
+    assert [action["tool"] for action in inserted] == ["create_reservation"]
+    assert original[0]["payload"] == inserted[0]["payload"]
+    assert original[0]["action_id"] == inserted[0]["action_id"]
+    assert original[0]["idempotency_key"] == inserted[0]["idempotency_key"]
+
+
+def test_policy_party_size_counts_none_children_as_zero():
+    plan = {
+        "itinerary": [
+            {"type": "restaurant", "title": "绿荫轻食餐厅", "place_id": "poi_restaurant", "start": "16:00"},
+        ]
+    }
+    candidate_lookup = {
+        "poi_restaurant": {
+            "id": "poi_restaurant",
+            "name": "绿荫轻食餐厅",
+            "category": "restaurant",
+            "booking_supported": True,
+        },
+    }
+    constraints = {"people": {"adults": 2, "children": None}, "required_actions": ["restaurant_reservation"]}
+
+    actions = _assert_deterministic("rev_1", plan, candidate_lookup, constraints)
+
+    assert actions[0]["payload"]["party_size"] == 2
+
+
+def test_policy_party_size_uses_int_children_count():
+    plan = {
+        "itinerary": [
+            {"type": "restaurant", "title": "绿荫轻食餐厅", "place_id": "poi_restaurant", "start": "16:00"},
+        ]
+    }
+    candidate_lookup = {
+        "poi_restaurant": {
+            "id": "poi_restaurant",
+            "name": "绿荫轻食餐厅",
+            "category": "restaurant",
+            "booking_supported": True,
+        },
+    }
+    constraints = {"people": {"adults": 2, "children": 2}, "required_actions": ["restaurant_reservation"]}
+
+    actions = _assert_deterministic("rev_1", plan, candidate_lookup, constraints)
+
+    assert actions[0]["payload"]["party_size"] == 4
+
+
+def test_policy_party_size_defaults_invalid_adults_to_zero():
+    plan = {
+        "itinerary": [
+            {"type": "restaurant", "title": "绿荫轻食餐厅", "place_id": "poi_restaurant", "start": "16:00"},
+        ]
+    }
+    candidate_lookup = {
+        "poi_restaurant": {
+            "id": "poi_restaurant",
+            "name": "绿荫轻食餐厅",
+            "category": "restaurant",
+            "booking_supported": True,
+        },
+    }
+    constraints = {"people": {"adults": "bad", "children": [{"age": 7}]}, "required_actions": ["restaurant_reservation"]}
+
+    actions = _assert_deterministic("rev_1", plan, candidate_lookup, constraints)
+
+    assert actions[0]["payload"]["party_size"] == 1

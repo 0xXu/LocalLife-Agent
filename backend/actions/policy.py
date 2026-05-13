@@ -17,7 +17,7 @@ def build_executable_actions(
     user_id = _user_id(constraints)
 
     actions: list[dict[str, Any]] = []
-    for step_ordinal, step in enumerate(plan.get("itinerary", [])):
+    for step in plan.get("itinerary", []):
         step_type = step.get("type")
         place_id = step.get("place_id")
         if not place_id:
@@ -28,7 +28,11 @@ def build_executable_actions(
             continue
 
         if step_type == "activity":
-            if "activity_reservation" in required_actions and candidate.get("booking_supported") is True:
+            if (
+                "activity_reservation" in required_actions
+                and _activity_grounded(candidate)
+                and candidate.get("booking_supported") is True
+            ):
                 time = _step_time(step)
                 if time:
                     actions.append(
@@ -38,15 +42,13 @@ def build_executable_actions(
                             label="预约活动",
                             target=_target(step, candidate),
                             payload={"place_id": place_id, "time": time, "party_size": party_size},
-                            ordinal=len(actions),
-                            source_ordinal=step_ordinal,
                         )
                     )
             continue
 
         if step_type != "restaurant":
             continue
-        if not _restaurant_grounded(step, candidate):
+        if not _restaurant_grounded(candidate):
             continue
 
         time = _step_time(step)
@@ -59,8 +61,6 @@ def build_executable_actions(
                     label="预订餐厅",
                     target=target,
                     payload={"place_id": place_id, "time": time, "party_size": party_size},
-                    ordinal=len(actions),
-                    source_ordinal=step_ordinal,
                 )
             )
 
@@ -73,8 +73,6 @@ def build_executable_actions(
                     label="领取团购券",
                     target=target,
                     payload={"place_id": place_id, "deal_id": deal_id, "user_id": user_id},
-                    ordinal=len(actions),
-                    source_ordinal=step_ordinal,
                 )
             )
 
@@ -91,8 +89,6 @@ def build_executable_actions(
                         "items": items,
                         "pickup_time": time,
                     },
-                    ordinal=len(actions),
-                    source_ordinal=step_ordinal,
                 )
             )
 
@@ -105,17 +101,8 @@ def make_action(
     label: str,
     target: str,
     payload: dict[str, Any],
-    ordinal: int = 0,
-    source_ordinal: int | None = None,
 ) -> dict[str, Any]:
-    idempotency_key = _stable_idempotency_key(
-        revision_id,
-        tool,
-        target,
-        payload,
-        ordinal=ordinal,
-        source_ordinal=source_ordinal,
-    )
+    idempotency_key = _stable_idempotency_key(revision_id, tool, payload)
     action_id = _stable_action_id(idempotency_key)
     return {
         "action_id": action_id,
@@ -133,7 +120,25 @@ def make_action(
 
 def _party_size(constraints: Mapping[str, Any]) -> int:
     people = _value(constraints, "people", {})
-    return int(_value(people, "adults", 0)) + len(_value(people, "children", []))
+    adults = _int_count(_value(people, "adults", 0))
+    children = _children_count(_value(people, "children", 0))
+    return adults + children
+
+
+def _int_count(value: Any) -> int:
+    if isinstance(value, bool):
+        return 0
+    try:
+        count = int(value)
+    except (TypeError, ValueError):
+        return 0
+    return max(count, 0)
+
+
+def _children_count(value: Any) -> int:
+    if isinstance(value, list):
+        return len(value)
+    return _int_count(value)
 
 
 def _target(step: Mapping[str, Any], candidate: Mapping[str, Any]) -> str:
@@ -205,11 +210,17 @@ def _identity_matches(step: Mapping[str, Any], candidate: Mapping[str, Any]) -> 
     return bool(expected_ids & candidate_ids)
 
 
-def _restaurant_grounded(step: Mapping[str, Any], candidate: Mapping[str, Any]) -> bool:
+def _restaurant_grounded(candidate: Mapping[str, Any]) -> bool:
+    return candidate.get("category") == "restaurant"
+
+
+def _activity_grounded(candidate: Mapping[str, Any]) -> bool:
     category = candidate.get("category")
-    if category is None or category == "":
-        return step.get("type") == "restaurant"
-    return category == "restaurant"
+    if not isinstance(category, str) or not category:
+        return False
+    normalized = category.lower()
+    allowed_categories = {"social_activity", "family_activity", "date_activity", "indoor_activity"}
+    return normalized in allowed_categories or "activity" in normalized
 
 
 def _valid_items(value: Any) -> bool:
@@ -232,18 +243,12 @@ def _valid_items(value: Any) -> bool:
 def _stable_idempotency_key(
     revision_id: str,
     tool: str,
-    target: str,
     payload: dict[str, Any],
-    ordinal: int,
-    source_ordinal: int | None,
 ) -> str:
     source = {
         "revision_id": revision_id,
         "tool": tool,
-        "target": target,
         "payload": payload,
-        "ordinal": ordinal,
-        "source_ordinal": source_ordinal,
     }
     source_json = json.dumps(source, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     digest = hashlib.sha256(source_json.encode("utf-8")).hexdigest()
