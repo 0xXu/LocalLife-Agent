@@ -149,6 +149,19 @@ class WorkflowRepository:
             ).fetchone()
         return dict(row) if row else None
 
+    def get_thread_by_run(self, run_id: str) -> dict[str, Any] | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                select * from plan_threads
+                where run_id = ?
+                order by created_at desc, thread_id desc
+                limit 1
+                """,
+                (run_id,),
+            ).fetchone()
+        return dict(row) if row else None
+
     def update_thread_status_for_plan(self, plan_id: str, status: str) -> None:
         with self._connect() as conn:
             result = conn.execute(

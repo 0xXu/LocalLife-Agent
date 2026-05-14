@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from backend.graph.events import sse_event
 from backend.llm import LLMConfig
 from backend.profile.models import UserPreference, UserProfile
 from backend.services import PlanningService, WorkflowService
@@ -102,6 +103,24 @@ def create_app(service: PlanningService | None = None, workflow_service: Workflo
         return workflow(request).start_run(
             str(body.get("goal", "")),
             user_id=str(body.get("user_id", "local_demo_user")),
+        )
+
+    @api.get("/api/plans/runs/{run_id}/stream")
+    async def stream_plan_run(run_id: str, request: Request) -> StreamingResponse:
+        events = workflow(request).stream_run_events(run_id)
+
+        async def event_stream():
+            for event in events:
+                yield sse_event(str(event["id"]), str(event["event"]), event["data"])
+
+        return StreamingResponse(
+            event_stream(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "X-Accel-Buffering": "no",
+                "Connection": "keep-alive",
+            },
         )
 
     @api.post("/api/plans/build")

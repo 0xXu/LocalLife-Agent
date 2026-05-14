@@ -1,3 +1,5 @@
+import json
+
 from fastapi.testclient import TestClient
 
 from backend.api.app import create_app
@@ -24,6 +26,20 @@ def make_client(tmp_path):
     workflow = make_workflow_service(tmp_path)
     client = TestClient(create_app(workflow_service=workflow), raise_server_exceptions=False)
     return client
+
+
+def parse_sse_events(body: str) -> list[dict[str, object]]:
+    events = []
+    for chunk in body.strip().split("\n\n"):
+        event: dict[str, object] = {"data": ""}
+        for line in chunk.splitlines():
+            field, value = line.split(": ", 1)
+            if field == "data":
+                event[field] = json.loads(value)
+            else:
+                event[field] = value
+        events.append(event)
+    return events
 
 
 def test_create_app_preserves_positional_planning_service_argument(tmp_path):
@@ -87,6 +103,38 @@ def test_build_endpoint_creates_workflow_readable_plan(tmp_path):
     assert loaded.status_code == 200
     assert loaded.json()["plan_id"] == plan_id
     assert loaded.json()["plan"]["id"] == plan_id
+
+
+def test_run_stream_returns_stable_graph_update_without_creating_new_revision(tmp_path):
+    client = make_client(tmp_path)
+    start = client.post("/api/plans/runs", json={"goal": "family with child wants low fat lunch", "user_id": "user_1"})
+    run_id = start.json()["run_id"]
+    plan_id = start.json()["plan_id"]
+    versions_before = client.get(f"/api/plans/{plan_id}/versions").json()["versions"]
+
+    first = client.get(f"/api/plans/runs/{run_id}/stream")
+    second = client.get(f"/api/plans/runs/{run_id}/stream")
+
+    assert first.status_code == 200
+    assert first.headers["content-type"].startswith("text/event-stream")
+    first_events = parse_sse_events(first.text)
+    second_events = parse_sse_events(second.text)
+    assert first_events[0]["id"].startswith("evt_")
+    assert first_events[0]["id"] == second_events[0]["id"]
+    assert first_events[0]["event"] == "graph_update"
+    assert first_events[0]["data"]["run_id"] == run_id
+    assert first_events[0]["data"]["plan_id"] == plan_id
+    assert client.get(f"/api/plans/{plan_id}/versions").json()["versions"] == versions_before
+    assert client.get("/api/plans").json()["total"] == 1
+
+
+def test_unknown_run_stream_returns_not_found(tmp_path):
+    client = make_client(tmp_path)
+
+    response = client.get("/api/plans/runs/run_missing/stream")
+
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "run_not_found"
 
 
 def test_missing_plan_versions_returns_not_found(tmp_path):

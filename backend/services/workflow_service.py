@@ -175,6 +175,34 @@ class WorkflowService:
         plans = [self._plan_summary(revision) for revision in revisions]
         return {"plans": plans, "total": len(plans)}
 
+    def stream_run_events(self, run_id: str) -> list[dict[str, Any]]:
+        thread = self.repository.get_thread_by_run(run_id)
+        if thread is None:
+            raise KeyError("run_not_found")
+
+        plan_id = str(thread["plan_id"])
+        revision = self.repository.get_latest_revision(plan_id)
+        if revision is None:
+            raise KeyError("run_not_found")
+
+        phase = self._current_phase(plan_id, revision)
+        actions = self.ledger.list_actions(revision["revision_id"])
+        revision = self._response_revision(revision, phase, actions)
+        return [
+            {
+                "id": "evt_000001",
+                "event": "graph_update",
+                "data": {
+                    "run_id": run_id,
+                    "thread_id": thread["thread_id"],
+                    "plan_id": plan_id,
+                    "revision_id": revision["revision_id"],
+                    "phase": phase,
+                    "revision": revision,
+                },
+            }
+        ]
+
     def _current_phase(self, plan_id: str, revision: Mapping[str, Any]) -> str:
         thread = self.repository.get_thread_by_plan(plan_id)
         if thread and thread.get("status"):
