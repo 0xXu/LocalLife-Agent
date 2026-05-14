@@ -249,6 +249,8 @@ class PlanState:
     action_ledger: dict[str, Any] = field(default_factory=dict)
     validation_issues: list[dict[str, Any]] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    recovery_attempts: int = 0
+    agent_decisions: dict[str, Any] = field(default_factory=dict)
 
     def add_trace(self, trace: TraceStep) -> None:
         self.trace.append(trace)
