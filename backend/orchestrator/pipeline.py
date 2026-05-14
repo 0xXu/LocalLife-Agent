@@ -14,6 +14,7 @@ from langgraph.graph import END, START, StateGraph
 
 from backend.agents.ranker import RankerAgent
 from backend.agents.recovery import RecoveryAgent
+from backend.agents.tools import AgentContext
 from backend.agents.validator import ValidatorAgent
 from backend.data.catalog import LocalDataCatalog
 from backend.llm import LLMClient, LLMConfig
@@ -233,8 +234,9 @@ class PlanningPipeline:
     def _ranker_agent_node(self, graph_state: BuildGraphState) -> BuildGraphState:
         state = graph_state["state"]
         constraints = require_constraints(state)
-        agent = RankerAgent(self.llm)
-        ranked = agent.rank(state.candidates, constraints)
+        context = AgentContext(user_id=state.context.get("user_id", "default"))
+        agent = RankerAgent(self.llm, registry=self.tools, memory_store=getattr(self, 'memory_store', None))
+        ranked = agent.rank(state.candidates, constraints, context=context)
 
         # If agent used deterministic fallback (no LLM "ranked" key), use old multi-factor scorer
         # which considers tag relevance, distance, quality, wait time, budget, etc.
@@ -273,7 +275,8 @@ class PlanningPipeline:
     def _validator_agent_node(self, graph_state: BuildGraphState) -> BuildGraphState:
         state = graph_state["state"]
         constraints = require_constraints(state)
-        agent = ValidatorAgent(self.llm)
+        context = AgentContext(user_id=state.context.get("user_id", "default"))
+        agent = ValidatorAgent(self.llm, registry=self.tools)
         constraints_data = {
             "scenario": constraints.scenario,
             "budget_level": constraints.preferences.get("budget_level", "medium"),
@@ -285,7 +288,7 @@ class PlanningPipeline:
         }
         weather = state.context.get("weather", {})
         lookup = {item["id"]: item for group in state.ranked.values() for item in group}
-        validation = agent.validate(state.itinerary, constraints_data, weather, lookup, state.route)
+        validation = agent.validate(state.itinerary, constraints_data, weather, lookup, state.route, context=context)
         state.validation_issues = validation.get("issues", [])
         state.status = "pending_confirmation" if validation.get("valid", True) else "recovering"
         state.agent_decisions["validator"] = {"score": validation.get("overall_score", 85), "issues": validation.get("issues", [])}
@@ -310,8 +313,9 @@ class PlanningPipeline:
         issues = state.validation_issues
         itinerary_summary = [{"type": step.type, "place_id": step.place_id, "title": step.title} for step in state.itinerary]
         alternatives = {k: list(v) for k, v in state.ranked.items()}
-        agent = RecoveryAgent(self.llm)
-        decision = agent.recover(issues, itinerary_summary, alternatives)
+        context = AgentContext(user_id=state.context.get("user_id", "default"))
+        agent = RecoveryAgent(self.llm, registry=self.tools)
+        decision = agent.recover(issues, itinerary_summary, alternatives, context=context)
         state.agent_decisions["recovery"] = decision
 
         # Apply recovery decision
