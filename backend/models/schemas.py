@@ -519,12 +519,13 @@ def progress_from_trace(trace: list[TraceStep]) -> list[dict[str, str]]:
         "IntentParserAgent": "理解出行需求",
         "ContextBuilderAgent": "补全场景上下文",
         "CandidateSearchAgent": "筛选本地供给",
-        "RankerAgent": "多目标排序",
+        "RankerAgent": "LLM 多目标排序",
         "RouteSchedulerAgent": "生成时间轴和路线",
         "PlanValidatorAgent": "校验可订性和约束",
         "ConfirmationAgent": "等待用户确认",
         "ExecutionAgent": "执行已确认动作",
-        "RecoveryAgent": "异常恢复",
+        "ValidatorAgent": "LLM 方案评估",
+        "RecoveryAgent": "LLM 异常恢复",
     }
     return [
         {
