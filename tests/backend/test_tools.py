@@ -34,6 +34,14 @@ class TestNewToolMethods(unittest.TestCase):
         result = self.registry.check_opening_hours(poi_id, "14:00")
         self.assertIn("is_open", result.output)
         self.assertIn("poi_id", result.output)
+        self.assertIsInstance(result.output["is_open"], bool)
+        self.assertEqual(result.output["poi_id"], poi_id)
+        self.assertEqual(result.output["time"], "14:00")
+
+    def test_check_weather_default_argument(self):
+        result = self.registry.check_weather()
+        self.assertIn("condition", result.output)
+        self.assertIn("temperature", result.output)
 
     def test_search_alternatives_excludes_specified_ids(self):
         all_pois = self.catalog.pois[:5]
@@ -49,6 +57,9 @@ class TestNewToolMethods(unittest.TestCase):
         result = self.registry.estimate_cost(poi["id"], 2)
         self.assertIn("total_cost", result.output)
         self.assertIn("per_person", result.output)
+        self.assertEqual(result.output["per_person"], int(poi.get("avg_price", 100)))
+        self.assertEqual(result.output["total_cost"], result.output["per_person"] * 2)
+        self.assertEqual(result.output["party_size"], 2)
 
 
 if __name__ == "__main__":

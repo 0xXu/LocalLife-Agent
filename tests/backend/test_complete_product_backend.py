@@ -75,6 +75,11 @@ class CompleteBackendTest(unittest.TestCase):
                 "create_order",
                 "send_plan_message",
                 "create_calendar_event",
+                "get_poi_details",
+                "check_weather",
+                "check_opening_hours",
+                "search_alternatives",
+                "estimate_cost",
             },
         )
         side_effect_tools = {schema["name"] for schema in schemas if schema["side_effect"]}
@@ -106,7 +111,7 @@ class CompleteApiTest(unittest.TestCase):
     def test_expanded_api_flow(self):
         status, schemas = self.request("GET", "/api/tool-schemas")
         self.assertEqual(status, 200)
-        self.assertEqual(len(schemas["tools"]), 15)
+        self.assertEqual(len(schemas["tools"]), 20)
 
         status, built = self.request("POST", "/api/plans/runs", {"goal": "friends afternoon, four adults, activity before dinner", "user_id": "user_1"})
         self.assertEqual(status, 200)

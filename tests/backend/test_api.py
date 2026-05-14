@@ -182,7 +182,7 @@ class BackendApiTest(unittest.TestCase):
         status, data = self.request("GET", "/api/tool-schemas")
 
         self.assertEqual(status, 200)
-        self.assertEqual(len(data["tools"]), 15)
+        self.assertEqual(len(data["tools"]), 20)
 
     def test_user_profile_endpoints(self):
         status, data = self.request("GET", "/api/users/test_user/profile")
