@@ -13,6 +13,9 @@ warnings.filterwarnings("ignore", category=LangChainPendingDeprecationWarning)
 
 from langgraph.graph import END, START, StateGraph
 
+from backend.agents.ranker import RankerAgent
+from backend.agents.recovery import RecoveryAgent
+from backend.agents.validator import ValidatorAgent
 from backend.data.catalog import LocalDataCatalog
 from backend.llm import LLMClient, LLMConfig
 from backend.models.schemas import (
@@ -26,6 +29,8 @@ from backend.models.schemas import (
     RecoveryDiff,
 )
 from backend.observability.spans import span
+from backend.orchestrator.nodes import build_context_node, merge_search_results_node
+from backend.orchestrator.search import search_activities, search_restaurants, search_walks
 from backend.planning.candidates import build_itinerary_variants
 from backend.profile.resolver import merge_profile_into_goal_context
 from backend.providers.local import confidence_for_tags, ground_place
@@ -52,6 +57,10 @@ class BuildGraphState(TypedDict, total=False):
     route: dict[str, Any]
     build_result: dict[str, Any]
     validation: dict[str, Any]
+    # Parallel search results
+    activity_candidates: list[dict[str, Any]]
+    restaurant_candidates: list[dict[str, Any]]
+    walk_candidates: list[dict[str, Any]]
 
 
 def should_continue_after_parse(graph_state: BuildGraphState) -> str:
@@ -73,21 +82,43 @@ class PlanningPipeline:
 
     def _compile_graph(self):
         graph = StateGraph(BuildGraphState)
+
+        # Existing nodes
         graph.add_node("parse_intent", self._parse_intent_node)
         graph.add_node("build_context", self._build_context_node)
-        graph.add_node("search_candidates", self._search_candidates_node)
-        graph.add_node("rank_candidates", self._rank_candidates_node)
+
+        # Parallel search nodes
+        graph.add_node("search_activities", self._search_activities_node)
+        graph.add_node("search_restaurants", self._search_restaurants_node)
+        graph.add_node("search_walks", self._search_walks_node)
+        graph.add_node("merge_search_results", self._merge_search_results_node)
+
+        # Agent nodes
+        graph.add_node("ranker_agent", self._ranker_agent_node)
         graph.add_node("build_itinerary", self._build_itinerary_node)
-        graph.add_node("validate_plan", self._validate_plan_node)
+        graph.add_node("validator_agent", self._validator_agent_node)
         graph.add_node("prepare_confirmation", self._prepare_confirmation_node)
+        graph.add_node("recovery", self._recovery_node)
+
+        # Edges
         graph.add_edge(START, "parse_intent")
         graph.add_conditional_edges("parse_intent", should_continue_after_parse, {"continue": "build_context", "clarify": END})
-        graph.add_edge("build_context", "search_candidates")
-        graph.add_edge("search_candidates", "rank_candidates")
-        graph.add_edge("rank_candidates", "build_itinerary")
-        graph.add_edge("build_itinerary", "validate_plan")
-        graph.add_edge("validate_plan", "prepare_confirmation")
+        graph.add_edge("build_context", "search_activities")
+        graph.add_edge("build_context", "search_restaurants")
+        graph.add_edge("build_context", "search_walks")
+        graph.add_edge("search_activities", "merge_search_results")
+        graph.add_edge("search_restaurants", "merge_search_results")
+        graph.add_edge("search_walks", "merge_search_results")
+        graph.add_edge("merge_search_results", "ranker_agent")
+        graph.add_edge("ranker_agent", "build_itinerary")
+        graph.add_edge("build_itinerary", "validator_agent")
+        graph.add_conditional_edges("validator_agent", self._after_validate, {
+            "confirm": "prepare_confirmation",
+            "recover": "recovery",
+        })
+        graph.add_edge("recovery", "ranker_agent")  # Loop back
         graph.add_edge("prepare_confirmation", END)
+
         return graph.compile()
 
     def _parse_intent_node(self, graph_state: BuildGraphState) -> BuildGraphState:
@@ -134,6 +165,139 @@ class PlanningPipeline:
         state.status = "context_ready"
         state.add_trace(span("ContextBuilderAgent", "get_weather", "ok", "补全天气、位置和用户偏好上下文。", "tool", {}, weather, 120, {"provider": "local_weather_seed"}))
         emit_progress(graph_state, "补全场景上下文", "补全天气、位置和用户偏好上下文。")
+        return {"state": state}
+
+    # --- Parallel search nodes ---
+
+    def _search_activities_node(self, graph_state: BuildGraphState) -> BuildGraphState:
+        state = graph_state["state"]
+        constraints = require_constraints(state)
+        items = search_activities(self.catalog, constraints)
+        emit_progress(graph_state, "搜索活动场所", f"找到 {len(items)} 个候选")
+        return {"activity_candidates": items}
+
+    def _search_restaurants_node(self, graph_state: BuildGraphState) -> BuildGraphState:
+        state = graph_state["state"]
+        constraints = require_constraints(state)
+        items = search_restaurants(self.catalog, constraints)
+        emit_progress(graph_state, "搜索餐厅", f"找到 {len(items)} 个候选")
+        return {"restaurant_candidates": items}
+
+    def _search_walks_node(self, graph_state: BuildGraphState) -> BuildGraphState:
+        state = graph_state["state"]
+        constraints = require_constraints(state)
+        items = search_walks(self.catalog, constraints)
+        emit_progress(graph_state, "搜索散步点", f"找到 {len(items)} 个候选")
+        return {"walk_candidates": items}
+
+    def _merge_search_results_node(self, graph_state: BuildGraphState) -> BuildGraphState:
+        state = graph_state["state"]
+        activities = graph_state.get("activity_candidates", [])
+        restaurants = graph_state.get("restaurant_candidates", [])
+        walks = graph_state.get("walk_candidates", [])
+        updated = merge_search_results_node(state, activities, restaurants, walks)
+        emit_progress(graph_state, "合并搜索结果", f"活动 {len(activities)}、餐厅 {len(restaurants)}、散步 {len(walks)}")
+        return {"state": updated}
+
+    # --- Agent nodes ---
+
+    def _ranker_agent_node(self, graph_state: BuildGraphState) -> BuildGraphState:
+        state = graph_state["state"]
+        constraints = require_constraints(state)
+        agent = RankerAgent(self.llm)
+        ranked = agent.rank(state.candidates, constraints)
+
+        # If agent used deterministic fallback (no LLM "ranked" key), use old multi-factor scorer
+        # which considers tag relevance, distance, quality, wait time, budget, etc.
+        if "deterministic" in agent.last_reasoning.lower() or "fallback" in agent.last_reasoning.lower():
+            preferred_tags = list(constraints.preferences.get("activity", [])) + list(constraints.preferences.get("diet", []))
+            candidate_sets: dict[str, list[dict[str, Any]]] = {}
+            rejected: dict[str, list[dict[str, Any]]] = {}
+            for key, items in state.candidates.items():
+                grounded = [ground_place(item, confidence_for_tags(item, preferred_tags)) for item in items]
+                result = rank_candidates(grounded, constraints)
+                ranked[key] = [candidate.place.as_poi_dict() for candidate in result.items]
+                candidate_sets[key] = [
+                    {
+                        "place": candidate.place.as_poi_dict(),
+                        "total_score": candidate.total_score,
+                        "score_breakdown": candidate.breakdown,
+                        "explanation": candidate.explanation,
+                    }
+                    for candidate in result.items
+                ]
+                rejected[key] = result.rejected
+            state.candidate_sets = candidate_sets
+            state.rejected_candidates = rejected
+
+        state.ranked = ranked
+        state.status = "ranked"
+        state.agent_decisions["ranker"] = {"reasoning": agent.last_reasoning}
+        state.add_trace(agent.build_trace(
+            "ok", "LLM 驱动的多目标候选排序。",
+            {"candidates": {k: len(v) for k, v in state.candidates.items()}},
+            {"ranked": {k: len(v) for k, v in ranked.items()}, "reasoning": agent.last_reasoning},
+        ))
+        emit_progress(graph_state, "LLM 多目标排序", "LLM 驱动的多目标候选排序。")
+        return {"state": state}
+
+    def _validator_agent_node(self, graph_state: BuildGraphState) -> BuildGraphState:
+        state = graph_state["state"]
+        constraints = require_constraints(state)
+        agent = ValidatorAgent(self.llm)
+        constraints_data = {
+            "scenario": constraints.scenario,
+            "budget_level": constraints.preferences.get("budget_level", "medium"),
+            "duration_hours": constraints.time_window.get("duration_hours", 4.5),
+            "time_window": constraints.time_window,
+            "people": constraints.people,
+            "preferences": constraints.preferences,
+            "constraints": constraints.constraints,
+        }
+        weather = state.context.get("weather", {})
+        lookup = {item["id"]: item for group in state.ranked.values() for item in group}
+        validation = agent.validate(state.itinerary, constraints_data, weather, lookup, state.route)
+        state.validation_issues = validation.get("issues", [])
+        state.status = "pending_confirmation" if validation.get("valid", True) else "recovering"
+        state.agent_decisions["validator"] = {"score": validation.get("overall_score", 85), "issues": validation.get("issues", [])}
+        state.add_trace(agent.build_trace(
+            "ok" if validation.get("valid", True) else "warning",
+            "LLM 驱动的方案整体评估。",
+            {"itinerary_steps": len(state.itinerary)},
+            validation,
+        ))
+        emit_progress(graph_state, "LLM 方案评估", "LLM 驱动的方案整体评估。")
+        return {"state": state, "validation": validation}
+
+    def _after_validate(self, graph_state: BuildGraphState) -> str:
+        state = graph_state["state"]
+        validation = graph_state.get("validation", {})
+        if validation.get("valid", True) and state.pending_actions:
+            return "confirm"
+        if state.recovery_attempts >= 3:
+            return "confirm"
+        return "recover"
+
+    def _recovery_node(self, graph_state: BuildGraphState) -> BuildGraphState:
+        state = graph_state["state"]
+        state.recovery_attempts += 1
+        issues = state.validation_issues
+        itinerary_summary = [{"type": step.type, "place_id": step.place_id, "title": step.title} for step in state.itinerary]
+        alternatives = {k: list(v) for k, v in state.ranked.items()}
+        agent = RecoveryAgent(self.llm)
+        decision = agent.recover(issues, itinerary_summary, alternatives)
+        state.agent_decisions["recovery"] = decision
+
+        # Apply recovery decision
+        if decision.get("action") == "replace":
+            _apply_replacement(state, decision)
+
+        state.status = "recovering"
+        state.add_trace(agent.build_trace(
+            "ok", f"恢复尝试 #{state.recovery_attempts}。",
+            {"issues": issues}, decision,
+        ))
+        emit_progress(graph_state, f"异常恢复 #{state.recovery_attempts}", decision.get("reason", ""))
         return {"state": state}
 
     def _search_candidates_node(self, graph_state: BuildGraphState) -> BuildGraphState:
@@ -412,6 +576,47 @@ class PlanningPipeline:
             return normalize_constraints_for_goal(goal, constraints), False
         except Exception as exc:
             raise LLMIntentParsingError(f"LLM intent parsing failed: {exc}") from exc
+
+
+def _apply_replacement(state: PlanState, decision: dict[str, Any]) -> None:
+    target_type = decision.get("target_type", "")
+    replacement_id = decision.get("replacement_id", "")
+    if not target_type or not replacement_id:
+        return
+
+    # Find replacement candidate
+    replacement = None
+    for items in state.ranked.values():
+        for item in items:
+            if item.get("id") == replacement_id:
+                replacement = item
+                break
+        if replacement:
+            break
+
+    if not replacement:
+        return
+
+    # Replace in itinerary
+    for i, step in enumerate(state.itinerary):
+        if step.type == target_type:
+            state.itinerary[i] = ItineraryStep(
+                step.start, step.end, step.type,
+                replacement.get("name", step.title),
+                replacement_id,
+                replacement.get("reason", step.reason),
+                f"约 {replacement.get('avg_price', 0)} 元",
+                step.travel,
+                step.score,
+                step.risk,
+            )
+            break
+
+    # Remove old pending actions for this type and rebuild
+    state.pending_actions = [
+        action for action in state.pending_actions
+        if action.type != target_type
+    ]
 
 
 def extract_json_object(content: str) -> str:

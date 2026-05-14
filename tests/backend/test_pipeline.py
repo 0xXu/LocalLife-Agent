@@ -34,8 +34,53 @@ class FakeLLMClient:
         }
 
     def chat_stream(self, messages):
-        response = self.chat(messages)
-        yield response["choices"][0]["message"]["content"]
+        system_prompt = messages[0]["content"] if messages else ""
+        lower = system_prompt.lower()
+        if "ranker" in lower or "planning ranker" in lower:
+            # No "ranked" key → triggers RankerAgent deterministic fallback
+            yield json.dumps({"reasoning": "test: using deterministic fallback"})
+        elif "validator" in lower or "plan validator" in lower:
+            yield json.dumps({
+                "valid": True,
+                "issues": [],
+                "suggestions": [],
+                "overall_score": 90,
+            })
+        elif "recovery" in lower:
+            yield json.dumps({
+                "action": "adjust",
+                "reason": "No blocking issues, minor adjustments only.",
+            })
+        else:
+            response = self.chat(messages)
+            yield response["choices"][0]["message"]["content"]
+
+
+def _agent_dispatch(system_prompt: str, intent_fallback):
+    """Dispatch based on agent system prompt content. Returns a JSON string.
+
+    For ranker: return JSON without "ranked" key so RankerAgent uses its
+    deterministic fallback (which sorts by rating/distance).
+    For validator: always return valid=True.
+    For recovery: return adjust action (no-op).
+    """
+    lower = system_prompt.lower()
+    if "ranker" in lower or "planning ranker" in lower:
+        # No "ranked" key → triggers RankerAgent._deterministic_fallback
+        return json.dumps({"reasoning": "test: using deterministic fallback"})
+    if "validator" in lower or "plan validator" in lower:
+        return json.dumps({
+            "valid": True,
+            "issues": [],
+            "suggestions": [],
+            "overall_score": 90,
+        })
+    if "recovery" in lower:
+        return json.dumps({
+            "action": "adjust",
+            "reason": "No blocking issues, minor adjustments only.",
+        })
+    return intent_fallback
 
 
 class FailingLLMClient:
@@ -49,8 +94,7 @@ class InvalidJsonLLMClient:
 
 
 class OneHourLLMClient:
-    def chat_stream(self, _messages):
-        yield """
+    _intent_json = """
         {
           "scenario": "date",
           "origin": {"type": "current_location", "label": "home", "lat": 38.2601, "lng": 140.8824},
@@ -62,10 +106,13 @@ class OneHourLLMClient:
         }
         """
 
+    def chat_stream(self, messages):
+        system_prompt = messages[0]["content"] if messages else ""
+        yield _agent_dispatch(system_prompt, self._intent_json)
+
 
 class MisclassifiedHikingLLMClient:
-    def chat_stream(self, _messages):
-        yield """
+    _intent_json = """
         {
           "scenario": "family",
           "origin": {"type": "current_location", "label": "home", "lat": 38.2601, "lng": 140.8824},
@@ -77,6 +124,10 @@ class MisclassifiedHikingLLMClient:
         }
         """
 
+    def chat_stream(self, messages):
+        system_prompt = messages[0]["content"] if messages else ""
+        yield _agent_dispatch(system_prompt, self._intent_json)
+
 
 class OpenDomainLLMClient:
     def __init__(self, scenario: str, label: str, activity_tags: list[str], goal_actions: list[str] | None = None):
@@ -84,9 +135,7 @@ class OpenDomainLLMClient:
         self.label = label
         self.activity_tags = activity_tags
         self.goal_actions = goal_actions or ["send_plan_message", "create_calendar_event"]
-
-    def chat_stream(self, _messages):
-        yield json.dumps(
+        self._intent_json = json.dumps(
             {
                 "scenario": self.scenario,
                 "origin": {"type": "current_location", "label": "home", "lat": 38.2601, "lng": 140.8824},
@@ -104,6 +153,10 @@ class OpenDomainLLMClient:
             },
             ensure_ascii=False,
         )
+
+    def chat_stream(self, messages):
+        system_prompt = messages[0]["content"] if messages else ""
+        yield _agent_dispatch(system_prompt, self._intent_json)
 
 
 class PlanningPipelineTest(unittest.TestCase):
