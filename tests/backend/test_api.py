@@ -5,9 +5,8 @@ from fastapi.testclient import TestClient
 
 from backend.api.app import create_app
 from backend.llm.config import LLMConfig
-from backend.services.planning_service import PlanningService
 from backend.services.workflow_service import WorkflowService
-from tests.backend.helpers import RuleBasedLLMClient, planning_service_with_fake_llm
+from tests.backend.helpers import RuleBasedLLMClient
 
 
 class FailingLLMClient:
@@ -18,14 +17,13 @@ class FailingLLMClient:
 class BackendApiTest(unittest.TestCase):
     def setUp(self):
         self._tmp = TemporaryDirectory()
-        service = planning_service_with_fake_llm()
-        workflow = self.workflow_service()
-        self.client = TestClient(create_app(service, workflow_service=workflow))
+        self.workflow = self._make_workflow()
+        self.client = TestClient(create_app(self.workflow))
 
     def tearDown(self):
         self._tmp.cleanup()
 
-    def workflow_service(self):
+    def _make_workflow(self):
         workflow = WorkflowService(
             repository_path=f"{self._tmp.name}/workflow.sqlite",
             llm_config=LLMConfig(
@@ -69,7 +67,6 @@ class BackendApiTest(unittest.TestCase):
             "/api/plans/{plan_id}/resume",
             "/api/plans/{plan_id}/versions",
             "/api/tool-schemas",
-            "/api/traces/{plan_id}",
         ]:
             self.assertIn(path, paths)
         for path in [
@@ -162,18 +159,17 @@ class BackendApiTest(unittest.TestCase):
         self.assertEqual(data["error"]["message"], "invalid_json")
 
     def test_remote_llm_failure_returns_500_without_template_plan(self):
-        service = PlanningService(
+        workflow = WorkflowService(
+            repository_path=f"{self._tmp.name}/failing.sqlite",
             llm_config=LLMConfig(
                 base_url="https://token-plan-sgp.xiaomimimo.com/v1",
                 api_key="secret-key-value",
                 model="MiMo-V2.5-Pro",
                 remote_enabled=True,
-            )
+            ),
         )
-        service.pipeline.llm = FailingLLMClient()
-        workflow = self.workflow_service()
         workflow.pipeline.llm = FailingLLMClient()
-        client = TestClient(create_app(service, workflow_service=workflow), raise_server_exceptions=False)
+        client = TestClient(create_app(workflow), raise_server_exceptions=False)
 
         response = client.post("/api/plans/runs", json={"goal": "friends dinner this afternoon"})
 
@@ -181,6 +177,29 @@ class BackendApiTest(unittest.TestCase):
         data = response.json()
         self.assertEqual(data["error"]["code"], "tool_failed")
         self.assertIn("LLM intent parsing failed", data["error"]["message"])
+
+    def test_tool_schemas_endpoint(self):
+        status, data = self.request("GET", "/api/tool-schemas")
+
+        self.assertEqual(status, 200)
+        self.assertEqual(len(data["tools"]), 15)
+
+    def test_user_profile_endpoints(self):
+        status, data = self.request("GET", "/api/users/test_user/profile")
+        self.assertEqual(status, 200)
+
+        status, data = self.request("POST", "/api/users/test_user/profile", {
+            "explicit_preferences": [{
+                "key": "diet",
+                "value": "low_fat",
+                "source": "explicit",
+                "confidence": 0.9,
+                "scope": "long_term",
+                "evidence": "user stated preference",
+            }],
+        })
+        self.assertEqual(status, 200)
+        self.assertEqual(data["user_id"], "test_user")
 
 
 if __name__ == "__main__":

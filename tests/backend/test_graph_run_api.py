@@ -6,7 +6,7 @@ from backend.api.app import create_app
 from backend.graph.events import sse_event
 from backend.llm.config import LLMConfig
 from backend.services.workflow_service import WorkflowService
-from tests.backend.helpers import RuleBasedLLMClient, planning_service_with_fake_llm
+from tests.backend.helpers import RuleBasedLLMClient
 
 
 def make_workflow_service(tmp_path):
@@ -25,7 +25,7 @@ def make_workflow_service(tmp_path):
 
 def make_client(tmp_path):
     workflow = make_workflow_service(tmp_path)
-    client = TestClient(create_app(workflow_service=workflow), raise_server_exceptions=False)
+    client = TestClient(create_app(workflow), raise_server_exceptions=False)
     return client
 
 
@@ -47,16 +47,6 @@ def test_sse_event_serializes_sorted_unicode_raw_payload():
     assert sse_event("evt_000001", "graph_update", {"z": 1, "a": "中文"}) == (
         'id: evt_000001\nevent: graph_update\ndata: {"a":"中文","z":1}\n\n'
     )
-
-
-def test_create_app_preserves_positional_planning_service_argument(tmp_path):
-    planning_service = planning_service_with_fake_llm(db_path=tmp_path / "plans.sqlite")
-
-    client = TestClient(create_app(planning_service), raise_server_exceptions=False)
-
-    response = client.get("/api/tool-schemas")
-    assert response.status_code == 200
-    assert response.json()["tools"]
 
 
 def test_start_run_get_plan_versions_list_and_resume(tmp_path):

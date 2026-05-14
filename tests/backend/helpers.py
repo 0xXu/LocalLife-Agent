@@ -3,7 +3,7 @@ import json
 from backend.llm.config import LLMConfig
 from backend.models.schemas import to_dict
 from backend.orchestrator.pipeline import deterministic_constraints
-from backend.services.planning_service import PlanningService
+from backend.services.workflow_service import WorkflowService
 
 
 def configured_test_llm_config() -> LLMConfig:
@@ -42,7 +42,11 @@ class RuleBasedLLMClient:
         yield json.dumps(to_dict(constraints), ensure_ascii=False)
 
 
-def planning_service_with_fake_llm(db_path=None, profile_store_path=None) -> PlanningService:
-    service = PlanningService(llm_config=configured_test_llm_config(), repository_path=db_path, profile_store_path=profile_store_path)
+def workflow_service_with_fake_llm(repository_path=None, profile_store_path=None) -> WorkflowService:
+    service = WorkflowService(
+        llm_config=configured_test_llm_config(),
+        repository_path=repository_path,
+        profile_store_path=profile_store_path,
+    )
     service.pipeline.llm = RuleBasedLLMClient()
     return service

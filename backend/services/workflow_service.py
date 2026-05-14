@@ -28,7 +28,10 @@ from backend.graph.state import (
 from backend.llm import LLMConfig
 from backend.models.schemas import to_dict
 from backend.orchestrator import PlanningPipeline
+from backend.profile.models import UserProfile
+from backend.profile.store import UserProfileStore
 from backend.storage.workflow_repository import WorkflowRepository
+from backend.tools import LocalToolRegistry
 from backend.validation.business import validate_revision_for_approval
 
 
@@ -38,11 +41,14 @@ class WorkflowService:
         catalog: LocalDataCatalog | None = None,
         llm_config: LLMConfig | None = None,
         repository_path: Path | str | None = None,
+        profile_store_path: Path | str | None = None,
     ) -> None:
         self.catalog = catalog or LocalDataCatalog()
         self.pipeline = PlanningPipeline(self.catalog, llm_config)
         self.repository = WorkflowRepository(repository_path or Path(".weekendpilot/workflow.sqlite"))
         self.ledger = DurableActionLedger(self.repository)
+        self.tool_registry = LocalToolRegistry(self.catalog)
+        self.profile_store = UserProfileStore(profile_store_path or Path(".weekendpilot/profiles.sqlite"))
 
     def start_run(self, goal: str, user_id: str = "local_demo_user") -> dict[str, str]:
         if not goal.strip():
@@ -527,6 +533,16 @@ class WorkflowService:
     def _format_time(self, minutes: int) -> str:
         minutes = max(0, min(minutes, 23 * 60 + 59))
         return f"{minutes // 60:02d}:{minutes % 60:02d}"
+
+    def tool_schemas(self) -> dict[str, Any]:
+        return {"tools": self.tool_registry.schemas()}
+
+    def get_user_profile(self, user_id: str) -> dict[str, Any]:
+        return self.profile_store.get(user_id).as_dict()
+
+    def save_user_profile(self, profile: UserProfile) -> dict[str, Any]:
+        self.profile_store.save(profile)
+        return profile.as_dict()
 
     def _plan_summary(self, revision: Mapping[str, Any]) -> dict[str, Any]:
         plan = revision.get("plan", {})

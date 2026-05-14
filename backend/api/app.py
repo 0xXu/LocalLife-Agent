@@ -12,16 +12,15 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from backend.graph.events import sse_event
 from backend.llm import LLMConfig
 from backend.profile.models import UserPreference, UserProfile
-from backend.services import PlanningService, WorkflowService
+from backend.services import WorkflowService
 
 
-def create_app(service: PlanningService | None = None, workflow_service: WorkflowService | None = None) -> FastAPI:
+def create_app(workflow_service: WorkflowService | None = None) -> FastAPI:
     api = FastAPI(
         title="WeekendPilot Backend",
         description="FastAPI backend for the WeekendPilot local-life planning workflow.",
         version="0.1.0",
     )
-    api.state.planning_service = service or PlanningService()
     api.state.workflow_service = workflow_service or WorkflowService()
     api.add_middleware(
         CORSMiddleware,
@@ -65,11 +64,11 @@ def create_app(service: PlanningService | None = None, workflow_service: Workflo
 
     @api.get("/api/tool-schemas")
     async def tool_schemas(request: Request) -> dict[str, Any]:
-        return planning_service(request).tool_schemas()
+        return workflow(request).tool_schemas()
 
     @api.get("/api/users/{user_id}/profile")
     async def get_user_profile(user_id: str, request: Request) -> dict[str, Any]:
-        return planning_service(request).get_user_profile(user_id)
+        return workflow(request).get_user_profile(user_id)
 
     @api.post("/api/users/{user_id}/profile")
     async def save_user_profile(user_id: str, request: Request) -> dict[str, Any]:
@@ -80,13 +79,7 @@ def create_app(service: PlanningService | None = None, workflow_service: Workflo
             learned_preferences=[UserPreference(**item) for item in body.get("learned_preferences", [])],
             session_preferences=[UserPreference(**item) for item in body.get("session_preferences", [])],
         )
-        return planning_service(request).save_user_profile(profile)
-
-    @api.get("/api/traces/{plan_id}")
-    async def traces(plan_id: str, request: Request) -> dict[str, Any]:
-        service = planning_service(request)
-        plan = service.get_plan(plan_id)
-        return {"planId": plan_id, "trace": service.get_trace(plan_id), "tool_calls": plan.get("tool_calls", [])}
+        return workflow(request).save_user_profile(profile)
 
     @api.get("/api/plans")
     async def list_plans(request: Request) -> dict[str, Any]:
@@ -150,10 +143,6 @@ async def read_json_object(request: Request) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ValueError("validation_error")
     return data
-
-
-def planning_service(request: Request) -> PlanningService:
-    return request.app.state.planning_service
 
 
 def workflow(request: Request) -> WorkflowService:

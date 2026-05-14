@@ -3,7 +3,6 @@ import unittest
 
 from backend.llm.config import LLMConfig
 from backend.orchestrator.pipeline import PlanningPipeline, constraints_from_dict
-from tests.backend.helpers import planning_service_with_fake_llm
 
 
 class FakeLLMClient:
@@ -108,110 +107,6 @@ class OpenDomainLLMClient:
 
 
 class PlanningPipelineTest(unittest.TestCase):
-    def setUp(self):
-        self.service = planning_service_with_fake_llm()
-
-    def test_build_plan_runs_layered_pipeline_and_returns_trace(self):
-        result = self.service.build_plan(
-            "今天下午想和老婆孩子出去玩几个小时，孩子 5 岁，老婆减脂，别太远"
-        )
-
-        self.assertEqual(result["plan"]["status"], "pending_confirmation")
-        self.assertEqual(result["constraints"]["people"]["children"][0]["age"], 5)
-        self.assertEqual(result["constraints"]["constraints"]["radius_km"], 5)
-        self.assertGreaterEqual(len(result["plan"]["itinerary"]), 4)
-        self.assertGreaterEqual(len(result["trace"]), 6)
-        self.assertIn("IntentParserAgent", {step["agent"] for step in result["trace"]})
-        self.assertIn("PlanValidatorAgent", {step["agent"] for step in result["trace"]})
-
-    def test_execute_plan_requires_confirmation_and_returns_receipts(self):
-        result = self.service.build_plan("家庭 5 岁孩子 减脂 附近")
-        plan_id = result["plan"]["id"]
-
-        with self.assertRaises(PermissionError):
-            self.service.execute_plan(plan_id, confirmed=False)
-
-        executed = self.service.execute_plan(plan_id, confirmed=True)
-        receipt_types = [receipt["type"] for receipt in executed["receipts"]]
-
-        self.assertEqual(
-            receipt_types,
-            ["activity_reservation", "restaurant_reservation", "coupon", "order", "message", "calendar"],
-        )
-        self.assertRegex(executed["receipts"][0]["id"], r"^TKT-")
-        self.assertRegex(executed["receipts"][1]["id"], r"^RES-")
-        self.assertTrue(any(receipt["id"].startswith("MSG-") for receipt in executed["receipts"]))
-
-    def test_recover_plan_replaces_only_unavailable_restaurant(self):
-        result = self.service.build_plan("家庭 5 岁孩子 减脂 附近")
-        original = result["plan"]
-
-        recovered = self.service.recover_plan(
-            original["id"],
-            reason="restaurant_unavailable",
-        )
-
-        self.assertEqual(recovered["plan"]["status"], "recovered_pending_confirmation")
-        self.assertEqual(recovered["diff"]["changed"], "restaurant")
-        original_restaurant = next(step for step in original["itinerary"] if step["type"] == "restaurant")
-        recovered_restaurant = next(step for step in recovered["plan"]["itinerary"] if step["type"] == "restaurant")
-        original_activity = next(step for step in original["itinerary"] if step["type"] == "activity")
-        recovered_activity = next(step for step in recovered["plan"]["itinerary"] if step["type"] == "activity")
-
-        self.assertEqual(recovered_activity["place_id"], original_activity["place_id"])
-        self.assertNotEqual(recovered_restaurant["place_id"], original_restaurant["place_id"])
-
-    def test_friends_goal_builds_friend_plan_for_four_adults(self):
-        result = self.service.build_plan("今天下午朋友4个人出去玩，2男2女，别太远")
-
-        self.assertEqual(result["constraints"]["scenario"], "friends")
-        self.assertEqual(result["constraints"]["people"]["adults"], 4)
-        self.assertEqual(result["constraints"]["people"]["children"], [])
-        self.assertIn("朋友", result["plan"]["title"])
-        self.assertNotIn("亲子", result["plan"]["title"])
-        message_action = next(action for action in result["pending_actions"] if action["type"] == "message")
-        self.assertEqual(message_action["target"], "朋友群聊")
-
-    def test_underspecified_goal_returns_clarification_instead_of_low_confidence_plan(self):
-        result = self.service.build_plan("周末安排一下")
-
-        self.assertEqual(result["status"], "needs_clarification")
-        self.assertGreaterEqual(len(result["clarifying_questions"]), 2)
-        self.assertIn("time_window", result["missing_fields"])
-        self.assertNotIn("plan", result)
-
-    def test_trace_spans_include_kind_timing_model_and_provider_context(self):
-        result = self.service.build_plan("想带狗狗找个能散步的地方，别太吵")
-
-        span = result["trace"][0]
-        self.assertIn("span_id", span)
-        self.assertIn("kind", span)
-        self.assertIn(span["kind"], {"llm", "tool", "validation", "planning", "execution", "recovery"})
-        self.assertIn("duration_ms", span)
-        self.assertIn("metadata", span)
-
-    def test_variants_use_different_place_combinations_not_copies(self):
-        result = self.service.build_plan("今天下午朋友4个人出去玩，先活动再吃饭，预算适中")
-
-        variant_place_sets = {
-            tuple(step["place_id"] for step in variant["itinerary"] if step.get("place_id") and step["place_id"] != "origin_home")
-            for variant in result["plan"]["variants"]
-        }
-
-        self.assertGreaterEqual(len(variant_place_sets), 2)
-
-    def test_multiple_builds_keep_independent_plan_state(self):
-        family = self.service.build_plan("今天下午想和老婆孩子出去玩几个小时，孩子5岁，老婆减脂，别太远")
-        friends = self.service.build_plan("今天下午朋友4个人出去玩，2男2女，别太远")
-
-        self.assertNotEqual(family["plan"]["id"], friends["plan"]["id"])
-
-        executed_family = self.service.execute_plan(family["plan"]["id"], confirmed=True)
-        executed_friends = self.service.execute_plan(friends["plan"]["id"], confirmed=True)
-
-        self.assertEqual(executed_family["constraints"]["scenario"], "family")
-        self.assertEqual(executed_friends["constraints"]["scenario"], "friends")
-
     def test_pipeline_uses_configured_openai_compatible_llm_for_constraints(self):
         pipeline = PlanningPipeline(
             llm_config=LLMConfig(
