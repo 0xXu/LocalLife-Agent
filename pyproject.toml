@@ -18,6 +18,7 @@ package = false
 pythonpath = ["."]
 filterwarnings = [
     "ignore:The default value of `allowed_objects` will change in a future version:langchain_core._api.deprecation.LangChainPendingDeprecationWarning",
+    "ignore:create_react_agent has been moved:langgraph._api.deprecation.LangGraphDeprecatedSinceV10",
 ]
 
 [dependency-groups]
