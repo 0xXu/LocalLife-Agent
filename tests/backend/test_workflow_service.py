@@ -135,3 +135,158 @@ def test_get_plan_reads_latest_revision_and_actions_after_restart(tmp_path: Path
     assert restored["revision"]["revision_id"] == original["revision"]["revision_id"]
     assert restored["revision"]["phase"] == "pending_approval"
     assert restored["actions"] == original["actions"]
+
+
+def test_validation_failed_revision_cannot_be_approved(tmp_path: Path):
+    service = make_service(tmp_path)
+    result = service.start_run("friends 10人 lunch", user_id="user_1")
+    plan = service.get_plan(result["plan_id"])
+
+    assert plan["revision"]["phase"] == "validation_failed"
+
+    try:
+        service.resume(result["plan_id"], {"decision": "approve", "selected_action_ids": []})
+    except ValueError as exc:
+        assert str(exc) == "validation_failed"
+    else:
+        raise AssertionError("validation_failed revision was approved")
+
+
+def test_resume_approve_executes_selected_actions_and_appends_receipts(tmp_path: Path):
+    service = make_service(tmp_path)
+    result = service.start_run("family with child wants low fat lunch", user_id="user_1")
+    plan = service.get_plan(result["plan_id"])
+    selected = [action["action_id"] for action in plan["actions"][:2]]
+
+    resumed = service.resume(result["plan_id"], {"decision": "approve", "selected_action_ids": selected})
+    loaded = service.get_plan(result["plan_id"])
+
+    assert resumed["revision"]["phase"] == "partially_completed"
+    assert loaded["revision"]["phase"] == "partially_completed"
+    assert [receipt["action_id"] for receipt in loaded["receipts"]] == selected
+    action_statuses = {action["action_id"]: action["status"] for action in loaded["actions"]}
+    assert {action_statuses[action_id] for action_id in selected} == {"succeeded"}
+    assert any(status == "pending" for action_id, status in action_statuses.items() if action_id not in selected)
+    embedded_statuses = {action["action_id"]: action["status"] for action in loaded["revision"]["plan"]["actions"]}
+    assert embedded_statuses == action_statuses
+    assert service.list_plans()["plans"][0]["phase"] == "partially_completed"
+
+
+def test_resume_approve_requires_selected_actions(tmp_path: Path):
+    service = make_service(tmp_path)
+    result = service.start_run("family with child wants low fat lunch", user_id="user_1")
+
+    try:
+        service.resume(result["plan_id"], {"decision": "approve", "selected_action_ids": []})
+    except ValueError as exc:
+        assert str(exc) == "selected_action_ids_required"
+    else:
+        raise AssertionError("empty approval changed workflow phase")
+
+    loaded = service.get_plan(result["plan_id"])
+    assert loaded["revision"]["phase"] == "pending_approval"
+    assert loaded["receipts"] == []
+    assert {action["status"] for action in loaded["actions"]} == {"pending"}
+
+
+def test_resume_partial_plan_can_execute_remaining_actions(tmp_path: Path):
+    service = make_service(tmp_path)
+    result = service.start_run("family with child wants low fat lunch", user_id="user_1")
+    plan = service.get_plan(result["plan_id"])
+    first = [plan["actions"][0]["action_id"]]
+    remaining = [action["action_id"] for action in plan["actions"][1:]]
+
+    partial = service.resume(result["plan_id"], {"decision": "approve", "selected_action_ids": first})
+    completed = service.resume(result["plan_id"], {"decision": "approve", "selected_action_ids": remaining})
+
+    assert partial["revision"]["phase"] == "partially_completed"
+    assert completed["revision"]["phase"] == "completed"
+    assert [receipt["action_id"] for receipt in completed["receipts"]] == [*first, *remaining]
+    assert {action["status"] for action in completed["actions"]} == {"succeeded"}
+
+
+def test_resume_approve_completes_when_all_actions_succeed(tmp_path: Path):
+    service = make_service(tmp_path)
+    result = service.start_run("family with child wants low fat lunch", user_id="user_1")
+    plan = service.get_plan(result["plan_id"])
+    selected = [action["action_id"] for action in plan["actions"]]
+
+    resumed = service.resume(result["plan_id"], {"decision": "approve", "selected_action_ids": selected})
+
+    assert resumed["revision"]["phase"] == "completed"
+    assert [receipt["action_id"] for receipt in resumed["receipts"]] == selected
+    assert {action["status"] for action in resumed["actions"]} == {"succeeded"}
+
+
+def test_completed_revision_cannot_be_approved_again(tmp_path: Path):
+    service = make_service(tmp_path)
+    result = service.start_run("family with child wants low fat lunch", user_id="user_1")
+    plan = service.get_plan(result["plan_id"])
+    selected = [action["action_id"] for action in plan["actions"]]
+    service.resume(result["plan_id"], {"decision": "approve", "selected_action_ids": selected})
+
+    try:
+        service.resume(result["plan_id"], {"decision": "approve", "selected_action_ids": selected})
+    except ValueError as exc:
+        assert str(exc) == "completed"
+    else:
+        raise AssertionError("completed revision was approved again")
+
+
+def test_reject_is_only_allowed_from_pending_approval(tmp_path: Path):
+    service = make_service(tmp_path)
+    failed = service.start_run("friends 10人 lunch", user_id="user_1")
+    pending = service.start_run("family with child wants low fat lunch", user_id="user_1")
+    plan = service.get_plan(pending["plan_id"])
+    service.resume(pending["plan_id"], {"decision": "approve", "selected_action_ids": [plan["actions"][0]["action_id"]]})
+
+    for plan_id, expected_phase in (
+        (failed["plan_id"], "validation_failed"),
+        (pending["plan_id"], "partially_completed"),
+    ):
+        try:
+            service.resume(plan_id, {"decision": "reject"})
+        except ValueError as exc:
+            assert str(exc) == expected_phase
+        else:
+            raise AssertionError(f"{expected_phase} revision was rejected")
+
+
+def test_resume_reject_cancels_without_executing_actions(tmp_path: Path):
+    service = make_service(tmp_path)
+    result = service.start_run("family with child wants low fat lunch", user_id="user_1")
+
+    resumed = service.resume(result["plan_id"], {"decision": "reject"})
+
+    assert resumed["revision"]["phase"] == "cancelled"
+    assert resumed["receipts"] == []
+    assert {action["status"] for action in resumed["actions"]} == {"pending"}
+
+
+def test_resume_does_not_mutate_immutable_revision_snapshot(tmp_path: Path):
+    service = make_service(tmp_path)
+    result = service.start_run("family with child wants low fat lunch", user_id="user_1")
+    plan_id = result["plan_id"]
+    original = service.repository.get_latest_revision(plan_id)
+    assert original is not None
+    selected = [action["action_id"] for action in service.get_plan(plan_id)["actions"][:1]]
+
+    resumed = service.resume(plan_id, {"decision": "approve", "selected_action_ids": selected})
+    stored = service.repository.get_latest_revision(plan_id)
+
+    assert resumed["revision"]["phase"] == "partially_completed"
+    assert stored == original
+    assert len(service.repository.list_revisions(plan_id)) == 1
+    assert service.repository.get_thread_by_plan(plan_id)["status"] == "partially_completed"
+
+
+def test_resume_rejects_unsupported_decisions(tmp_path: Path):
+    service = make_service(tmp_path)
+    result = service.start_run("family with child wants low fat lunch", user_id="user_1")
+
+    try:
+        service.resume(result["plan_id"], {"decision": "maybe"})
+    except ValueError as exc:
+        assert str(exc) == "unsupported_decision"
+    else:
+        raise AssertionError("unsupported decision was accepted")

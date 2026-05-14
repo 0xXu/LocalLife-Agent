@@ -9,7 +9,12 @@ from backend.actions.durable_ledger import DurableActionLedger
 from backend.actions.policy import build_executable_actions
 from backend.data.catalog import LocalDataCatalog
 from backend.graph.state import (
+    PHASE_APPROVED,
+    PHASE_CANCELLED,
+    PHASE_COMPLETED,
+    PHASE_EXECUTING,
     PHASE_NEEDS_CLARIFICATION,
+    PHASE_PARTIALLY_COMPLETED,
     PHASE_PENDING_APPROVAL,
     PHASE_PLANNING,
     PHASE_VALIDATION_FAILED,
@@ -17,6 +22,7 @@ from backend.graph.state import (
     new_revision_id,
     new_run_id,
     new_thread_id,
+    assert_transition_allowed,
 )
 from backend.llm import LLMConfig
 from backend.models.schemas import to_dict
@@ -112,21 +118,91 @@ class WorkflowService:
         if revision is None:
             raise KeyError("plan_not_found")
         revision_id = revision["revision_id"]
+        actions = self.ledger.list_actions(revision_id)
+        receipts = self.ledger.list_receipts(revision_id)
+        current_phase = self._current_phase(plan_id, revision)
+        revision = self._response_revision(revision, current_phase, actions)
         return {
             "plan_id": plan_id,
             "revision": revision,
-            "actions": self.ledger.list_actions(revision_id),
-            "receipts": self.ledger.list_receipts(revision_id),
+            "actions": actions,
+            "receipts": receipts,
         }
 
+    def resume(self, plan_id: str, decision: dict[str, Any]) -> dict[str, Any]:
+        revision = self.repository.get_latest_revision(plan_id)
+        if revision is None:
+            raise KeyError("plan_not_found")
+
+        phase = self._current_phase(plan_id, revision)
+        decision_value = decision.get("decision")
+        if decision_value == "reject":
+            if phase != PHASE_PENDING_APPROVAL:
+                raise ValueError(phase)
+            assert_transition_allowed(phase, PHASE_CANCELLED)
+            self.repository.update_thread_status_for_plan(plan_id, PHASE_CANCELLED)
+            return self.get_plan(plan_id)
+        if decision_value != "approve":
+            raise ValueError("unsupported_decision")
+        if phase not in {PHASE_PENDING_APPROVAL, PHASE_PARTIALLY_COMPLETED}:
+            raise ValueError(phase)
+
+        selected_action_ids = [str(action_id) for action_id in decision.get("selected_action_ids", [])]
+        if not selected_action_ids:
+            raise ValueError("selected_action_ids_required")
+        executable = self.ledger.mark_executing(revision["revision_id"], selected_action_ids)
+        for action in executable:
+            self.ledger.mark_succeeded(
+                action["action_id"],
+                _receipt_id_for(action),
+                f"{action['tool']} completed",
+                action["payload"],
+            )
+
+        actions = self.ledger.list_actions(revision["revision_id"])
+        has_remaining = any(action["status"] not in {"succeeded", "skipped"} for action in actions)
+        next_phase = PHASE_PARTIALLY_COMPLETED if has_remaining else PHASE_COMPLETED
+        self._assert_execution_transition(phase, next_phase)
+        self.repository.update_thread_status_for_plan(plan_id, next_phase)
+        return self.get_plan(plan_id)
+
     def list_plans(self) -> dict[str, Any]:
-        revisions = [
-            revision
-            for revision in self.repository.list_latest_revisions()
-            if revision["phase"] == PHASE_PENDING_APPROVAL
-        ]
+        revisions = []
+        for revision in self.repository.list_latest_revisions():
+            phase = self._current_phase(revision["plan_id"], revision)
+            if phase in {PHASE_PENDING_APPROVAL, PHASE_PARTIALLY_COMPLETED}:
+                revisions.append(self._response_revision(revision, phase, []))
         plans = [self._plan_summary(revision) for revision in revisions]
         return {"plans": plans, "total": len(plans)}
+
+    def _current_phase(self, plan_id: str, revision: Mapping[str, Any]) -> str:
+        thread = self.repository.get_thread_by_plan(plan_id)
+        if thread and thread.get("status"):
+            return str(thread["status"])
+        return str(revision["phase"])
+
+    def _response_revision(
+        self,
+        revision: Mapping[str, Any],
+        phase: str,
+        actions: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        response = dict(revision)
+        plan_payload = dict(revision["plan"])
+        if actions:
+            plan_payload["actions"] = actions
+        plan_payload["status"] = phase
+        response["phase"] = phase
+        response["plan"] = plan_payload
+        return response
+
+    def _assert_execution_transition(self, phase: str, next_phase: str) -> None:
+        if phase == PHASE_PENDING_APPROVAL:
+            assert_transition_allowed(phase, PHASE_APPROVED)
+            assert_transition_allowed(PHASE_APPROVED, PHASE_EXECUTING)
+        else:
+            assert_transition_allowed(phase, PHASE_EXECUTING)
+        assert_transition_allowed(PHASE_EXECUTING, next_phase)
 
     def _candidate_lookup(self, ranked: Mapping[str, list[dict[str, Any]]]) -> dict[str, dict[str, Any]]:
         lookup: dict[str, dict[str, Any]] = {}
@@ -429,3 +505,16 @@ class WorkflowService:
             "title": str(plan.get("title", "")),
             "summary": str(plan.get("summary", "")),
         }
+
+
+def _receipt_id_for(action: dict[str, Any]) -> str:
+    prefix = {
+        "reserve_activity": "TKT",
+        "create_reservation": "RES",
+        "claim_coupon": "CPN",
+        "create_order": "ORD",
+        "send_plan_message": "MSG",
+        "create_calendar_event": "CAL",
+    }.get(str(action["tool"]), "RCT")
+    suffix = str(action["action_id"]).split("_", 1)[-1][:12].upper()
+    return f"{prefix}-{suffix}"

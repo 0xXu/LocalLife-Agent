@@ -136,6 +136,32 @@ class WorkflowRepository:
             row = conn.execute("select * from plan_threads where thread_id = ?", (thread_id,)).fetchone()
         return dict(row) if row else None
 
+    def get_thread_by_plan(self, plan_id: str) -> dict[str, Any] | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                select * from plan_threads
+                where plan_id = ?
+                order by created_at desc, thread_id desc
+                limit 1
+                """,
+                (plan_id,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def update_thread_status_for_plan(self, plan_id: str, status: str) -> None:
+        with self._connect() as conn:
+            result = conn.execute(
+                """
+                update plan_threads
+                set status = ?, updated_at = ?
+                where plan_id = ?
+                """,
+                (status, _now(), plan_id),
+            )
+            if result.rowcount == 0:
+                raise ValueError(f"unknown_plan_id:{plan_id}")
+
     def save_revision(
         self,
         revision_id: str,
@@ -403,6 +429,50 @@ class WorkflowRepository:
                 (action_id,),
             ).fetchone()
         return self._action_from_row(row) if row else None
+
+    def claim_actions_for_execution(self, revision_id: str, selected_action_ids: list[str]) -> list[dict[str, Any]]:
+        ordered_action_ids = list(dict.fromkeys(selected_action_ids))
+        if not ordered_action_ids:
+            return []
+
+        placeholders = ",".join("?" for _ in ordered_action_ids)
+        with self._connect() as conn:
+            conn.execute("begin immediate")
+            rows = conn.execute(
+                f"""
+                select * from action_ledger
+                where revision_id = ? and action_id in ({placeholders})
+                """,
+                (revision_id, *ordered_action_ids),
+            ).fetchall()
+            actions_by_id = {row["action_id"]: row for row in rows}
+
+            for action_id in ordered_action_ids:
+                action = actions_by_id.get(action_id)
+                if action is None:
+                    raise ValueError(f"unknown_action_id:{action_id}")
+                if action["status"] != "pending":
+                    raise ValueError(f"action_not_pending:{action_id}")
+
+            timestamp = _now()
+            conn.execute(
+                f"""
+                update action_ledger
+                set status = 'executing', updated_at = ?
+                where revision_id = ? and action_id in ({placeholders})
+                """,
+                (timestamp, revision_id, *ordered_action_ids),
+            )
+            updated_rows = conn.execute(
+                f"""
+                select * from action_ledger
+                where revision_id = ? and action_id in ({placeholders})
+                """,
+                (revision_id, *ordered_action_ids),
+            ).fetchall()
+
+        updated_by_id = {row["action_id"]: self._action_from_row(row) for row in updated_rows}
+        return [updated_by_id[action_id] for action_id in ordered_action_ids]
 
     def record_action_succeeded(
         self,

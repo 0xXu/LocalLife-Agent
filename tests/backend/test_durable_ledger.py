@@ -29,11 +29,11 @@ def test_ledger_executes_selected_actions_once_and_preserves_receipts(tmp_path: 
 
     executing = ledger.mark_executing("rev_1", ["act_msg"])
     ledger.mark_succeeded("act_msg", "MSG-1", "Sent", {"provider": "line"})
-    repeated = ledger.mark_executing("rev_1", ["act_msg"])
     next_executing = ledger.mark_executing("rev_1", ["act_cal"])
 
     assert [action["action_id"] for action in executing] == ["act_msg"]
-    assert repeated == []
+    with pytest.raises(ValueError, match="action_not_pending:act_msg"):
+        ledger.mark_executing("rev_1", ["act_msg"])
     assert [action["action_id"] for action in next_executing] == ["act_cal"]
     assert {action["action_id"]: action["status"] for action in ledger.list_actions("rev_1")} == {
         "act_msg": "succeeded",
@@ -53,7 +53,8 @@ def test_ledger_survives_repository_reopen(tmp_path: Path):
 
     reopened = DurableActionLedger(WorkflowRepository(db_path))
 
-    assert reopened.mark_executing("rev_1", ["act_msg"]) == []
+    with pytest.raises(ValueError, match="action_not_pending:act_msg"):
+        reopened.mark_executing("rev_1", ["act_msg"])
     assert [receipt["receipt_id"] for receipt in reopened.list_receipts("rev_1")] == ["MSG-1"]
 
 
@@ -85,7 +86,21 @@ def test_duplicate_selected_ids_claim_once(tmp_path: Path):
     claimed = ledger.mark_executing("rev_1", ["act_msg", "act_msg"])
 
     assert [action["action_id"] for action in claimed] == ["act_msg"]
-    assert ledger.mark_executing("rev_1", ["act_msg"]) == []
+    with pytest.raises(ValueError, match="action_not_pending:act_msg"):
+        ledger.mark_executing("rev_1", ["act_msg"])
+
+
+def test_mark_executing_is_all_or_nothing_when_any_selected_action_is_not_pending(tmp_path: Path):
+    repository = _repository(tmp_path)
+    ledger = DurableActionLedger(repository)
+    _seed_two_actions(ledger)
+    repository.claim_action_for_execution("act_msg")
+
+    with pytest.raises(ValueError, match="action_not_pending:act_msg"):
+        ledger.mark_executing("rev_1", ["act_msg", "act_cal"])
+
+    actions = {action["action_id"]: action["status"] for action in ledger.list_actions("rev_1")}
+    assert actions == {"act_msg": "executing", "act_cal": "pending"}
 
 
 def test_seed_actions_does_not_downgrade_existing_succeeded_action(tmp_path: Path):
