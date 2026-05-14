@@ -197,3 +197,71 @@ def test_validator_agent_falls_back_to_rules_on_llm_failure():
     # Fallback uses rule-based validation
     assert "valid" in result
     assert "issues" in result
+
+
+from backend.agents.recovery import RecoveryAgent
+
+
+def test_recovery_agent_decides_to_replace_restaurant():
+    issues = [{"code": "closed_at_visit_time", "detail": "Restaurant closes at 15:00", "severity": "blocking"}]
+    itinerary_summary = [
+        {"type": "activity", "place_id": "a1", "title": "Park A"},
+        {"type": "restaurant", "place_id": "r1", "title": "Closed Cafe"},
+    ]
+    alternatives = {
+        "restaurants": [
+            {"id": "r2", "name": "Open Cafe", "rating": 4.5},
+            {"id": "r3", "name": "Another Cafe", "rating": 4.0},
+        ]
+    }
+
+    llm_response = {
+        "action": "replace",
+        "target_type": "restaurant",
+        "target_id": "r1",
+        "replacement_id": "r2",
+        "reason": "Restaurant is closed, switching to Open Cafe which is nearby and well-rated.",
+    }
+    llm = FakeLLM(llm_response)
+    agent = RecoveryAgent(llm)
+
+    result = agent.recover(issues, itinerary_summary, alternatives)
+
+    assert result["action"] == "replace"
+    assert result["replacement_id"] == "r2"
+
+
+def test_recovery_agent_decides_plan_is_recoverable_with_minor_changes():
+    issues = [{"code": "budget_overrun", "detail": "Budget too high", "severity": "warning"}]
+    itinerary_summary = [{"type": "activity", "place_id": "a1", "title": "Expensive Activity"}]
+    alternatives = {}
+
+    llm_response = {
+        "action": "adjust",
+        "target_type": "activity",
+        "target_id": "a1",
+        "adjustment": "Keep activity but skip restaurant to reduce budget",
+        "reason": "Budget slightly over, can be fixed by removing optional components.",
+    }
+    llm = FakeLLM(llm_response)
+    agent = RecoveryAgent(llm)
+
+    result = agent.recover(issues, itinerary_summary, alternatives)
+
+    assert result["action"] == "adjust"
+
+
+def test_recovery_agent_falls_back_on_llm_failure():
+    issues = [{"code": "closed_at_visit_time", "severity": "blocking"}]
+    itinerary_summary = [{"type": "restaurant", "place_id": "r1", "title": "Closed"}]
+    alternatives = {"restaurants": [{"id": "r2", "name": "Backup"}]}
+
+    class BrokenLLM:
+        def chat_stream(self, messages):
+            raise RuntimeError("LLM down")
+
+    agent = RecoveryAgent(BrokenLLM())
+    result = agent.recover(issues, itinerary_summary, alternatives)
+
+    assert result["action"] == "replace"
+    assert result["target_type"] == "restaurant"
