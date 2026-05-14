@@ -98,20 +98,6 @@ def test_start_run_get_plan_versions_list_and_resume(tmp_path):
     assert len(resumed.json()["receipts"]) == 1
 
 
-def test_build_endpoint_creates_workflow_readable_plan(tmp_path):
-    client = make_client(tmp_path)
-
-    built = client.post("/api/plans/build", json={"goal": "family with child wants low fat lunch", "user_id": "user_1"})
-
-    assert built.status_code == 200
-    plan_id = built.json()["plan"]["id"]
-    assert built.json()["plan_id"] == plan_id
-    loaded = client.get(f"/api/plans/{plan_id}")
-    assert loaded.status_code == 200
-    assert loaded.json()["plan_id"] == plan_id
-    assert loaded.json()["plan"]["id"] == plan_id
-
-
 def test_run_stream_returns_stable_graph_update_without_creating_new_revision(tmp_path):
     client = make_client(tmp_path)
     start = client.post("/api/plans/runs", json={"goal": "family with child wants low fat lunch", "user_id": "user_1"})
@@ -161,13 +147,13 @@ def test_missing_plan_versions_returns_not_found(tmp_path):
     assert response.json()["error"]["code"] == "plan_not_found"
 
 
-def test_legacy_direct_confirm_and_execute_are_disabled(tmp_path):
+def test_legacy_direct_confirm_and_execute_are_removed(tmp_path):
     client = make_client(tmp_path)
 
     confirm = client.post("/api/plans/plan_1/confirm", json={"confirmed": True})
     execute = client.post("/api/plans/plan_1/execute", json={"confirmed": True})
 
-    assert confirm.status_code == 410
-    assert confirm.json()["error"]["code"] == "legacy_endpoint_disabled"
-    assert execute.status_code == 410
-    assert execute.json()["error"]["code"] == "legacy_endpoint_disabled"
+    assert confirm.status_code == 404
+    assert confirm.json()["error"]["code"] == "not_found"
+    assert execute.status_code == 404
+    assert execute.json()["error"]["code"] == "not_found"

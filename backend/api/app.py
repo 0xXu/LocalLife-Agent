@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import json
 from json import JSONDecodeError
 from typing import Any
@@ -123,70 +122,6 @@ def create_app(service: PlanningService | None = None, workflow_service: Workflo
             },
         )
 
-    @api.post("/api/plans/build")
-    async def build_plan(request: Request) -> dict[str, Any]:
-        body = await read_json_object(request)
-        started = workflow(request).start_run(
-            str(body.get("goal", "")),
-            user_id=str(body.get("user_id", "local_demo_user")),
-        )
-        built = workflow(request).get_plan(started["plan_id"])
-        return {**started, **workflow_plan_payload(built)}
-
-    @api.get("/api/plans/build/stream")
-    async def build_plan_stream(goal: str, request: Request) -> StreamingResponse:
-        svc = workflow(request)
-        queue: asyncio.Queue[tuple[str, str] | tuple[str, str, str] | None] = asyncio.Queue()
-        loop = asyncio.get_running_loop()
-
-        def on_progress(label: str, detail: str) -> None:
-            loop.call_soon_threadsafe(queue.put_nowait, (label, detail))
-
-        def on_token(token: str) -> None:
-            loop.call_soon_threadsafe(queue.put_nowait, ("__token__", token))
-
-        async def event_stream():
-            result_holder: dict[str, Any] = {}
-            error_holder: dict[str, str] = {}
-
-            yield f"data: {json.dumps({'type': 'started'}, ensure_ascii=False)}\n\n"
-
-            def run():
-                try:
-                    started = svc.start_run(goal)
-                    result_holder["data"] = {**started, **workflow_plan_payload(svc.get_plan(started["plan_id"]))}
-                except Exception as exc:
-                    error_holder["error"] = str(exc)
-                finally:
-                    loop.call_soon_threadsafe(queue.put_nowait, None)
-
-            loop.run_in_executor(None, run)
-
-            while True:
-                item = await queue.get()
-                if item is None:
-                    break
-                if item[0] == "__token__":
-                    yield f"data: {json.dumps({'type': 'token', 'content': item[1]}, ensure_ascii=False)}\n\n"
-                else:
-                    label, detail = item
-                    yield f"data: {json.dumps({'type': 'progress', 'label': label, 'detail': detail}, ensure_ascii=False)}\n\n"
-
-            if "error" in error_holder:
-                yield f"data: {json.dumps({'type': 'error', 'message': error_holder['error']}, ensure_ascii=False)}\n\n"
-            else:
-                yield f"data: {json.dumps({'type': 'done', 'result': result_holder['data']}, ensure_ascii=False)}\n\n"
-
-        return StreamingResponse(
-            event_stream(),
-            media_type="text/event-stream",
-            headers={
-                "Cache-Control": "no-cache, no-store, must-revalidate",
-                "X-Accel-Buffering": "no",
-                "Connection": "keep-alive",
-            },
-        )
-
     @api.get("/api/plans/{plan_id}/versions")
     async def plan_versions(plan_id: str, request: Request) -> dict[str, Any]:
         workflow(request).get_plan(plan_id)
@@ -200,46 +135,6 @@ def create_app(service: PlanningService | None = None, workflow_service: Workflo
     @api.get("/api/plans/{plan_id}")
     async def get_plan(plan_id: str, request: Request) -> dict[str, Any]:
         return workflow_plan_payload(workflow(request).get_plan(plan_id))
-
-    @api.post("/api/plans/{plan_id}/alternatives")
-    async def build_alternatives(plan_id: str, _request: Request) -> JSONResponse:
-        _ = plan_id
-        return error_response("legacy_endpoint_disabled", 410)
-
-    @api.post("/api/plans/{plan_id}/confirm")
-    async def confirm_plan(plan_id: str, _request: Request) -> JSONResponse:
-        _ = plan_id
-        return error_response("legacy_endpoint_disabled", 410)
-
-    @api.post("/api/plans/{plan_id}/execute")
-    async def execute_plan(plan_id: str, _request: Request) -> JSONResponse:
-        _ = plan_id
-        return error_response("legacy_endpoint_disabled", 410)
-
-    @api.post("/api/plans/{plan_id}/recover")
-    async def recover_plan(plan_id: str, _request: Request) -> JSONResponse:
-        _ = plan_id
-        return error_response("legacy_endpoint_disabled", 410)
-
-    @api.post("/api/plans/{plan_id}/feedback")
-    async def plan_feedback(plan_id: str, _request: Request) -> JSONResponse:
-        _ = plan_id
-        return error_response("legacy_endpoint_disabled", 410)
-
-    @api.post("/api/plans/{plan_id}/revise")
-    async def revise_plan(plan_id: str, _request: Request) -> JSONResponse:
-        _ = plan_id
-        return error_response("legacy_endpoint_disabled", 410)
-
-    @api.get("/api/plans/{plan_id}/revisions")
-    async def plan_revisions(plan_id: str, _request: Request) -> JSONResponse:
-        _ = plan_id
-        return error_response("legacy_endpoint_disabled", 410)
-
-    @api.patch("/api/plans/{plan_id}/constraints")
-    async def patch_constraints(plan_id: str, _request: Request) -> JSONResponse:
-        _ = plan_id
-        return error_response("legacy_endpoint_disabled", 410)
 
     return api
 
