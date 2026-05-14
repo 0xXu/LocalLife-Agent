@@ -71,11 +71,19 @@ def _merge_ranked_with_candidates(ranked: dict[str, list[dict]], candidates: dic
             if sid in seen_ids:
                 continue
             seen_ids.add(sid)
-            full = candidate_lookup.get(sid, {})
-            if full:
+            full = candidate_lookup.get(sid, None)
+            if full is not None:
                 enriched = dict(full)
                 enriched["llm_reason"] = sel.get("reason", "")
                 merged.append(enriched)
+        if not merged:
+            # LLM returned IDs not in catalog; fall back to top candidates
+            fallback_items = candidates.get(category, [])
+            sorted_fallback = sorted(
+                fallback_items,
+                key=lambda x: (-float(x.get("rating", 0)), float(x.get("distance_km", 99))),
+            )
+            merged = sorted_fallback[:3]
         result[category] = merged
     return result
 

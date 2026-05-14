@@ -271,10 +271,7 @@ class PlanningPipeline:
 
     def _after_validate(self, graph_state: BuildGraphState) -> str:
         state = graph_state["state"]
-        validation = graph_state.get("validation", {})
-        if validation.get("valid", True) and state.pending_actions:
-            return "confirm"
-        if state.recovery_attempts >= 3:
+        if state.status == "pending_confirmation" or state.recovery_attempts >= 3:
             return "confirm"
         return "recover"
 
@@ -353,6 +350,8 @@ class PlanningPipeline:
     def _build_itinerary_node(self, graph_state: BuildGraphState) -> BuildGraphState:
         state = graph_state["state"]
         constraints = require_constraints(state)
+        if not state.ranked.get("activities"):
+            raise RuntimeError("No activity candidates found after ranking. Cannot build itinerary.")
         activity = state.ranked["activities"][0]
         restaurant = state.ranked["restaurants"][0] if should_include_restaurant(constraints) and state.ranked.get("restaurants") else None
         walk = state.ranked["walks"][0] if should_include_walk(constraints, restaurant) and state.ranked.get("walks") else None
