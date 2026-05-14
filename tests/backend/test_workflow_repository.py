@@ -87,6 +87,16 @@ def test_repository_uses_json_not_pickle(tmp_path: Path):
     assert row == ("thread_1",)
 
 
+def test_repository_releases_sqlite_file_handles_between_operations(tmp_path: Path):
+    db_path = tmp_path / "workflow.sqlite"
+    repository = WorkflowRepository(db_path)
+
+    repository.create_thread("thread_1", "run_1", "plan_1", "user_1", "planning")
+
+    db_path.unlink()
+    assert not db_path.exists()
+
+
 def test_repository_resets_legacy_receipts_schema(tmp_path: Path):
     db_path = tmp_path / "workflow.sqlite"
     new_payload = {"provider": "line", "raw": {"message_id": "MSG-new"}}

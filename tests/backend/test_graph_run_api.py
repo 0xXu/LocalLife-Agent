@@ -3,6 +3,7 @@ import json
 from fastapi.testclient import TestClient
 
 from backend.api.app import create_app
+from backend.graph.events import sse_event
 from backend.llm.config import LLMConfig
 from backend.services.workflow_service import WorkflowService
 from tests.backend.helpers import RuleBasedLLMClient, planning_service_with_fake_llm
@@ -40,6 +41,12 @@ def parse_sse_events(body: str) -> list[dict[str, object]]:
                 event[field] = value
         events.append(event)
     return events
+
+
+def test_sse_event_serializes_sorted_unicode_raw_payload():
+    assert sse_event("evt_000001", "graph_update", {"z": 1, "a": "中文"}) == (
+        'id: evt_000001\nevent: graph_update\ndata: {"a":"中文","z":1}\n\n'
+    )
 
 
 def test_create_app_preserves_positional_planning_service_argument(tmp_path):
@@ -109,21 +116,29 @@ def test_run_stream_returns_stable_graph_update_without_creating_new_revision(tm
     client = make_client(tmp_path)
     start = client.post("/api/plans/runs", json={"goal": "family with child wants low fat lunch", "user_id": "user_1"})
     run_id = start.json()["run_id"]
+    thread_id = start.json()["thread_id"]
     plan_id = start.json()["plan_id"]
     versions_before = client.get(f"/api/plans/{plan_id}/versions").json()["versions"]
+    latest_revision_before = versions_before[0]
 
     first = client.get(f"/api/plans/runs/{run_id}/stream")
     second = client.get(f"/api/plans/runs/{run_id}/stream")
 
     assert first.status_code == 200
     assert first.headers["content-type"].startswith("text/event-stream")
+    assert second.status_code == 200
+    assert second.headers["content-type"].startswith("text/event-stream")
     first_events = parse_sse_events(first.text)
     second_events = parse_sse_events(second.text)
-    assert first_events[0]["id"].startswith("evt_")
-    assert first_events[0]["id"] == second_events[0]["id"]
+    assert first_events[0]["id"] == "evt_000001"
+    assert second_events[0]["id"] == "evt_000001"
+    assert second_events[0] == first_events[0]
     assert first_events[0]["event"] == "graph_update"
     assert first_events[0]["data"]["run_id"] == run_id
+    assert first_events[0]["data"]["thread_id"] == thread_id
     assert first_events[0]["data"]["plan_id"] == plan_id
+    assert first_events[0]["data"]["revision_id"] == latest_revision_before["revision_id"]
+    assert first_events[0]["data"]["phase"] == latest_revision_before["phase"]
     assert client.get(f"/api/plans/{plan_id}/versions").json()["versions"] == versions_before
     assert client.get("/api/plans").json()["total"] == 1
 
