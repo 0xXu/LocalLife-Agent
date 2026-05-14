@@ -53,6 +53,7 @@ venv/
 tmp/
 temp/
 .codex-run/
+.worktrees/
 *.tmp
 *.bak
 .weekendpilot/
