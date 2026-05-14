@@ -72,6 +72,7 @@ class WorkflowService:
             if state.route:
                 plan_payload["route"] = state.route
             self._ensure_origin_route_leg(plan_payload)
+            self._sync_route_totals(plan_payload)
 
             constraints = dict(plan_payload.get("constraints") or {})
             constraints["user_id"] = user_id
@@ -88,6 +89,7 @@ class WorkflowService:
                 state.context.get("weather", {}),
             )
             phase = PHASE_PENDING_APPROVAL if validation["valid"] else PHASE_VALIDATION_FAILED
+            plan_payload["actions"] = actions if phase == PHASE_PENDING_APPROVAL else []
 
         self.repository.save_revision(
             revision_id,
@@ -167,17 +169,38 @@ class WorkflowService:
             },
         )
 
+    def _sync_route_totals(self, plan: dict[str, Any]) -> None:
+        route = plan.get("route")
+        if not isinstance(route, dict):
+            return
+        legs = route.get("legs", [])
+        if not isinstance(legs, list):
+            return
+
+        total_minutes = sum(
+            self._int_count(leg.get("duration_minutes", 0))
+            for leg in legs
+            if isinstance(leg, Mapping)
+        )
+        route["total_travel_minutes"] = total_minutes
+        route["drive_time_minutes"] = total_minutes
+
+        overview = plan.get("overview")
+        if isinstance(overview, dict) and "driveTime" in overview:
+            overview["driveTime"] = f"约 {total_minutes} 分钟"
+
     def _normalize_seed_catalog_plan_for_validation(
         self,
         plan: dict[str, Any],
         candidate_lookup: Mapping[str, dict[str, Any]],
         constraints: dict[str, Any],
     ) -> None:
-        self._normalize_seed_catalog_visit_date(candidate_lookup, constraints)
+        self._normalize_seed_catalog_visit_date(plan, candidate_lookup, constraints)
         self._align_seed_restaurant_steps_to_availability(plan, candidate_lookup, constraints)
 
     def _normalize_seed_catalog_visit_date(
         self,
+        plan: dict[str, Any],
         candidate_lookup: Mapping[str, dict[str, Any]],
         constraints: dict[str, Any],
     ) -> None:
@@ -189,8 +212,18 @@ class WorkflowService:
         if not weekday:
             return
 
-        time_window["date"] = self._next_weekday_date(weekday)
+        normalized_date = self._next_weekday_date(weekday)
+        time_window["date"] = normalized_date
         constraints["time_window"] = time_window
+        self._set_plan_time_window_date(plan, normalized_date)
+
+    def _set_plan_time_window_date(self, plan: dict[str, Any], date_value: str) -> None:
+        plan_constraints = plan.get("constraints")
+        if not isinstance(plan_constraints, dict):
+            return
+        time_window = dict(plan_constraints.get("time_window") or {})
+        time_window["date"] = date_value
+        plan_constraints["time_window"] = time_window
 
     def _align_seed_restaurant_steps_to_availability(
         self,
@@ -200,11 +233,33 @@ class WorkflowService:
     ) -> None:
         party_size = self._party_size(constraints)
         max_wait = self._max_wait_minutes(constraints)
-        for step in plan.get("itinerary", []):
+        self._align_seed_restaurant_steps(plan.get("itinerary", []), candidate_lookup, party_size, max_wait)
+        adjusted_variants = []
+        for variant in plan.get("variants", []):
+            if not isinstance(variant, dict):
+                continue
+            if self._align_seed_restaurant_steps(variant.get("itinerary", []), candidate_lookup, party_size, max_wait):
+                adjusted_variants.append(variant)
+        plan["variants"] = adjusted_variants
+
+    def _align_seed_restaurant_steps(
+        self,
+        itinerary: Any,
+        candidate_lookup: Mapping[str, dict[str, Any]],
+        party_size: int,
+        max_wait: int,
+    ) -> bool:
+        if not isinstance(itinerary, list):
+            return False
+        aligned = True
+        for index, step in enumerate(itinerary):
+            if not isinstance(step, dict):
+                continue
             if step.get("type") != "restaurant":
                 continue
             candidate = self._candidate_for_step(step, candidate_lookup)
             if not candidate or candidate.get("category") != "restaurant":
+                aligned = False
                 continue
             slot_time = self._nearest_available_slot(
                 candidate.get("availability", []),
@@ -213,8 +268,16 @@ class WorkflowService:
                 max_wait,
             )
             if not slot_time:
+                aligned = False
                 continue
-            self._shift_step_time(step, slot_time)
+            delta = self._time_delta_to_slot(step, slot_time)
+            if delta is None:
+                aligned = False
+                continue
+            for later_step in itinerary[index:]:
+                if isinstance(later_step, dict):
+                    self._shift_step_by_delta(later_step, delta)
+        return aligned
 
     def _candidate_for_step(
         self,
@@ -264,6 +327,23 @@ class WorkflowService:
             return
 
         delta = new_start_minutes - old_start_minutes
+        self._shift_step_by_delta(step, delta)
+
+    def _time_delta_to_slot(self, step: Mapping[str, Any], slot_time: str) -> int | None:
+        old_start = str(step.get("start") or step.get("time") or "")
+        old_start_minutes = self._time_to_minutes(old_start)
+        new_start_minutes = self._time_to_minutes(slot_time)
+        if old_start_minutes is None or new_start_minutes is None:
+            return None
+        return new_start_minutes - old_start_minutes
+
+    def _shift_step_by_delta(self, step: dict[str, Any], delta: int) -> None:
+        old_start = str(step.get("start") or step.get("time") or "")
+        old_start_minutes = self._time_to_minutes(old_start)
+        if old_start_minutes is None:
+            return
+
+        slot_time = self._format_time(old_start_minutes + delta)
         step["start"] = slot_time
         if "time" in step:
             step["time"] = slot_time

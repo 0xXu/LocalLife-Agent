@@ -19,6 +19,10 @@ def make_service(tmp_path: Path, repository_path: Path | None = None) -> Workflo
     return service
 
 
+def _step_by_type(itinerary: list[dict], step_type: str) -> dict:
+    return next(step for step in itinerary if step["type"] == step_type)
+
+
 def test_start_run_creates_durable_ids_and_latest_revision(tmp_path: Path):
     service = make_service(tmp_path)
 
@@ -43,6 +47,45 @@ def test_start_run_creates_durable_ids_and_latest_revision(tmp_path: Path):
     for action in plan["actions"]:
         if action["tool"] in {"reserve_activity", "create_reservation", "create_order"}:
             assert action["payload"]["party_size"] == 3
+    ledger_actions_by_id = {action["action_id"]: action for action in plan["actions"]}
+    for persisted_action in plan["revision"]["plan"]["actions"]:
+        ledger_action = ledger_actions_by_id[persisted_action["action_id"]]
+        assert persisted_action["tool"] == ledger_action["tool"]
+        assert persisted_action["payload"] == ledger_action["payload"]
+        assert persisted_action["status"] == ledger_action["status"]
+    assert {action["tool"] for action in plan["revision"]["plan"]["actions"]} == {
+        "reserve_activity",
+        "create_reservation",
+        "claim_coupon",
+        "create_order",
+    }
+
+    plan_constraints = plan["revision"]["plan"]["constraints"]
+    normalized_date = plan["revision"]["constraints"]["time_window"]["date"]
+    assert plan_constraints["time_window"]["date"] == normalized_date
+    assert normalized_date != "today"
+    assert "user_id" not in plan_constraints
+
+    route = plan["revision"]["plan"]["route"]
+    route_total = sum(leg["duration_minutes"] for leg in route["legs"])
+    assert route["total_travel_minutes"] == route_total
+    assert route["drive_time_minutes"] == route_total
+    assert plan["revision"]["plan"]["overview"]["driveTime"] == f"约 {route_total} 分钟"
+
+    itinerary = plan["revision"]["plan"]["itinerary"]
+    restaurant = _step_by_type(itinerary, "restaurant")
+    dessert = _step_by_type(itinerary, "dessert_walk")
+    assert restaurant["start"] == "15:45"
+    assert restaurant["end"] == "16:45"
+    assert dessert["start"] == "17:00"
+    assert dessert["end"] == "17:35"
+    for variant in plan["revision"]["plan"]["variants"]:
+        variant_restaurant = _step_by_type(variant["itinerary"], "restaurant")
+        variant_dessert = _step_by_type(variant["itinerary"], "dessert_walk")
+        assert variant_restaurant["start"] == restaurant["start"]
+        assert variant_restaurant["end"] == restaurant["end"]
+        assert variant_dessert["start"] == dessert["start"]
+        assert variant_dessert["end"] == dessert["end"]
 
     plans = service.list_plans()
     assert plans["total"] == 1
@@ -76,6 +119,7 @@ def test_validation_failed_run_has_no_pending_actions_and_is_not_listed(tmp_path
     assert plan["revision"]["phase"] == "validation_failed"
     assert plan["revision"]["validation"]["valid"] is False
     assert plan["actions"] == []
+    assert plan["revision"]["plan"]["actions"] == []
     assert service.list_plans() == {"plans": [], "total": 0}
 
 
