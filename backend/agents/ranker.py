@@ -52,6 +52,13 @@ def _candidate_brief(item: dict) -> dict:
         "distance_km": item.get("distance_km", 0),
         "avg_price": item.get("avg_price", 0),
         "wait_minutes": item.get("wait_minutes", 0),
+        "open_hours": item.get("open_hours", []),
+        "risk_tags": item.get("risk_tags", []),
+        "booking_supported": item.get("booking_supported", False),
+        "duration_minutes": item.get("duration_minutes", 0),
+        "reason": item.get("reason", ""),
+        "review_count": item.get("review_count", 0),
+        "source": item.get("source", ""),
     }
 
 
