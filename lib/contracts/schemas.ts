@@ -113,22 +113,26 @@ export const ItineraryStepSchema = z.object({
 
 export const PlanActionSchema = z.object({
   id: z.string().optional(),
+  action_id: z.string().optional(),
   type: z.string(),
   place_id: z.string().optional(),
   time: z.string().optional(),
   target: z.string().optional(),
   detail: z.string().optional(),
+  status: z.enum(['pending', 'executing', 'succeeded', 'failed', 'skipped']).optional(),
   requires_confirmation: z.boolean().default(true),
   requiresConfirmation: z.boolean().optional(),
   tool: z.string().optional(),
   label: z.string().optional(),
   payload: z.record(z.string(), JsonSchema).default({}),
+  idempotency_key: z.string().optional(),
 });
 
 export const ReceiptSchema = z.object({
   type: z.string(),
   tool: z.string(),
   id: z.string(),
+  action_id: z.string().optional(),
   status: z.string(),
   detail: z.string(),
   payload: z.record(z.string(), JsonSchema).default({}),
@@ -164,16 +168,13 @@ export const TraceSpanSchema = z.object({
   metadata: z.record(z.string(), JsonSchema).default({}),
 });
 
-export const PendingActionSchema = z.object({
-  id: z.string(),
-  type: z.string(),
+export const PendingActionSchema = PlanActionSchema.extend({
+  action_id: z.string().optional(),
+  id: z.string().optional(),
   tool: z.string(),
   label: z.string(),
-  target: z.string().optional(),
-  detail: z.string().optional(),
-  requires_confirmation: z.boolean().default(true),
-  requiresConfirmation: z.boolean().optional(),
-  payload: z.record(z.string(), JsonSchema).default({}),
+}).refine((action) => Boolean(action.action_id || action.id), {
+  message: 'pending action requires action_id or id',
 });
 
 export const PlanOverviewSchema = z.object({
@@ -239,6 +240,30 @@ export const PlanSchema = z.object({
   badges: z.array(z.string()).default([]),
 });
 
+export const GraphRunStartResponseSchema = z.object({
+  run_id: z.string(),
+  thread_id: z.string(),
+  plan_id: z.string(),
+});
+
+export const PlanRevisionSnapshotSchema = z.object({
+  revision_id: z.string(),
+  phase: z.string(),
+  version: z.number().int().optional(),
+  goal: z.string().optional(),
+  constraints: ParsedConstraintsSchema.optional(),
+  plan: PlanSchema,
+}).passthrough();
+
+export const GraphRunEventSchema = z.object({
+  run_id: z.string(),
+  thread_id: z.string(),
+  plan_id: z.string(),
+  revision_id: z.string(),
+  phase: z.string(),
+  revision: PlanRevisionSnapshotSchema,
+});
+
 export const RecoveryDiffSchema = z.object({
   changed: z.string(),
   reason: z.string(),
@@ -264,6 +289,8 @@ export const AdjustmentSchema = z.object({
 });
 
 export const PlanResponseSchema = z.object({
+  plan_id: z.string().optional(),
+  revision: PlanRevisionSnapshotSchema.optional(),
   constraints: ParsedConstraintsSchema,
   progress: z.array(z.string()).default([]),
   trace: z.array(TraceSpanSchema).default([]),

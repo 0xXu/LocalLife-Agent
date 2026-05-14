@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   ClarificationResponseSchema,
+  GraphRunEventSchema,
+  GraphRunStartResponseSchema,
   ParsedConstraintsSchema,
   PoiSchema,
   PlanResponseSchema,
@@ -265,6 +267,101 @@ test('PlanResponse exposes candidate sets with score breakdowns', () => {
 
   assert.equal((response as any).candidate_sets.activities[0].place.provenance.source, 'local_seed_catalog');
   assert.equal(response.user_profile?.explicit_preferences[0].key, 'pace');
+});
+
+test('PlanResponse accepts persisted graph-run workflow payloads with durable action ids', () => {
+  const constraints = {
+    scenario: 'family',
+    origin: { type: 'district', label: 'home', lat: 31.2, lng: 121.5 },
+    time_window: { date: '2026-05-14', start: '14:00', duration_hours: 4, flexible: true },
+    people: { adults: 2, children: [{ age: 5 }], relationship: 'family' },
+    preferences: { distance: 'nearby', diet: [], activity: [], budget_level: 'medium' },
+    constraints: { radius_km: 5, max_wait_minutes: 15, avoid: [] },
+    required_actions: ['send_plan_message'],
+  };
+  const plan = {
+    id: 'plan_test_001',
+    status: 'pending_approval',
+    title: '亲子半日计划',
+    summary: '轻松安排',
+    constraint_fit: { distance: 1, time: 1, budget: 1 },
+    itinerary: [],
+    overview: {
+      theme: '家庭',
+      totalDuration: '4 小时',
+      driveTime: '约 20 分钟',
+      walkingDistance: '1 公里',
+      estimatedCost: '¥300',
+      score: 88,
+    },
+    actions: [{
+      action_id: 'act_msg_001',
+      type: 'send_plan_message',
+      tool: 'messaging',
+      label: '发送计划',
+      detail: '发送给同行人',
+      status: 'pending',
+      payload: {},
+      requires_confirmation: true,
+    }],
+    receipts: [],
+    badges: ['家庭'],
+  };
+  const response = PlanResponseSchema.parse({
+    plan_id: 'plan_test_001',
+    revision: {
+      revision_id: 'rev_test_001',
+      phase: 'pending_approval',
+      version: 1,
+      goal: 'family lunch',
+      constraints,
+      plan,
+    },
+    plan,
+    actions: plan.actions,
+    pending_actions: plan.actions,
+    receipts: [],
+    constraints,
+  });
+
+  assert.equal(response.plan_id, 'plan_test_001');
+  assert.equal(response.revision?.phase, 'pending_approval');
+  assert.equal(response.actions[0].action_id, 'act_msg_001');
+  assert.equal(response.pending_actions[0].status, 'pending');
+});
+
+test('Graph run schemas accept start response and stream event payloads', () => {
+  const started = GraphRunStartResponseSchema.parse({
+    run_id: 'run_test_001',
+    thread_id: 'thread_test_001',
+    plan_id: 'plan_test_001',
+  });
+  const event = GraphRunEventSchema.parse({
+    run_id: 'run_test_001',
+    thread_id: 'thread_test_001',
+    plan_id: 'plan_test_001',
+    revision_id: 'rev_test_001',
+    phase: 'pending_approval',
+    revision: {
+      revision_id: 'rev_test_001',
+      phase: 'pending_approval',
+      plan: {
+        id: 'plan_test_001',
+        status: 'pending_approval',
+        title: '计划',
+        summary: '摘要',
+        constraint_fit: { distance: 1, time: 1, budget: 1 },
+        itinerary: [],
+        overview: { theme: '下午', totalDuration: '2 小时', driveTime: '约 10 分钟', walkingDistance: '0 公里', estimatedCost: '¥100', score: 80 },
+        actions: [],
+        receipts: [],
+        badges: [],
+      },
+    },
+  });
+
+  assert.equal(started.run_id, 'run_test_001');
+  assert.equal(event.revision.revision_id, 'rev_test_001');
 });
 
 test('Receipt and RecoveryDiff match execution and recovery contract', () => {

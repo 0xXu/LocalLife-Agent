@@ -93,23 +93,40 @@ test('saved plan card, edit modal, details close, and delete callbacks are inter
   await waitFor(() => assert.equal(deletes, 1));
 });
 
-test('saved plans view executes the selected backend plan', async () => {
-  const calls: Array<{ url: string; method: string }> = [];
+test('saved plans view resumes pending backend actions', async () => {
+  const calls: Array<{ url: string; method: string; body?: string }> = [];
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     const method = init?.method ?? 'GET';
-    calls.push({ url, method });
+    calls.push({ url, method, body: String(init?.body ?? '') });
     if (url.endsWith('/api/plans') && method === 'GET') {
       return jsonResponse({
         plans: [makePlanSummary()],
         total: 1,
       });
     }
-    if (url.endsWith('/confirm')) {
-      return jsonResponse({ plan: { id: 'plan_001', status: 'confirmed' } });
+    if (url.endsWith('/api/plans/plan_001') && method === 'GET') {
+      return jsonResponse({
+        plan_id: 'plan_001',
+        constraints: makeConstraintsFixture(),
+        plan: {
+          ...makePlanSummary(),
+          id: 'plan_001',
+          actions: [{ action_id: 'act_msg_001', tool: 'messaging', type: 'send_plan_message', label: '发送计划', status: 'pending', payload: {} }],
+        },
+        actions: [{ action_id: 'act_msg_001', tool: 'messaging', type: 'send_plan_message', label: '发送计划', status: 'pending', payload: {} }],
+        pending_actions: [],
+        receipts: [],
+      });
     }
-    if (url.endsWith('/execute')) {
-      return jsonResponse({ plan: { ...makePlanSummary(), status: 'completed' }, receipts: [] });
+    if (url.endsWith('/api/plans/plan_001/resume')) {
+      return jsonResponse({
+        constraints: makeConstraintsFixture(),
+        plan: { ...makePlanSummary(), id: 'plan_001', status: 'completed', actions: [] },
+        actions: [],
+        pending_actions: [],
+        receipts: [{ id: 'rcpt_1', action_id: 'act_msg_001', tool: 'messaging', type: 'send_plan_message', status: 'succeeded', detail: 'messaging completed', payload: {} }],
+      });
     }
     return jsonResponse({});
   }) as typeof fetch;
@@ -119,8 +136,9 @@ test('saved plans view executes the selected backend plan', async () => {
   await waitFor(() => byTestId(container, 'plan-execute-plan_001'));
   await click(byTestId(container, 'plan-execute-plan_001'));
   await waitFor(() => {
-    assert.ok(calls.some((call) => call.url.endsWith('/api/plans/plan_001/confirm') && call.method === 'POST'));
-    assert.ok(calls.some((call) => call.url.endsWith('/api/plans/plan_001/execute') && call.method === 'POST'));
+    assert.ok(calls.some((call) => call.url.endsWith('/api/plans/plan_001') && call.method === 'GET'));
+    assert.ok(calls.some((call) => call.url.endsWith('/api/plans/plan_001/resume') && call.method === 'POST'));
+    assert.ok(calls.some((call) => call.body?.includes('"selected_action_ids":["act_msg_001"]')));
   });
 });
 
@@ -261,4 +279,16 @@ function makePlanSummary() {
     estimated_cost: '320',
     itinerary_count: 4,
   } as const;
+}
+
+function makeConstraintsFixture() {
+  return {
+    scenario: 'family',
+    origin: { type: 'current_location', label: 'home', lat: 38.26, lng: 140.88 },
+    time_window: { date: '2026-05-14', start: '14:00', duration_hours: 4, flexible: true },
+    people: { adults: 2, children: [], relationship: 'family' },
+    preferences: { distance: 'nearby', diet: [], activity: [], budget_level: 'medium' },
+    constraints: { radius_km: 5, max_wait_minutes: 15, avoid: [] },
+    required_actions: ['send_plan_message'],
+  };
 }

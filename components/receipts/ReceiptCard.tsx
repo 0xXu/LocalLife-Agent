@@ -7,7 +7,9 @@ type ReceiptCardProps = {
   receipt: {
     type: string;
     tool: string;
-    id: string;
+    id?: string;
+    receipt_id?: string;
+    action_id?: string;
     status: string;
     detail: string;
     payload?: Record<string, unknown>;
@@ -36,7 +38,8 @@ const toolLabels: Record<string, string> = {
 export function ReceiptCard({ receipt, index }: ReceiptCardProps) {
   const Icon = toolIcons[receipt.tool] ?? Ticket;
   const label = toolLabels[receipt.tool] ?? receipt.tool;
-  const isSuccess = receipt.status === 'success' || receipt.status === 'ok';
+  const isSuccess = ['success', 'ok', 'succeeded'].includes(receipt.status);
+  const receiptId = receipt.receipt_id ?? receipt.id ?? receipt.action_id ?? '';
 
   return (
     <div className="receipt-card" style={{ animationDelay: `${index * 100}ms` }}>
@@ -46,7 +49,7 @@ export function ReceiptCard({ receipt, index }: ReceiptCardProps) {
       <div className="receipt-card-icon"><Icon size={20} /></div>
       <div className="receipt-card-body">
         <strong>{label}</strong>
-        <span className="receipt-card-id">{receipt.id}</span>
+        <span className="receipt-card-id">{receiptId}</span>
         <p>{receipt.detail}</p>
       </div>
     </div>

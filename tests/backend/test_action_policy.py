@@ -25,8 +25,10 @@ def _assert_deterministic(revision_id: str, plan: dict, candidate_lookup: dict, 
     return first
 
 
-def test_policy_does_not_create_activity_reservation_without_booking_intent():
+def test_policy_creates_global_message_action_without_place_bound_grounding():
     plan = {
+        "title": "陶艺下午",
+        "summary": "按时间和预算生成短计划。",
         "itinerary": [
             {"type": "activity", "title": "陶艺体验", "place_id": "poi_activity", "start": "14:00", "end": "15:30"},
         ]
@@ -35,7 +37,53 @@ def test_policy_does_not_create_activity_reservation_without_booking_intent():
 
     actions = _assert_deterministic("rev_1", plan, candidate_lookup, _constraints(["send_plan_message"]))
 
-    assert actions == []
+    assert _without_ids(actions) == [
+        {
+            "revision_id": "rev_1",
+            "tool": "send_plan_message",
+            "label": "发送计划",
+            "target": "同行人",
+            "status": "pending",
+            "requires_confirmation": True,
+            "payload": {
+                "recipient": "同行人",
+                "message": "陶艺下午\n按时间和预算生成短计划。",
+                "plan_title": "陶艺下午",
+            },
+            "receipt_id": "",
+        }
+    ]
+
+
+def test_policy_creates_global_calendar_action_without_place_bound_grounding():
+    plan = {
+        "title": "陶艺下午",
+        "itinerary": [
+            {"type": "activity", "title": "陶艺体验", "place_id": "poi_activity", "start": "14:00", "end": "15:30"},
+        ]
+    }
+    candidate_lookup = {"poi_activity": {"id": "poi_activity", "name": "陶艺体验", "booking_supported": True}}
+
+    actions = _assert_deterministic("rev_1", plan, candidate_lookup, _constraints(["create_calendar_event"]))
+
+    assert _without_ids(actions) == [
+        {
+            "revision_id": "rev_1",
+            "tool": "create_calendar_event",
+            "label": "创建日历",
+            "target": "本地日历",
+            "status": "pending",
+            "requires_confirmation": True,
+            "payload": {
+                "itinerary": [
+                    {"title": "陶艺体验", "start": "14:00", "end": "15:30", "type": "activity", "place_id": "poi_activity"}
+                ],
+                "participants": 3,
+                "title": "陶艺下午",
+            },
+            "receipt_id": "",
+        }
+    ]
 
 
 def test_policy_creates_activity_reservation_with_party_size_payload():

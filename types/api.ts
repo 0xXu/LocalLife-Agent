@@ -1,6 +1,15 @@
 // types/api.ts
 
-export type PlanStatus = 'draft' | 'saved' | 'executing' | 'completed';
+export type PlanStatus =
+  | 'pending_approval'
+  | 'partially_completed'
+  | 'completed'
+  | 'cancelled'
+  | 'validation_failed'
+  | 'ready'
+  | 'draft'
+  | 'saved'
+  | 'executing';
 export type ActivityStatus = 'completed' | 'failed' | 'partial';
 
 export interface PlanSummary {

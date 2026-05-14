@@ -9,16 +9,14 @@ test('plan results renders Python backend open-domain variants and fit metrics',
   const html = renderToStaticMarkup(
     <PlanResultsView
       result={makeOpenDomainResponse() as any}
-      recoveredPlan={null}
-      onConfirm={() => {}}
-      onRecover={() => {}}
-      onLoadAlternatives={() => {}}
-      onPatchConstraints={() => {}}
-      onRegenerateWithFeedback={() => {}}
-      onReplaceNode={() => {}}
+      selectedActions={new Set(['act_msg_001'])}
+      executing={false}
+      onToggleAction={() => {}}
+      onSelectAll={() => {}}
+      onDeselectAll={() => {}}
+      onApprove={() => {}}
+      onReject={() => {}}
       error={null}
-      loadingAction={null}
-      loadingMessage=""
     />,
   );
 
@@ -30,7 +28,37 @@ test('plan results renders Python backend open-domain variants and fit metrics',
   assert.match(html, /local_seed_route_matrix/);
   assert.match(html, /候选解释/);
   assert.match(html, /偏好匹配高/);
-  assert.match(html, /对方案不满意/);
+  assert.match(html, /Action Ledger/);
+  assert.match(html, /批准执行/);
+});
+
+test('plan results falls back to revision constraints from graph-run payloads', () => {
+  const response = makeOpenDomainResponse();
+  const { constraints, ...withoutTopLevelConstraints } = response;
+  const html = renderToStaticMarkup(
+    <PlanResultsView
+      result={{
+        ...withoutTopLevelConstraints,
+        revision: {
+          revision_id: 'rev_graph_001',
+          phase: 'pending_approval',
+          constraints,
+          plan: response.plan,
+        },
+      } as any}
+      selectedActions={new Set(['act_msg_001'])}
+      executing={false}
+      onToggleAction={() => {}}
+      onSelectAll={() => {}}
+      onDeselectAll={() => {}}
+      onApprove={() => {}}
+      onReject={() => {}}
+      error={null}
+    />,
+  );
+
+  assert.match(html, /宠物散步短计划/);
+  assert.match(html, /8km/);
 });
 
 function makeOpenDomainResponse() {
@@ -84,6 +112,7 @@ function makeOpenDomainResponse() {
       provider: 'local_seed_route_matrix',
     },
     pending_actions: [],
+    actions: [{ action_id: 'act_msg_001', type: 'send_plan_message', tool: 'messaging', label: '发送计划', detail: '发送摘要', status: 'pending', payload: {} }],
     plan: {
       id: 'plan_open_001',
       status: 'pending_confirmation',
@@ -92,7 +121,7 @@ function makeOpenDomainResponse() {
       constraint_fit: { distance: 0.95, time: 1, budget: 0.92 },
       itinerary,
       overview: { theme: '下午 · pet friendly walk · 可执行', totalDuration: '3 小时', driveTime: '约 12 分钟', walkingDistance: '0.0 公里', estimatedCost: '约 325 元', score: 98 },
-      actions: [],
+      actions: [{ action_id: 'act_msg_001', type: 'send_plan_message', tool: 'messaging', label: '发送计划', detail: '发送摘要', status: 'pending', payload: {} }],
       variants: [
         { id: 'variant_main', kind: 'main', title: '主方案', summary: '综合距离、可订性和偏好匹配。', score: 98, estimated_budget: 325, constraint_fit: { distance: 0.95, time: 1, budget: 0.92 }, itinerary },
         { id: 'variant_budget', kind: 'budget', title: '省钱版', summary: '优先使用低客单价点位。', score: 93, estimated_budget: 300, constraint_fit: { distance: 0.9, time: 1, budget: 1 }, itinerary },

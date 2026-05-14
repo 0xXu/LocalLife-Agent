@@ -17,6 +17,7 @@ from backend.graph.state import (
     PHASE_PARTIALLY_COMPLETED,
     PHASE_PENDING_APPROVAL,
     PHASE_PLANNING,
+    PHASE_READY,
     PHASE_VALIDATION_FAILED,
     new_plan_id,
     new_revision_id,
@@ -94,7 +95,10 @@ class WorkflowService:
                 actions,
                 state.context.get("weather", {}),
             )
-            phase = PHASE_PENDING_APPROVAL if validation["valid"] else PHASE_VALIDATION_FAILED
+            if validation["valid"]:
+                phase = PHASE_PENDING_APPROVAL if actions else PHASE_READY
+            else:
+                phase = PHASE_VALIDATION_FAILED
             plan_payload["actions"] = actions if phase == PHASE_PENDING_APPROVAL else []
 
         self.repository.save_revision(
@@ -170,7 +174,7 @@ class WorkflowService:
         revisions = []
         for revision in self.repository.list_latest_revisions():
             phase = self._current_phase(revision["plan_id"], revision)
-            if phase in {PHASE_PENDING_APPROVAL, PHASE_PARTIALLY_COMPLETED}:
+            if phase in {PHASE_READY, PHASE_PENDING_APPROVAL, PHASE_PARTIALLY_COMPLETED}:
                 revisions.append(self._response_revision(revision, phase, []))
         plans = [self._plan_summary(revision) for revision in revisions]
         return {"plans": plans, "total": len(plans)}
@@ -405,7 +409,8 @@ class WorkflowService:
         if requested_minutes is None or not isinstance(availability, list):
             return ""
 
-        best: tuple[int, str] | None = None
+        best_within_wait: tuple[int, str] | None = None
+        best_available: tuple[int, str] | None = None
         for slot_value in availability:
             slot = slot_value if isinstance(slot_value, Mapping) else {}
             if slot.get("available") is not True:
@@ -417,10 +422,11 @@ class WorkflowService:
             if slot_minutes is None:
                 continue
             delta = abs(slot_minutes - requested_minutes)
-            if delta > max_wait_minutes:
-                continue
-            if best is None or delta < best[0]:
-                best = (delta, slot_time)
+            if best_available is None or delta < best_available[0]:
+                best_available = (delta, slot_time)
+            if delta <= max_wait_minutes and (best_within_wait is None or delta < best_within_wait[0]):
+                best_within_wait = (delta, slot_time)
+        best = best_within_wait or best_available
         return best[1] if best else ""
 
     def _shift_step_time(self, step: dict[str, Any], slot_time: str) -> None:

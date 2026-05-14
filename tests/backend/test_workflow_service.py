@@ -54,6 +54,8 @@ def test_start_run_creates_durable_ids_and_latest_revision(tmp_path: Path):
         assert persisted_action["payload"] == ledger_action["payload"]
         assert persisted_action["status"] == ledger_action["status"]
     assert {action["tool"] for action in plan["revision"]["plan"]["actions"]} == {
+        "send_plan_message",
+        "create_calendar_event",
         "reserve_activity",
         "create_reservation",
         "claim_coupon",
@@ -124,6 +126,77 @@ def test_validation_failed_run_has_no_pending_actions_and_is_not_listed(tmp_path
     assert plan["actions"] == []
     assert plan["revision"]["plan"]["actions"] == []
     assert service.list_plans() == {"plans": [], "total": 0}
+
+
+def test_valid_run_without_executable_actions_is_ready_not_pending_approval(tmp_path: Path, monkeypatch):
+    service = make_service(tmp_path)
+    monkeypatch.setattr("backend.services.workflow_service.build_executable_actions", lambda *_args, **_kwargs: [])
+    monkeypatch.setattr(
+        "backend.services.workflow_service.validate_revision_for_approval",
+        lambda *_args, **_kwargs: {"valid": True, "blocking": [], "warnings": []},
+    )
+
+    result = service.start_run("family with child wants low fat lunch", user_id="user_1")
+    plan = service.get_plan(result["plan_id"])
+
+    assert plan["revision"]["phase"] == "ready"
+    assert plan["plan_id"] == result["plan_id"]
+    assert plan["actions"] == []
+    assert plan["revision"]["plan"]["actions"] == []
+    assert service.list_plans()["plans"][0]["phase"] == "ready"
+
+
+def test_dining_run_aligns_restaurant_slot_and_creates_global_actions(tmp_path: Path):
+    service = make_service(tmp_path)
+
+    result = service.start_run("外出就餐 + 顺路用餐计划，12点出发，预算适中，需要能预订或点单", user_id="user_1")
+    plan = service.get_plan(result["plan_id"])
+
+    assert plan["revision"]["phase"] == "pending_approval"
+    assert plan["revision"]["validation"] == {"valid": True, "blocking": [], "warnings": []}
+    tools = {action["tool"] for action in plan["actions"]}
+    assert {"send_plan_message", "create_calendar_event"} <= tools
+    restaurant = _step_by_type(plan["revision"]["plan"]["itinerary"], "restaurant")
+    assert restaurant["start"] in {"13:30", "15:45", "18:00"}
+
+
+def test_seed_restaurant_alignment_uses_available_slot_when_wait_constraint_is_too_strict(tmp_path: Path):
+    service = make_service(tmp_path)
+    itinerary = [
+        {"type": "activity", "title": "活动", "place_id": "poi_activity", "start": "12:00", "end": "12:45"},
+        {"type": "restaurant", "title": "餐厅", "place_id": "poi_restaurant", "start": "13:00", "end": "14:00"},
+    ]
+    candidate_lookup = {
+        "poi_restaurant": {
+            "id": "poi_restaurant",
+            "category": "restaurant",
+            "availability": [{"time": "13:30", "available": True, "capacity": 2}],
+        }
+    }
+
+    aligned = service._align_seed_restaurant_steps(itinerary, candidate_lookup, party_size=1, max_wait=15)
+
+    assert aligned is True
+    assert itinerary[1]["start"] == "13:30"
+    assert itinerary[1]["end"] == "14:30"
+
+
+def test_ready_plan_cannot_be_resumed_for_approval(tmp_path: Path, monkeypatch):
+    service = make_service(tmp_path)
+    monkeypatch.setattr("backend.services.workflow_service.build_executable_actions", lambda *_args, **_kwargs: [])
+    monkeypatch.setattr(
+        "backend.services.workflow_service.validate_revision_for_approval",
+        lambda *_args, **_kwargs: {"valid": True, "blocking": [], "warnings": []},
+    )
+
+    result = service.start_run("family with child wants low fat lunch", user_id="user_1")
+
+    try:
+        service.resume(result["plan_id"], {"decision": "approve", "selected_action_ids": ["act_missing"]})
+    except ValueError as exc:
+        assert str(exc) == "ready"
+    else:
+        raise AssertionError("ready plan resume should fail")
 
 
 def test_get_plan_reads_latest_revision_and_actions_after_restart(tmp_path: Path):

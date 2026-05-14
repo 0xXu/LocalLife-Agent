@@ -1,37 +1,20 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react';
-import type { PlanPhase, PlanState, LoadingAction } from '../../types/views';
-import type { BuildPlanResponse, PlanResponse } from '../../types/weekendpilot';
-import {
-  buildPlanStream,
-  buildAlternatives,
-  confirmPlan,
-  executePlan,
-  recoverPlan,
-  patchConstraints,
-  revisePlan,
-} from './apiClient';
-import { NODE_TYPE_LABELS } from '../../lib/constants/nodeTypes';
+import type { GraphPhase, PlanPhase, PlanState } from '../../types/views';
+import type { ClarificationResponse, GraphRunEvent, GraphRunStartResponse, PlanResponse } from '../../types/weekendpilot';
+import { getPlan, rejectPlan, resumePlan, startPlanRun, streamRunUpdates } from './apiClient';
 
 type Action =
   | { type: 'START_PLAN'; goal: string }
-  | { type: 'STREAM_STARTED' }
-  | { type: 'STREAM_TOKEN'; content: string }
+  | { type: 'RUN_STARTED'; run: GraphRunStartResponse }
+  | { type: 'GRAPH_UPDATED'; event: GraphRunEvent }
   | { type: 'UPDATE_PROGRESS'; step: string }
   | { type: 'PLAN_LOADED'; result: PlanResponse }
-  | { type: 'CLARIFICATION_LOADED'; result: Extract<BuildPlanResponse, { status: 'needs_clarification' }> }
+  | { type: 'CLARIFICATION_LOADED'; result: ClarificationResponse }
   | { type: 'PLAN_FAILED'; error: string }
-  | { type: 'GO_TO_CONFIRM' }
   | { type: 'START_EXECUTE' }
   | { type: 'EXECUTE_LOADED'; result: PlanResponse }
   | { type: 'EXECUTE_FAILED'; error: string }
-  | { type: 'START_RECOVER' }
-  | { type: 'RECOVER_LOADED'; result: PlanResponse }
-  | { type: 'RECOVER_FAILED'; error: string }
-  | { type: 'ALTERNATIVES_LOADED'; result: PlanResponse }
-  | { type: 'ALTERNATIVES_FAILED'; error: string }
-  | { type: 'CONSTRAINTS_UPDATED'; result: PlanResponse }
-  | { type: 'CONSTRAINTS_FAILED'; error: string }
-  | { type: 'SET_LOADING'; action: LoadingAction; message: string }
+  | { type: 'SET_LOADING'; message: string }
   | { type: 'CLEAR_LOADING' }
   | { type: 'TOGGLE_ACTION'; key: string }
   | { type: 'SELECT_ALL_ACTIONS' }
@@ -41,11 +24,14 @@ type Action =
 
 const initialState: PlanState = {
   phase: 'idle',
+  graphPhase: 'idle',
   goal: '',
+  runId: null,
+  threadId: null,
   planId: null,
+  revisionId: null,
   result: null,
   clarification: null,
-  recoveredPlan: null,
   receipts: [],
   error: null,
   selectedActions: new Set(),
@@ -56,102 +42,122 @@ const initialState: PlanState = {
   loadingMessage: '',
 };
 
-function getActionKey(action: Record<string, unknown>): string {
-  return String(action.id ?? `${action.tool ?? action.type}_${action.target ?? action.label ?? action.place_id ?? 'default'}`);
+export function getActionKey(action: Record<string, unknown>): string {
+  return String(action.action_id ?? action.id ?? `${action.tool ?? action.type}_${action.target ?? action.label ?? action.place_id ?? 'default'}`);
 }
 
-function isClarificationResponse(result: BuildPlanResponse): result is Extract<BuildPlanResponse, { status: 'needs_clarification' }> {
-  return (result as any)?.status === 'needs_clarification';
+function graphPhaseOf(result: PlanResponse): GraphPhase {
+  return String(result.revision?.phase ?? result.plan.status ?? 'idle') as GraphPhase;
+}
+
+function planPhaseOf(result: PlanResponse): PlanPhase {
+  const phase = graphPhaseOf(result);
+  if (phase === 'completed') return 'completed';
+  if (phase === 'needs_clarification') return 'clarifying';
+  return 'results';
+}
+
+function actionsFor(result: PlanResponse | null): Array<Record<string, unknown>> {
+  if (!result) return [];
+  const topLevel = (result.actions ?? []) as Array<Record<string, unknown>>;
+  return topLevel.length ? topLevel : ((result.plan.actions ?? []) as Array<Record<string, unknown>>);
+}
+
+function selectableActions(result: PlanResponse | null): Array<Record<string, unknown>> {
+  return actionsFor(result).filter((action) => String(action.status ?? 'pending') === 'pending');
+}
+
+function clarificationFromPlanResponse(result: PlanResponse): ClarificationResponse {
+  const plan = result.plan as Record<string, any>;
+  return {
+    status: 'needs_clarification',
+    plan_id: result.plan_id ?? result.plan.id,
+    missing_fields: Array.isArray(plan.missing_fields) ? plan.missing_fields : [],
+    clarifying_questions: Array.isArray(plan.clarifying_questions) ? plan.clarifying_questions : [],
+    trace: result.trace ?? [],
+    tool_calls: result.tool_calls ?? [],
+  };
 }
 
 function reducer(state: PlanState, action: Action): PlanState {
   switch (action.type) {
     case 'START_PLAN':
-      return { ...initialState, phase: 'planning', goal: action.goal, currentStep: 0, streamingText: '' };
-    case 'STREAM_STARTED':
-      return { ...state, currentStep: 0 };
-    case 'STREAM_TOKEN':
-      return { ...state, streamingText: state.streamingText + action.content };
-    case 'UPDATE_PROGRESS':
-      return { ...state, progress: [...state.progress, action.step], currentStep: state.currentStep + 1, streamingText: '' };
-    case 'PLAN_LOADED': {
-      const plan = action.result.plan;
-      const allKeys = new Set<string>(((plan as any)?.actions ?? []).map((a: any) => getActionKey(a)));
+      return { ...initialState, phase: 'planning', graphPhase: 'planning', goal: action.goal, currentStep: 0, progress: ['Graph run starting'] };
+    case 'RUN_STARTED':
       return {
         ...state,
-        phase: 'results',
-        planId: (plan as any)?.id ?? null,
+        runId: action.run.run_id,
+        threadId: action.run.thread_id,
+        planId: action.run.plan_id,
+        progress: [...state.progress, 'Graph run created'],
+        currentStep: Math.max(state.currentStep + 1, 1),
+      };
+    case 'GRAPH_UPDATED':
+      return {
+        ...state,
+        graphPhase: action.event.phase as GraphPhase,
+        revisionId: action.event.revision_id,
+        progress: [...state.progress, `Graph phase: ${action.event.phase}`],
+        currentStep: state.currentStep + 1,
+      };
+    case 'UPDATE_PROGRESS':
+      return {
+        ...state,
+        progress: [...state.progress, action.step],
+        currentStep: state.currentStep + 1,
+      };
+    case 'PLAN_LOADED': {
+      const pending = selectableActions(action.result);
+      return {
+        ...state,
+        phase: planPhaseOf(action.result),
+        graphPhase: graphPhaseOf(action.result),
+        planId: action.result.plan_id ?? action.result.plan.id,
+        revisionId: action.result.revision?.revision_id ?? state.revisionId,
         result: action.result,
-        clarification: null,
-        recoveredPlan: null,
-        receipts: [],
+        clarification: graphPhaseOf(action.result) === 'needs_clarification' ? clarificationFromPlanResponse(action.result) : null,
+        receipts: action.result.receipts ?? [],
+        selectedActions: new Set(pending.map(getActionKey)),
         error: null,
-        selectedActions: allKeys,
+        loadingAction: null,
+        loadingMessage: '',
       };
     }
     case 'CLARIFICATION_LOADED':
       return {
         ...state,
         phase: 'clarifying',
+        graphPhase: 'needs_clarification',
         planId: action.result.plan_id,
         clarification: action.result,
         result: null,
-        recoveredPlan: null,
         receipts: [],
         error: null,
       };
     case 'PLAN_FAILED':
-      return { ...state, phase: 'idle', error: action.error };
-    case 'GO_TO_CONFIRM':
-      return { ...state, phase: 'confirming', error: null };
+      return { ...state, phase: 'idle', graphPhase: 'failed', error: action.error, loadingAction: null, loadingMessage: '' };
     case 'START_EXECUTE':
-      return { ...state, phase: 'executing', error: null };
-    case 'EXECUTE_LOADED':
+      return { ...state, phase: 'executing', graphPhase: 'executing', error: null };
+    case 'EXECUTE_LOADED': {
+      const pending = selectableActions(action.result);
       return {
         ...state,
-        phase: 'completed',
+        phase: planPhaseOf(action.result),
+        graphPhase: graphPhaseOf(action.result),
         result: action.result,
-        clarification: null,
-        recoveredPlan: null,
-        receipts: action.result.receipts,
-        error: null,
-      };
-    case 'EXECUTE_FAILED':
-      return { ...state, phase: 'results', error: action.error };
-    case 'START_RECOVER':
-      return { ...state, phase: 'recovering', error: null };
-    case 'RECOVER_LOADED':
-      return {
-        ...state,
-        phase: 'results',
-        result: action.result,
-        clarification: null,
-        recoveredPlan: (action.result as any).plan ?? null,
-        receipts: [],
-        error: null,
-      };
-    case 'RECOVER_FAILED':
-      return { ...state, phase: 'results', error: action.error };
-    case 'ALTERNATIVES_LOADED':
-      if (!state.result) return state;
-      return { ...state, phase: 'results', result: mergePlanAlternatives(state.result, action.result), error: null };
-    case 'ALTERNATIVES_FAILED':
-      return { ...state, phase: 'results', error: action.error };
-    case 'CONSTRAINTS_UPDATED':
-      return {
-        ...state,
-        phase: 'results',
-        planId: (action.result.plan as any)?.id ?? state.planId,
-        result: action.result,
-        recoveredPlan: null,
+        planId: action.result.plan_id ?? action.result.plan.id,
+        revisionId: action.result.revision?.revision_id ?? state.revisionId,
+        receipts: action.result.receipts ?? [],
+        selectedActions: new Set(pending.map(getActionKey)),
         error: null,
         loadingAction: null,
         loadingMessage: '',
       };
-    case 'CONSTRAINTS_FAILED':
-      return { ...state, phase: 'results', error: action.error, loadingAction: null, loadingMessage: '' };
+    }
+    case 'EXECUTE_FAILED':
+      return { ...state, phase: state.result ? 'results' : 'idle', graphPhase: graphPhaseOf(state.result ?? ({ plan: { status: 'failed' } } as PlanResponse)), error: action.error, loadingAction: null, loadingMessage: '' };
     case 'SET_LOADING':
-      return { ...state, loadingAction: action.action, loadingMessage: action.message };
+      return { ...state, loadingAction: 'approval', loadingMessage: action.message };
     case 'CLEAR_LOADING':
       return { ...state, loadingAction: null, loadingMessage: '' };
     case 'TOGGLE_ACTION': {
@@ -160,11 +166,8 @@ function reducer(state: PlanState, action: Action): PlanState {
       else next.add(action.key);
       return { ...state, selectedActions: next };
     }
-    case 'SELECT_ALL_ACTIONS': {
-      const plan = state.recoveredPlan ?? state.result?.plan;
-      const allKeys = new Set((plan?.actions ?? []).map((a) => getActionKey(a)));
-      return { ...state, selectedActions: allKeys };
-    }
+    case 'SELECT_ALL_ACTIONS':
+      return { ...state, selectedActions: new Set(selectableActions(state.result).map(getActionKey)) };
     case 'DESELECT_ALL_ACTIONS':
       return { ...state, selectedActions: new Set() };
     case 'RESET':
@@ -179,136 +182,71 @@ function reducer(state: PlanState, action: Action): PlanState {
 export function usePlanMachine() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const mountedRef = useRef(true);
+  const stopStreamRef = useRef<null | (() => void)>(null);
 
   useEffect(() => {
-    return () => { mountedRef.current = false; };
+    return () => {
+      mountedRef.current = false;
+      stopStreamRef.current?.();
+    };
   }, []);
 
   const startPlan = useCallback(async (goal: string) => {
+    stopStreamRef.current?.();
     dispatch({ type: 'START_PLAN', goal });
     try {
-      const result = await buildPlanStream(goal, {
-        onStarted: async () => {
-          if (mountedRef.current) dispatch({ type: 'STREAM_STARTED' });
-        },
-        onToken: async (content: string) => {
-          if (mountedRef.current) dispatch({ type: 'STREAM_TOKEN', content });
-        },
-        onProgress: async (label: string) => {
-          if (mountedRef.current) dispatch({ type: 'UPDATE_PROGRESS', step: label });
-          // 添加 400ms 延迟，让用户能看到每个步骤的变化
-          await new Promise<void>((resolve) => {
-            requestAnimationFrame(() => {
-              setTimeout(resolve, 400);
-            });
-          });
-        },
-      });
+      const run = await startPlanRun(goal);
       if (!mountedRef.current) return;
-      if (isClarificationResponse(result)) dispatch({ type: 'CLARIFICATION_LOADED', result });
-      else dispatch({ type: 'PLAN_LOADED', result });
+      dispatch({ type: 'RUN_STARTED', run });
+
+      if (typeof EventSource !== 'undefined') {
+        stopStreamRef.current = streamRunUpdates(run.run_id, {
+          onGraphUpdate: (event) => {
+            if (mountedRef.current) dispatch({ type: 'GRAPH_UPDATED', event });
+          },
+          onError: (error) => {
+            if (mountedRef.current) dispatch({ type: 'UPDATE_PROGRESS', step: error.message });
+          },
+        });
+      }
+
+      const result = await getPlan(run.plan_id);
+      if (!mountedRef.current) return;
+      dispatch({ type: 'PLAN_LOADED', result });
     } catch (err) {
       if (mountedRef.current) dispatch({ type: 'PLAN_FAILED', error: err instanceof Error ? err.message : '计划生成失败' });
     }
   }, []);
 
-  const goToConfirm = useCallback(() => {
-    dispatch({ type: 'GO_TO_CONFIRM' });
-  }, []);
-
-  const confirmAndExecute = useCallback(async () => {
-    const planId = (state.recoveredPlan ?? state.result?.plan)?.id;
+  const approveSelectedActions = useCallback(async () => {
+    const planId = state.planId ?? state.result?.plan.id;
     if (!planId) return;
+    const selected = Array.from(state.selectedActions);
+    if (!selected.length) {
+      dispatch({ type: 'EXECUTE_FAILED', error: '请选择至少一项待执行动作' });
+      return;
+    }
+
     dispatch({ type: 'START_EXECUTE' });
     try {
-      await confirmPlan(planId);
-      const result = await executePlan(planId, Array.from(state.selectedActions));
+      const result = await resumePlan(planId, selected);
       dispatch({ type: 'EXECUTE_LOADED', result });
     } catch (err) {
       dispatch({ type: 'EXECUTE_FAILED', error: err instanceof Error ? err.message : '执行失败' });
     }
-  }, [state.recoveredPlan, state.result]);
+  }, [state.planId, state.result, state.selectedActions]);
 
-  const recoverCurrentPlan = useCallback(async (reason: string) => {
-    const planId = (state.recoveredPlan ?? state.result?.plan)?.id;
+  const rejectCurrentPlan = useCallback(async () => {
+    const planId = state.planId ?? state.result?.plan.id;
     if (!planId) return;
-    dispatch({ type: 'START_RECOVER' });
+    dispatch({ type: 'SET_LOADING', message: '正在取消当前计划...' });
     try {
-      const result = await recoverPlan(planId, reason);
-      dispatch({ type: 'RECOVER_LOADED', result });
+      const result = await rejectPlan(planId);
+      dispatch({ type: 'PLAN_LOADED', result });
     } catch (err) {
-      dispatch({ type: 'RECOVER_FAILED', error: err instanceof Error ? err.message : '恢复失败' });
+      dispatch({ type: 'PLAN_FAILED', error: err instanceof Error ? err.message : '取消失败' });
     }
-  }, [state.recoveredPlan, state.result]);
-
-  const loadAlternatives = useCallback(async () => {
-    if (!state.planId) return;
-    dispatch({ type: 'SET_LOADING', action: 'alternatives', message: '正在加载更多方案...' });
-    try {
-      const result = await buildAlternatives(state.planId);
-      dispatch({ type: 'ALTERNATIVES_LOADED', result });
-    } catch (err) {
-      dispatch({ type: 'ALTERNATIVES_FAILED', error: err instanceof Error ? err.message : '备选方案加载失败' });
-    } finally {
-      dispatch({ type: 'CLEAR_LOADING' });
-    }
-  }, [state.planId]);
-
-  const updateConstraints = useCallback(async (updates: Record<string, any>) => {
-    const planId = (state.recoveredPlan ?? state.result?.plan)?.id;
-    if (!planId) return;
-    dispatch({ type: 'SET_LOADING', action: 'constraints', message: '正在根据新约束重新生成方案...' });
-    try {
-      const result = await patchConstraints(planId, updates);
-      dispatch({ type: 'CONSTRAINTS_UPDATED', result });
-    } catch (err) {
-      dispatch({ type: 'CONSTRAINTS_FAILED', error: err instanceof Error ? err.message : '约束更新失败' });
-    }
-  }, [state.recoveredPlan, state.result]);
-
-  const regenerateWithFeedback = useCallback(async (feedback: string) => {
-    dispatch({ type: 'SET_LOADING', action: 'feedback', message: '正在根据您的反馈调整方案...' });
-    const planId = (state.recoveredPlan ?? state.result?.plan)?.id;
-    if (!planId) {
-      await startPlan(feedback);
-      return;
-    }
-    try {
-      const removedNodes = extractRemovedNodes(feedback, state.result);
-      const result = await revisePlan(planId, {
-        feedback_text: feedback,
-        selected_issue_codes: inferIssueCodes(feedback),
-        locked_nodes: [],
-        removed_nodes: removedNodes,
-        preference_updates: inferPreferenceUpdates(feedback),
-        save_to_profile: true,
-        user_id: 'local_demo_user',
-      });
-      dispatch({ type: 'CONSTRAINTS_UPDATED', result });
-    } catch (err) {
-      dispatch({ type: 'CONSTRAINTS_FAILED', error: err instanceof Error ? err.message : '反馈调整失败' });
-    }
-  }, [startPlan, state.recoveredPlan, state.result]);
-
-  const replaceNode = useCallback(async (nodeType: string, nodeId: string) => {
-    const planId = (state.recoveredPlan ?? state.result?.plan)?.id;
-    if (!planId) return;
-
-    dispatch({
-      type: 'SET_LOADING',
-      action: 'replace',
-      message: `正在为您更换${NODE_TYPE_LABELS[nodeType] || '节点'}...`
-    });
-
-    const reasonMap: Record<string, string> = {
-      'activity': 'activity_full',
-      'restaurant': 'restaurant_unavailable',
-      'dessert_walk': 'route_timeout',
-    };
-
-    const reason = reasonMap[nodeType] || 'restaurant_unavailable';
-    await recoverCurrentPlan(reason);
-  }, [state.recoveredPlan, state.result, recoverCurrentPlan]);
+  }, [state.planId, state.result]);
 
   const toggleAction = useCallback((key: string) => {
     dispatch({ type: 'TOGGLE_ACTION', key });
@@ -323,6 +261,7 @@ export function usePlanMachine() {
   }, []);
 
   const reset = useCallback(() => {
+    stopStreamRef.current?.();
     dispatch({ type: 'RESET' });
   }, []);
 
@@ -333,67 +272,13 @@ export function usePlanMachine() {
   return {
     state,
     startPlan,
-    goToConfirm,
-    confirmAndExecute,
-    recoverCurrentPlan,
-    loadAlternatives,
-    updateConstraints,
-    regenerateWithFeedback,
-    replaceNode,
+    approveSelectedActions,
+    rejectCurrentPlan,
     toggleAction,
     selectAllActions,
     deselectAllActions,
     reset,
     setPhase,
     getActionKey,
-  };
-}
-
-function inferPreferenceUpdates(feedback: string): Record<string, any> {
-  const updates: Record<string, any> = {};
-  if (/轻松|不赶|慢|太赶/.test(feedback)) updates.pace = 'slow';
-  if (/省钱|便宜|预算低|低预算/.test(feedback)) updates.budget_level = 'low';
-  if (/高端|不限预算/.test(feedback)) updates.budget_level = 'high';
-  if (/不想吃|不要餐厅|餐厅不想去/.test(feedback)) updates.meal_required = false;
-  return updates;
-}
-
-function inferIssueCodes(feedback: string): string[] {
-  const issues: string[] = [];
-  if (/太赶|不赶|轻松|慢/.test(feedback)) issues.push('too_rushed');
-  if (/不想吃|不要餐厅|餐厅不想去/.test(feedback)) issues.push('remove_restaurant');
-  if (/省钱|便宜|预算/.test(feedback)) issues.push('cheaper');
-  return issues;
-}
-
-function extractRemovedNodes(feedback: string, result: PlanResponse | null): string[] {
-  if (!result || !/不想吃|不要餐厅|餐厅不想去/.test(feedback)) return [];
-  return (result.plan.itinerary ?? [])
-    .filter((step: any) => step.type === 'restaurant' && step.place_id)
-    .map((step: any) => step.place_id);
-}
-
-export function mergePlanAlternatives(current: PlanResponse, alternativesResponse: PlanResponse): PlanResponse {
-  const incoming = ((alternativesResponse as any).variants ?? (alternativesResponse as any).alternatives ?? []) as any[];
-  const existing = (current.variants?.length ? current.variants : [current.plan]) as any[];
-  const seen = new Set<string>();
-  const variants = [...existing, ...incoming].filter((variant: any, index) => {
-    const key = String(variant.kind ?? variant.id ?? variant.title ?? index);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-
-  return {
-    ...current,
-    ...alternativesResponse,
-    plan: current.plan,
-    constraints: current.constraints,
-    itinerary: current.itinerary,
-    pending_actions: current.pending_actions,
-    progress: current.progress,
-    trace: current.trace,
-    tool_calls: current.tool_calls,
-    variants,
   };
 }

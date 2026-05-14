@@ -8,7 +8,9 @@ type ReceiptsViewProps = {
   receipts: Array<{
     type: string;
     tool: string;
-    id: string;
+    id?: string;
+    receipt_id?: string;
+    action_id?: string;
     status: string;
     detail: string;
     payload?: Record<string, unknown>;
@@ -17,7 +19,7 @@ type ReceiptsViewProps = {
 };
 
 export function ReceiptsView({ receipts, onNewPlan }: ReceiptsViewProps) {
-  const successCount = receipts.filter((r) => r.status === 'success' || r.status === 'ok').length;
+  const successCount = receipts.filter((r) => ['success', 'ok', 'succeeded'].includes(r.status)).length;
 
   return (
     <section className="receipts-view">
@@ -28,7 +30,7 @@ export function ReceiptsView({ receipts, onNewPlan }: ReceiptsViewProps) {
       </div>
       <div className="receipts-list">
         {receipts.map((receipt, index) => (
-          <ReceiptCard key={receipt.id} receipt={receipt} index={index} />
+          <ReceiptCard key={receipt.receipt_id ?? receipt.id ?? receipt.action_id ?? index} receipt={receipt} index={index} />
         ))}
       </div>
       <button className="primary-button" type="button" onClick={onNewPlan}>再来一局</button>

@@ -2,250 +2,118 @@
 
 import React, { useState } from 'react';
 import type { PlanResponse } from '../../types/weekendpilot';
-import type { LoadingAction } from '../../types/views';
-import { OverviewCard } from './OverviewCard';
+import { ActionLedgerPanel } from './ActionLedgerPanel';
+import { CandidateInsights } from './CandidateInsights';
 import { ConstraintChips } from './ConstraintChips';
+import { GraphRunStatusRail } from './GraphRunStatusRail';
 import { ItineraryTimeline } from './ItineraryTimeline';
+import { OverviewCard } from './OverviewCard';
 import { VariantSelector } from './VariantSelector';
-import { RecoveryBanner } from '../recovery/RecoveryBanner';
+import { WorkbenchTabs, type WorkbenchTab } from './WorkbenchTabs';
 import { RouteMap } from '../map/RouteMap';
 import { TracePanel } from '../trace/TracePanel';
-import { CandidateInsights } from './CandidateInsights';
-import { MessageSquare, Edit3, Loader2, Sparkles } from 'lucide-react';
 
 type PlanResultsViewProps = {
   result: PlanResponse;
-  recoveredPlan: PlanResponse['plan'] | null;
-  onConfirm: () => void;
-  onRecover: (reason: string) => void;
-  onLoadAlternatives: () => void;
-  onPatchConstraints: (updates: Record<string, any>) => void;
-  onRegenerateWithFeedback: (feedback: string) => void;
-  onReplaceNode: (nodeType: string, nodeId: string) => void;
+  selectedActions: Set<string>;
+  executing: boolean;
+  onToggleAction: (key: string) => void;
+  onSelectAll: () => void;
+  onDeselectAll: () => void;
+  onApprove: () => void;
+  onReject: () => void;
   error: string | null;
-  loadingAction?: LoadingAction;
-  loadingMessage?: string;
 };
 
 export function PlanResultsView({
-  result, recoveredPlan, onConfirm, onRecover, onLoadAlternatives,
-  onPatchConstraints, onRegenerateWithFeedback, onReplaceNode, error,
-  loadingAction, loadingMessage,
+  result,
+  selectedActions,
+  executing,
+  onToggleAction,
+  onSelectAll,
+  onDeselectAll,
+  onApprove,
+  onReject,
+  error,
 }: PlanResultsViewProps) {
+  const [activeTab, setActiveTab] = useState<WorkbenchTab>('plan');
   const [activeVariant, setActiveVariant] = useState(0);
-  const [showTrace, setShowTrace] = useState(false);
-  const [loadingAlternatives, setLoadingAlternatives] = useState(false);
-  const [feedback, setFeedback] = useState('');
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [isEditingConstraints, setIsEditingConstraints] = useState(false);
-
-  const plan = recoveredPlan ?? result.plan;
-  const variants = result.variants?.length
-    ? result.variants
-    : plan.variants?.length
-      ? plan.variants
-      : [plan];
+  const plan = result.plan;
+  const actions = (result.actions?.length ? result.actions : plan.actions) ?? [];
+  const phase = String(result.revision?.phase ?? plan.status);
+  const variants = plan.variants?.length ? plan.variants : [plan];
   const activePlanVariant = variants[activeVariant] ?? variants[0] ?? plan;
-  const displayItinerary = activePlanVariant?.itinerary ?? plan.itinerary ?? [];
-  const profile = (result as any).user_profile;
-  const revision = (result as any).revision;
-
-  const isLoading = loadingAction !== null;
-
-  const handleLoadAlternatives = async () => {
-    setLoadingAlternatives(true);
-    try {
-      await onLoadAlternatives();
-    } finally {
-      setLoadingAlternatives(false);
-    }
-  };
-
-  const handleFeedbackSubmit = () => {
-    if (feedback.trim()) {
-      onRegenerateWithFeedback(feedback.trim());
-      setFeedback('');
-      setShowFeedback(false);
-    }
-  };
-
-  const handleConstraintsChange = (updates: Record<string, any>) => {
-    onPatchConstraints(updates);
-    setIsEditingConstraints(false);
-  };
+  const displayItinerary = activePlanVariant?.itinerary?.length ? activePlanVariant.itinerary : plan.itinerary ?? [];
+  const constraints = result.constraints ?? result.revision?.constraints ?? (plan as any).constraints ?? {};
 
   return (
-    <section className="plan-results">
-      {/* 全局加载动画 */}
-      {isLoading && (
-        <div className="loading-overlay">
-          <div className="loading-card">
-            <div className="loading-icon-wrapper">
-              <Loader2 size={24} className="spin" />
-            </div>
-            <div className="loading-content">
-              <strong>{loadingMessage}</strong>
-              <span>AI 正在为您调整方案，请稍候...</span>
-            </div>
-            <div className="loading-progress">
-              <div className="loading-progress-bar" />
-            </div>
+    <section className="graph-workbench">
+      <div className="graph-workbench-main">
+        {error && <div className="plan-error-banner" role="alert">{error}</div>}
+
+        <header className="plan-results-header">
+          <div className="plan-results-title">
+            <span className="plan-results-kicker">WeekendPilot Graph Run</span>
+            <h1>{plan.title}</h1>
+            {plan.summary && <p>{plan.summary}</p>}
           </div>
-        </div>
-      )}
-
-      {error && <div className="plan-error-banner" role="alert">{error}</div>}
-      {result.diff && <RecoveryBanner diff={result.diff} adjustment={result.adjustment} />}
-
-      <header className="plan-results-header">
-        <div>
-          <span className="plan-results-kicker">WeekendPilot grounded plan</span>
-          <h1>{plan.title}</h1>
-          {plan.summary && <p>{plan.summary}</p>}
-        </div>
-        {plan.badges?.length > 0 && (
-          <div className="plan-badges" aria-label="方案标签">
-            {plan.badges.map((badge) => <span key={badge}>{badge}</span>)}
+          <div className="plan-results-meta">
+            <GraphRunStatusRail result={result} />
+            {plan.badges?.length > 0 && (
+              <div className="plan-badges" aria-label="方案标签">
+                {plan.badges.map((badge) => <span key={badge}>{badge}</span>)}
+              </div>
+            )}
           </div>
-        )}
-      </header>
+        </header>
 
-      <section className="plan-context-strip" aria-label="计划上下文">
-        <div>
-          <span>用户画像</span>
-          <strong>{profile?.explicit_preferences?.length || profile?.learned_preferences?.length ? '已应用偏好记忆' : '本次对话优先'}</strong>
+        <div className="workbench-toolbar">
+          <WorkbenchTabs value={activeTab} onChange={setActiveTab} />
+          <ConstraintChips constraints={constraints} editable={false} />
         </div>
-        <div>
-          <span>后端状态</span>
-          <strong>{plan.status}</strong>
-        </div>
-        <div>
-          <span>校验结果</span>
-          <strong>{(result as any).validation_issues?.length ? `${(result as any).validation_issues.length} 项需确认` : '无阻断风险'}</strong>
-        </div>
-        {revision ? (
-          <div>
-            <span>最近修订</span>
-            <strong>{revision.revision_id}</strong>
-          </div>
-        ) : null}
-      </section>
 
-      {/* 约束卡片 - 可编辑 */}
-      <div className={`constraint-section ${loadingAction === 'constraints' ? 'section-loading' : ''}`}>
-        <div className="constraint-header">
-          <h3>当前约束</h3>
-          <button
-            className="constraint-edit-btn"
-            onClick={() => setIsEditingConstraints(!isEditingConstraints)}
-            disabled={isLoading}
-          >
-            <Edit3 size={14} />
-            {isEditingConstraints ? '完成' : '编辑'}
-          </button>
+        <div className="workbench-panel" hidden={activeTab !== 'plan'}>
+          <OverviewCard
+            overview={activePlanVariant?.overview ?? plan.overview ?? {}}
+            constraintFit={activePlanVariant?.constraint_fit ?? plan.constraint_fit}
+          />
+          <VariantSelector
+            variants={variants}
+            activeIndex={activeVariant}
+            onSelect={setActiveVariant}
+          />
+          <ItineraryTimeline itinerary={displayItinerary} />
+          {result.route && (
+            <section className="plan-map-section">
+              <h2 className="section-title">路线预览</h2>
+              <RouteMap route={result.route as any} />
+            </section>
+          )}
         </div>
-        <ConstraintChips
-          constraints={result.constraints}
-          onConstraintsChange={handleConstraintsChange}
-          editable={isEditingConstraints && !isLoading}
-        />
+
+        <div className="workbench-panel" hidden={activeTab !== 'evidence'}>
+          <CandidateInsights
+            candidateSets={(result as any).candidate_sets}
+            validationIssues={(result as any).validation_issues ?? []}
+          />
+        </div>
+
+        <div className="workbench-panel" hidden={activeTab !== 'trace'}>
+          <TracePanel trace={result.trace ?? []} toolCalls={result.tool_calls ?? []} />
+        </div>
       </div>
 
-      <OverviewCard
-        overview={activePlanVariant?.overview ?? plan.overview ?? {}}
-        constraintFit={activePlanVariant?.constraint_fit ?? plan.constraint_fit}
+      <ActionLedgerPanel
+        actions={actions as any}
+        selectedActions={selectedActions}
+        executing={executing}
+        phase={phase}
+        onToggleAction={onToggleAction}
+        onSelectAll={onSelectAll}
+        onDeselectAll={onDeselectAll}
+        onApprove={onApprove}
+        onReject={onReject}
       />
-
-      <CandidateInsights
-        candidateSets={(result as any).candidate_sets}
-        validationIssues={(result as any).validation_issues ?? []}
-      />
-
-      {/* 备选方案 - 更明显的入口 */}
-      <div className={loadingAction === 'alternatives' ? 'section-loading' : ''}>
-        <VariantSelector
-          variants={variants}
-          activeIndex={activeVariant}
-          onSelect={setActiveVariant}
-          onLoadMore={handleLoadAlternatives}
-          loading={loadingAlternatives || loadingAction === 'alternatives'}
-        />
-      </div>
-
-      {/* 行程时间轴 - 带节点替换 */}
-      <div className={loadingAction === 'replace' ? 'section-loading' : ''}>
-        <ItineraryTimeline
-          itinerary={displayItinerary}
-          onReplaceNode={onReplaceNode}
-        />
-      </div>
-
-      {result.route && (
-        <section className="plan-map-section">
-          <h2 className="section-title">路线预览</h2>
-          <RouteMap route={result.route as any} />
-        </section>
-      )}
-
-      <button className="trace-toggle" type="button" onClick={() => setShowTrace(!showTrace)}>
-        {showTrace ? '隐藏' : '查看'} Agent 执行详情
-      </button>
-      {showTrace && <TracePanel trace={result.trace ?? []} toolCalls={result.tool_calls ?? []} />}
-
-      {/* 自然语言反馈 */}
-      <div className={`feedback-section ${loadingAction === 'feedback' ? 'section-loading' : ''}`}>
-        <button
-          className="feedback-toggle"
-          onClick={() => setShowFeedback(!showFeedback)}
-          disabled={isLoading}
-        >
-          <MessageSquare size={16} />
-          对方案不满意？说说你的想法
-        </button>
-        {showFeedback && (
-          <div className="feedback-input-wrapper">
-            <textarea
-              className="feedback-input"
-              placeholder="例如：太赶了，餐厅不想去了，换成轻松一点的散步和咖啡"
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-              rows={3}
-              disabled={isLoading}
-            />
-            <button
-              className="primary-button feedback-submit"
-              onClick={handleFeedbackSubmit}
-              disabled={!feedback.trim() || isLoading}
-            >
-              {loadingAction === 'feedback' ? (
-                <Loader2 size={16} className="spin" />
-              ) : (
-                <Sparkles size={16} />
-              )}
-              {loadingAction === 'feedback' ? '正在调整...' : '按反馈修订计划'}
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className="plan-results-actions">
-        <button
-          className="primary-button plan-confirm-btn"
-          type="button"
-          onClick={onConfirm}
-          disabled={isLoading}
-        >
-          确认方案，查看执行项
-        </button>
-        <button
-          className="secondary-button"
-          type="button"
-          onClick={() => onRecover('restaurant_unavailable')}
-          disabled={isLoading}
-        >
-          模拟故障恢复
-        </button>
-      </div>
     </section>
   );
 }

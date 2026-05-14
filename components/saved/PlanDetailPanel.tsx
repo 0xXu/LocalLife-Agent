@@ -9,8 +9,13 @@ import styles from './PlanDetailPanel.module.css';
 const STATUS_MAP: Record<PlanSummary['status'], { variant: 'info' | 'success' | 'default' | 'warning'; label: string }> = {
   draft: { variant: 'default', label: '草稿' },
   saved: { variant: 'info', label: '已保存' },
+  ready: { variant: 'info', label: '已生成' },
+  pending_approval: { variant: 'warning', label: '待审批' },
+  partially_completed: { variant: 'warning', label: '部分完成' },
   executing: { variant: 'warning', label: '执行中' },
   completed: { variant: 'success', label: '已完成' },
+  cancelled: { variant: 'default', label: '已取消' },
+  validation_failed: { variant: 'warning', label: '校验失败' },
 };
 
 export interface PlanDetailPanelProps {

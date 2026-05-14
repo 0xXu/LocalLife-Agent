@@ -4,9 +4,8 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import { ChatView } from '../../components/chat/ChatView';
-import { ConfirmView } from '../../components/confirm/ConfirmView';
+import { ActionLedgerPanel } from '../../components/plan/ActionLedgerPanel';
 import { PlanningProgress } from '../../components/planning/PlanningProgress';
-import type { PlanResponse } from '../../types/weekendpilot';
 
 test('chat entry explains open-domain planning quality signals', () => {
   const html = renderToStaticMarkup(
@@ -32,67 +31,23 @@ test('planning progress surfaces streaming backend reasoning text', () => {
   assert.match(html, /2 \/ 6/);
 });
 
-test('confirmation screen summarizes selected execution scope', () => {
-  const result = makePlanResponse();
+test('action ledger summarizes selected execution scope', () => {
   const html = renderToStaticMarkup(
-    <ConfirmView
-      result={result}
-      selectedActions={new Set(['send_plan_message_group'])}
+    <ActionLedgerPanel
+      actions={[
+        { action_id: 'act_msg_001', type: 'send_plan_message', tool: 'messaging', label: '发送计划', detail: '发送计划摘要', status: 'pending', payload: {} },
+        { action_id: 'act_cal_001', type: 'create_calendar_event', tool: 'calendar', label: '创建日历', detail: '写入 15:00-17:00', status: 'pending', payload: {} },
+      ]}
+      selectedActions={new Set(['act_msg_001'])}
+      executing={false}
       onToggleAction={() => {}}
       onSelectAll={() => {}}
       onDeselectAll={() => {}}
-      onExecute={() => {}}
-      onBack={() => {}}
-      executing={false}
+      onApprove={() => {}}
+      onReject={() => {}}
     />,
   );
 
-  assert.match(html, /即将执行 1 \/ 2 项/);
-  assert.match(html, /仅执行已勾选的动作/);
+  assert.match(html, /1 \/ 2/);
+  assert.match(html, /执行账本/);
 });
-
-function makePlanResponse(): PlanResponse {
-  return {
-    constraints: {},
-    trace: [],
-    tool_calls: [],
-    progress: [],
-    pending_actions: [],
-    actions: [],
-    variants: [],
-    receipts: [],
-    plan: {
-      id: 'plan_frontier_ui',
-      status: 'pending_confirmation',
-      title: '安静散步咖啡计划',
-      summary: '轻量本地生活计划',
-      itinerary: [],
-      actions: [
-        {
-          id: 'send_plan_message_group',
-          type: 'message',
-          tool: 'send_plan_message',
-          label: '发送计划',
-          target: '同行人',
-          detail: '发送计划摘要',
-          requires_confirmation: true,
-          payload: {},
-        },
-        {
-          id: 'create_calendar_event_self',
-          type: 'calendar',
-          tool: 'create_calendar_event',
-          label: '创建日历',
-          target: '个人日历',
-          detail: '写入 15:00-17:00',
-          requires_confirmation: true,
-          payload: {},
-        },
-      ],
-      overview: {},
-      constraint_fit: {},
-      receipts: [],
-      badges: [],
-    },
-  } as PlanResponse;
-}

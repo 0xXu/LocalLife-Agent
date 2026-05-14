@@ -1,4 +1,4 @@
-import type { BuildPlanResponse, PlanResponse, PlanRevisionResponse } from '../../types/weekendpilot';
+import type { GraphRunEvent, GraphRunStartResponse, PlanResponse } from '../../types/weekendpilot';
 import type { PlanListResponse } from '../../types/api';
 import { apiRequest, resolveApiUrl } from '../../lib/api/client';
 
@@ -9,72 +9,10 @@ export const scenarioPrompts = {
   rainy: '今天下午可能下雨，帮我找室内活动、舒服的餐厅和轻松路线。',
 };
 
-export async function buildPlan(goal: string) {
-  return apiRequest<BuildPlanResponse>('/api/plans/build', { method: 'POST', body: { goal } });
-}
-
-export async function buildPlanStream(
-  goal: string,
-  callbacks: {
-    onStarted?: () => void | Promise<void>;
-    onToken?: (content: string) => void | Promise<void>;
-    onProgress: (label: string, detail: string) => void | Promise<void>;
-  },
-): Promise<BuildPlanResponse> {
-  const url = resolveApiUrl(`/api/plans/build/stream?goal=${encodeURIComponent(goal)}`);
-
-  return new Promise<BuildPlanResponse>((resolve, reject) => {
-    const queue: Array<() => Promise<void>> = [];
-    let processing = false;
-
-    async function processNext() {
-      if (processing || queue.length === 0) return;
-      processing = true;
-      await queue.shift()!();
-      processing = false;
-      processNext();
-    }
-
-    const es = new EventSource(url);
-
-    es.onmessage = (e) => {
-      const data = JSON.parse(e.data);
-
-      if (data.type === 'started') {
-        if (callbacks.onStarted) {
-          queue.push(async () => { await callbacks.onStarted!(); });
-          processNext();
-        }
-      } else if (data.type === 'token') {
-        if (callbacks.onToken) {
-          queue.push(async () => { await callbacks.onToken!(data.content); });
-          processNext();
-        }
-      } else if (data.type === 'progress') {
-        queue.push(async () => {
-          await callbacks.onProgress(data.label, data.detail);
-        });
-        processNext();
-      } else if (data.type === 'done') {
-        queue.push(async () => {
-          es.close();
-          resolve(data.result);
-        });
-        processNext();
-      } else if (data.type === 'error') {
-        es.close();
-        reject(new Error(data.message));
-      }
-    };
-
-    es.onerror = () => {
-      // EventSource 会自动重连，只有在连接彻底关闭后才 reject
-      if (es.readyState === EventSource.CLOSED) {
-        es.close();
-        reject(new Error('SSE connection failed'));
-      }
-      // readyState === CONNECTING (0) 时，EventSource 会自动重连，不做处理
-    };
+export async function startPlanRun(goal: string, userId = 'local_demo_user') {
+  return apiRequest<GraphRunStartResponse>('/api/plans/runs', {
+    method: 'POST',
+    body: { goal, user_id: userId },
   });
 }
 
@@ -86,34 +24,45 @@ export async function listPlans() {
   return apiRequest<PlanListResponse>('/api/plans');
 }
 
-export async function patchConstraints(planId: string, body: Record<string, unknown>) {
-  return apiRequest<PlanResponse>(`/api/plans/${planId}/constraints`, { method: 'PATCH', body });
+export function streamRunUpdates(
+  runId: string,
+  callbacks: {
+    onGraphUpdate?: (event: GraphRunEvent) => void | Promise<void>;
+    onError?: (error: Error) => void;
+  },
+) {
+  const es = new EventSource(resolveApiUrl(`/api/plans/runs/${runId}/stream`));
+
+  es.addEventListener('graph_update', (event) => {
+    void callbacks.onGraphUpdate?.(JSON.parse((event as MessageEvent).data));
+    es.close();
+  });
+
+  es.onerror = () => {
+    if (es.readyState === EventSource.CLOSED) {
+      callbacks.onError?.(new Error('SSE connection failed'));
+    }
+  };
+
+  return () => es.close();
 }
 
-export async function buildAlternatives(planId: string) {
-  return apiRequest<PlanResponse>(`/api/plans/${planId}/alternatives`, { method: 'POST', body: {} });
-}
-
-export async function confirmPlan(planId: string) {
-  return apiRequest<PlanResponse>(`/api/plans/${planId}/confirm`, { method: 'POST', body: { confirmed: true } });
-}
-
-export async function executePlan(planId: string, selectedActionIds?: string[]) {
-  return apiRequest<PlanResponse>(`/api/plans/${planId}/execute`, {
+export async function resumePlan(planId: string, selectedActionIds: string[]) {
+  return apiRequest<PlanResponse>(`/api/plans/${planId}/resume`, {
     method: 'POST',
-    body: {
-      confirmed: true,
-      ...(selectedActionIds ? { selected_action_ids: selectedActionIds, idempotency_key: `${planId}:${selectedActionIds.join(',') || 'none'}` } : {}),
-    },
+    body: { decision: 'approve', selected_action_ids: selectedActionIds },
   });
 }
 
-export async function recoverPlan(planId: string, reason: string) {
-  return apiRequest<PlanResponse>(`/api/plans/${planId}/recover`, { method: 'POST', body: { reason } });
+export async function rejectPlan(planId: string) {
+  return apiRequest<PlanResponse>(`/api/plans/${planId}/resume`, {
+    method: 'POST',
+    body: { decision: 'reject' },
+  });
 }
 
-export async function revisePlan(planId: string, body: Record<string, unknown>) {
-  return apiRequest<PlanRevisionResponse & PlanResponse>(`/api/plans/${planId}/revise`, { method: 'POST', body });
+export async function getPlanVersions(planId: string) {
+  return apiRequest<{ plan_id: string; versions: Array<Record<string, unknown>> }>(`/api/plans/${planId}/versions`);
 }
 
 export async function getTraces(planId: string) {

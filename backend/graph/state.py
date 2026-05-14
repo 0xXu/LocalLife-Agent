@@ -7,6 +7,7 @@ PHASE_DRAFT = "draft"
 PHASE_NEEDS_CLARIFICATION = "needs_clarification"
 PHASE_PLANNING = "planning"
 PHASE_VALIDATION_FAILED = "validation_failed"
+PHASE_READY = "ready"
 PHASE_PENDING_APPROVAL = "pending_approval"
 PHASE_APPROVED = "approved"
 PHASE_EXECUTING = "executing"
@@ -20,6 +21,7 @@ WorkflowPhase = Literal[
     "needs_clarification",
     "planning",
     "validation_failed",
+    "ready",
     "pending_approval",
     "approved",
     "executing",
@@ -34,6 +36,7 @@ KNOWN_PHASES: set[str] = {
     PHASE_NEEDS_CLARIFICATION,
     PHASE_PLANNING,
     PHASE_VALIDATION_FAILED,
+    PHASE_READY,
     PHASE_PENDING_APPROVAL,
     PHASE_APPROVED,
     PHASE_EXECUTING,
@@ -78,6 +81,7 @@ ALLOWED_TRANSITIONS: set[tuple[str, str]] = {
     (PHASE_DRAFT, PHASE_PLANNING),
     (PHASE_NEEDS_CLARIFICATION, PHASE_PLANNING),
     (PHASE_PLANNING, PHASE_VALIDATION_FAILED),
+    (PHASE_PLANNING, PHASE_READY),
     (PHASE_PLANNING, PHASE_PENDING_APPROVAL),
     (PHASE_VALIDATION_FAILED, PHASE_PLANNING),
     (PHASE_VALIDATION_FAILED, PHASE_NEEDS_CLARIFICATION),

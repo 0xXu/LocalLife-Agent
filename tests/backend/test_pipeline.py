@@ -328,6 +328,23 @@ class PlanningPipelineTest(unittest.TestCase):
         self.assertEqual(constraints.scenario, "pet_friendly_walk")
         self.assertEqual(constraints.preferences["intent_label"], "宠物散步")
 
+    def test_constraints_from_llm_normalizes_action_aliases(self):
+        constraints = constraints_from_dict(
+            {
+                "scenario": "dining",
+                "people": {"adults": 2, "children": [], "relationship": "friends"},
+                "preferences": {"activity": ["restaurant"], "intent_label": "外出就餐"},
+                "constraints": {"radius_km": 5, "max_wait_minutes": 15, "avoid": []},
+                "time_window": {"date": "today", "start": "12:00", "duration_hours": 2, "flexible": True},
+                "required_actions": ["restaurant_search", "coupon_search", "order_food", "send_plan_message"],
+            }
+        )
+
+        self.assertEqual(
+            constraints.required_actions,
+            ["restaurant_reservation", "claim_coupon", "create_order", "send_plan_message"],
+        )
+
     def test_overview_duration_reflects_llm_time_window(self):
         pipeline = PlanningPipeline(
             llm_config=LLMConfig(

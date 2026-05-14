@@ -25,6 +25,8 @@ import type {
   ToolCallSchema,
   TraceSpanSchema,
   ClarificationResponseSchema,
+  GraphRunEventSchema,
+  GraphRunStartResponseSchema,
 } from '../lib/contracts/schemas';
 
 export type Scenario = z.infer<typeof ScenarioSchema>;
@@ -53,6 +55,11 @@ export type PlanResponse = z.infer<typeof PlanResponseSchema>;
 export type PlanRevisionResponse = z.infer<typeof PlanRevisionResponseSchema>;
 export type ClarificationResponse = z.infer<typeof ClarificationResponseSchema>;
 export type BuildPlanResponse = PlanResponse | ClarificationResponse;
+export type GraphRunStartResponse = z.infer<typeof GraphRunStartResponseSchema>;
+export type GraphRunEvent = z.infer<typeof GraphRunEventSchema>;
+export type ResumeDecision =
+  | { decision: 'approve'; selected_action_ids: string[] }
+  | { decision: 'reject' };
 
 export type PlanStatus =
   | 'draft'

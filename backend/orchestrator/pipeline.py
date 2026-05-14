@@ -496,7 +496,7 @@ def constraints_from_dict(data: dict) -> ParsedConstraints:
         people=people,
         preferences=preferences,
         constraints=constraints,
-        required_actions=as_list(data.get("required_actions", fallback.required_actions)),
+        required_actions=normalize_required_actions(data.get("required_actions", fallback.required_actions)),
     )
 
 
@@ -717,6 +717,37 @@ def normalize_constraints(value: dict, fallback: dict) -> dict:
     return constraints
 
 
+ACTION_ALIASES = {
+    "restaurant_search": "restaurant_reservation",
+    "book_restaurant": "restaurant_reservation",
+    "reserve_restaurant": "restaurant_reservation",
+    "coupon_search": "claim_coupon",
+    "coupon": "claim_coupon",
+    "order_food": "create_order",
+    "food_order": "create_order",
+    "calendar": "create_calendar_event",
+    "message": "send_plan_message",
+}
+
+SUPPORTED_REQUIRED_ACTIONS = {
+    "activity_reservation",
+    "restaurant_reservation",
+    "claim_coupon",
+    "create_order",
+    "send_plan_message",
+    "create_calendar_event",
+}
+
+
+def normalize_required_actions(value) -> list[str]:
+    normalized = []
+    for item in as_list(value):
+        action = ACTION_ALIASES.get(str(item), str(item))
+        if action in SUPPORTED_REQUIRED_ACTIONS and action not in normalized:
+            normalized.append(action)
+    return normalized
+
+
 def as_list(value) -> list:
     if value is None:
         return []
@@ -846,7 +877,7 @@ def apply_constraint_overrides(constraints: ParsedConstraints, overrides: dict) 
                 if action not in {"restaurant_reservation", "claim_coupon", "create_order"}
             ]
     if "required_actions" in overrides:
-        constraints.required_actions = as_list(overrides["required_actions"])
+        constraints.required_actions = normalize_required_actions(overrides["required_actions"])
     return constraints
 
 

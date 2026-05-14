@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { PlanSummary } from '../../types/api';
 import type { PlanResponse } from '../../types/weekendpilot';
-import { confirmPlan, executePlan, listPlans } from './apiClient';
+import { getPlan, listPlans, resumePlan } from './apiClient';
 
 export function usePlans() {
   const [plans, setPlans] = useState<PlanSummary[]>([]);
@@ -45,8 +45,19 @@ export function usePlans() {
 
   const execute = useCallback(async (planId: string) => {
     setPlans((prev) => prev.map((p) => (p.id === planId ? { ...p, status: 'executing' } : p)));
-    await confirmPlan(planId);
-    const result = await executePlan(planId);
+    const loaded = await getPlan(planId);
+    const pending = ((loaded.actions?.length ? loaded.actions : loaded.plan.actions) ?? [])
+      .filter((action: any) => String(action.status ?? 'pending') === 'pending')
+      .map((action: any) => String(action.action_id ?? action.id ?? ''))
+      .filter(Boolean);
+
+    if (!pending.length) {
+      const summary = summaryFromPlanResponse(loaded);
+      setPlans((prev) => prev.map((p) => (p.id === planId ? summary : p)));
+      return summary;
+    }
+
+    const result = await resumePlan(planId, pending);
     const summary = summaryFromPlanResponse(result);
     setPlans((prev) => prev.map((p) => (p.id === planId ? summary : p)));
     return summary;
@@ -60,7 +71,7 @@ function summaryFromPlanResponse(result: PlanResponse): PlanSummary {
   return {
     id: plan.id,
     title: plan.title,
-    status: plan.status === 'completed' ? 'completed' : 'saved',
+    status: plan.status ?? 'saved',
     summary: plan.summary,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

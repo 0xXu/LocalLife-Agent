@@ -17,6 +17,37 @@ def build_executable_actions(
     user_id = _user_id(constraints)
 
     actions: list[dict[str, Any]] = []
+    if "send_plan_message" in required_actions:
+        recipient = _recipient(constraints)
+        actions.append(
+            make_action(
+                revision_id,
+                tool="send_plan_message",
+                label="发送计划",
+                target=recipient,
+                payload={
+                    "recipient": recipient,
+                    "message": _plan_message(plan),
+                    "plan_title": _plan_title(plan),
+                },
+            )
+        )
+
+    if "create_calendar_event" in required_actions:
+        actions.append(
+            make_action(
+                revision_id,
+                tool="create_calendar_event",
+                label="创建日历",
+                target="本地日历",
+                payload={
+                    "itinerary": _calendar_itinerary(plan),
+                    "participants": party_size,
+                    "title": _plan_title(plan),
+                },
+            )
+        )
+
     for step in plan.get("itinerary", []):
         step_type = step.get("type")
         place_id = step.get("place_id")
@@ -144,6 +175,49 @@ def _children_count(value: Any) -> int:
 
 def _target(step: Mapping[str, Any], candidate: Mapping[str, Any]) -> str:
     return str(step.get("title") or candidate.get("name") or step.get("place_id") or "")
+
+
+def _recipient(constraints: Mapping[str, Any]) -> str:
+    people = _value(constraints, "people", {})
+    relationship = str(_value(people, "relationship", "") or _value(constraints, "scenario", ""))
+    if relationship == "family":
+        return "家庭群聊"
+    if relationship == "friends":
+        return "朋友群聊"
+    return "同行人"
+
+
+def _plan_title(plan: Mapping[str, Any]) -> str:
+    title = str(_value(plan, "title", "")).strip()
+    return title or "WeekendPilot 计划"
+
+
+def _plan_message(plan: Mapping[str, Any]) -> str:
+    title = _plan_title(plan)
+    summary = str(_value(plan, "summary", "")).strip()
+    if summary:
+        return f"{title}\n{summary}"
+    return title
+
+
+def _calendar_itinerary(plan: Mapping[str, Any]) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    itinerary = _value(plan, "itinerary", [])
+    if not isinstance(itinerary, list):
+        return items
+    for step in itinerary:
+        if not isinstance(step, Mapping):
+            continue
+        items.append(
+            {
+                "title": str(_value(step, "title", "")),
+                "start": str(_value(step, "start", "")),
+                "end": str(_value(step, "end", "")),
+                "type": str(_value(step, "type", "")),
+                "place_id": str(_value(step, "place_id", "")),
+            }
+        )
+    return items
 
 
 def _step_time(step: Mapping[str, Any]) -> str:

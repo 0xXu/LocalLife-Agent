@@ -6,7 +6,6 @@ import { ChatView } from '@/components/chat/ChatView';
 import { PlanningProgress } from '@/components/planning/PlanningProgress';
 import { ClarificationView } from '@/components/clarification/ClarificationView';
 import { PlanResultsView } from '@/components/plan/PlanResultsView';
-import { ConfirmView } from '@/components/confirm/ConfirmView';
 import { ReceiptsView } from '@/components/receipts/ReceiptsView';
 import { SavedPlansView } from '@/components/saved/SavedPlansView';
 import { ActivityView } from '@/components/activity/ActivityView';
@@ -32,32 +31,8 @@ export default function WeekendPilotApp() {
     machine.startPlan(goal);
   }
 
-  function handleConfirm() {
-    machine.goToConfirm();
-  }
-
   function handleExecute() {
-    machine.confirmAndExecute();
-  }
-
-  function handleRecover(reason: string) {
-    machine.recoverCurrentPlan(reason);
-  }
-
-  function handleBackToResults() {
-    machine.setPhase('results');
-  }
-
-  function handlePatchConstraints(updates: Record<string, any>) {
-    machine.updateConstraints(updates);
-  }
-
-  function handleRegenerateWithFeedback(feedback: string) {
-    machine.regenerateWithFeedback(feedback);
-  }
-
-  function handleReplaceNode(nodeType: string, nodeId: string) {
-    machine.replaceNode(nodeType, nodeId);
+    machine.approveSelectedActions();
   }
 
   const planContent = (() => {
@@ -96,46 +71,30 @@ export default function WeekendPilotApp() {
         return (
           <PlanResultsView
             result={state.result}
-            recoveredPlan={state.recoveredPlan}
-            onConfirm={handleConfirm}
-            onRecover={handleRecover}
-            onLoadAlternatives={machine.loadAlternatives}
-            onPatchConstraints={handlePatchConstraints}
-            onRegenerateWithFeedback={handleRegenerateWithFeedback}
-            onReplaceNode={handleReplaceNode}
-            error={state.error}
-            loadingAction={state.loadingAction}
-            loadingMessage={state.loadingMessage}
-          />
-        );
-
-      case 'confirming':
-        if (!state.result) return null;
-        return (
-          <ConfirmView
-            result={state.result}
             selectedActions={state.selectedActions}
+            executing={false}
             onToggleAction={machine.toggleAction}
             onSelectAll={machine.selectAllActions}
             onDeselectAll={machine.deselectAllActions}
-            onExecute={handleExecute}
-            onBack={handleBackToResults}
-            executing={false}
+            onApprove={handleExecute}
+            onReject={machine.rejectCurrentPlan}
+            error={state.error}
           />
         );
 
       case 'executing':
         if (!state.result) return null;
         return (
-          <ConfirmView
+          <PlanResultsView
             result={state.result}
             selectedActions={state.selectedActions}
+            executing={true}
             onToggleAction={machine.toggleAction}
             onSelectAll={machine.selectAllActions}
             onDeselectAll={machine.deselectAllActions}
-            onExecute={handleExecute}
-            onBack={handleBackToResults}
-            executing={true}
+            onApprove={handleExecute}
+            onReject={machine.rejectCurrentPlan}
+            error={state.error}
           />
         );
 
@@ -144,16 +103,6 @@ export default function WeekendPilotApp() {
           <ReceiptsView
             receipts={state.receipts}
             onNewPlan={handleNewPlan}
-          />
-        );
-
-      case 'recovering':
-        return (
-          <PlanningProgress
-            goal="正在恢复方案..."
-            progress={[]}
-            currentStep={0}
-            streamingText=""
           />
         );
 
