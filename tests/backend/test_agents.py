@@ -130,3 +130,70 @@ def test_ranker_agent_falls_back_to_deterministic_on_llm_failure():
     # Falls back to deterministic ranking — still returns candidates
     assert len(result["activities"]) == 1
     assert result["activities"][0]["id"] == "a1"
+
+
+from backend.agents.validator import ValidatorAgent
+from backend.models.schemas import ItineraryStep
+
+
+def test_validator_agent_approves_good_plan():
+    itinerary = [
+        ItineraryStep("14:00", "14:15", "transport", "出发", "origin_home", "", "约 35 元", "打车 12 分钟"),
+        ItineraryStep("14:15", "15:45", "activity", "Park A", "a1", "quiet outdoor", "约 0 元", "到达", 92),
+        ItineraryStep("16:00", "17:00", "restaurant", "Cafe C", "r1", "good food", "约 80 元", "步行 10 分钟", 88),
+    ]
+    constraints_data = {"scenario": "date", "budget_level": "medium", "duration_hours": 3}
+    weather = {"condition": "sunny"}
+
+    llm_response = {"valid": True, "issues": [], "suggestions": [], "overall_score": 90}
+    llm = FakeLLM(llm_response)
+    agent = ValidatorAgent(llm)
+
+    result = agent.validate(itinerary, constraints_data, weather)
+
+    assert result["valid"] is True
+    assert result["overall_score"] == 90
+
+
+def test_validator_agent_rejects_bad_plan():
+    itinerary = [
+        ItineraryStep("14:00", "14:15", "transport", "出发", "origin_home", "", "约 35 元", "打车 12 分钟"),
+        ItineraryStep("14:15", "15:45", "activity", "Outdoor Park", "a1", "outdoor", "约 0 元", "到达", 60),
+    ]
+    constraints_data = {"scenario": "rainy_indoor", "budget_level": "low"}
+    weather = {"condition": "rain"}
+
+    llm_response = {
+        "valid": False,
+        "issues": [{"code": "weather_mismatch", "detail": "Outdoor activity during rain", "severity": "blocking"}],
+        "suggestions": ["Switch to indoor activity"],
+        "overall_score": 35,
+    }
+    llm = FakeLLM(llm_response)
+    agent = ValidatorAgent(llm)
+
+    result = agent.validate(itinerary, constraints_data, weather)
+
+    assert result["valid"] is False
+    assert len(result["issues"]) == 1
+    assert result["issues"][0]["code"] == "weather_mismatch"
+
+
+def test_validator_agent_falls_back_to_rules_on_llm_failure():
+    itinerary = [
+        ItineraryStep("14:00", "14:15", "transport", "出发", "origin_home", "", "约 35 元", "打车 12 分钟"),
+        ItineraryStep("14:15", "15:45", "activity", "Park A", "a1", "outdoor", "约 0 元", "到达", 92),
+    ]
+    constraints_data = {"scenario": "family", "budget_level": "medium", "duration_hours": 3}
+    weather = {"condition": "sunny"}
+
+    class BrokenLLM:
+        def chat_stream(self, messages):
+            raise RuntimeError("LLM down")
+
+    agent = ValidatorAgent(BrokenLLM())
+    result = agent.validate(itinerary, constraints_data, weather)
+
+    # Fallback uses rule-based validation
+    assert "valid" in result
+    assert "issues" in result
