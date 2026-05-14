@@ -109,8 +109,10 @@ def test_run_stream_returns_stable_graph_update_without_creating_new_revision(tm
     client = make_client(tmp_path)
     start = client.post("/api/plans/runs", json={"goal": "family with child wants low fat lunch", "user_id": "user_1"})
     run_id = start.json()["run_id"]
+    thread_id = start.json()["thread_id"]
     plan_id = start.json()["plan_id"]
     versions_before = client.get(f"/api/plans/{plan_id}/versions").json()["versions"]
+    latest_revision_before = versions_before[0]
 
     first = client.get(f"/api/plans/runs/{run_id}/stream")
     second = client.get(f"/api/plans/runs/{run_id}/stream")
@@ -119,11 +121,14 @@ def test_run_stream_returns_stable_graph_update_without_creating_new_revision(tm
     assert first.headers["content-type"].startswith("text/event-stream")
     first_events = parse_sse_events(first.text)
     second_events = parse_sse_events(second.text)
-    assert first_events[0]["id"].startswith("evt_")
-    assert first_events[0]["id"] == second_events[0]["id"]
+    assert first_events[0]["id"] == "evt_000001"
+    assert second_events[0]["id"] == "evt_000001"
     assert first_events[0]["event"] == "graph_update"
     assert first_events[0]["data"]["run_id"] == run_id
+    assert first_events[0]["data"]["thread_id"] == thread_id
     assert first_events[0]["data"]["plan_id"] == plan_id
+    assert first_events[0]["data"]["revision_id"] == latest_revision_before["revision_id"]
+    assert first_events[0]["data"]["phase"] == latest_revision_before["phase"]
     assert client.get(f"/api/plans/{plan_id}/versions").json()["versions"] == versions_before
     assert client.get("/api/plans").json()["total"] == 1
 
