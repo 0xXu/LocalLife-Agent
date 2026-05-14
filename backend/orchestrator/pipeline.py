@@ -18,6 +18,7 @@ from backend.agents.tools import AgentContext
 from backend.agents.validator import ValidatorAgent
 from backend.data.catalog import LocalDataCatalog
 from backend.llm import LLMClient, LLMConfig
+from backend.llm.chat_model import build_mimo_chat_model
 from backend.models.schemas import (
     ItineraryStep,
     ParsedConstraints,
@@ -97,6 +98,7 @@ class PlanningPipeline:
         self.tools = LocalToolRegistry(self.catalog)
         self.llm_config = llm_config or LLMConfig.from_env_file()
         self.llm = LLMClient(self.llm_config)
+        self.chat_model = build_mimo_chat_model(self.llm_config) if self.llm_config.is_configured and self.llm_config.remote_enabled else None
         self.graph = self._compile_graph()
 
     def build(self, goal: str, overrides: dict | None = None, on_progress: Callable[[str, str], None] | None = None, on_token: Callable[[str], None] | None = None, profile=None) -> PlanState:
@@ -235,7 +237,7 @@ class PlanningPipeline:
         state = graph_state["state"]
         constraints = require_constraints(state)
         context = AgentContext(user_id=state.context.get("user_id", "default"))
-        agent = RankerAgent(self.llm, registry=self.tools, memory_store=getattr(self, 'memory_store', None))
+        agent = RankerAgent(self.chat_model or self.llm, registry=self.tools, memory_store=getattr(self, 'memory_store', None))
         ranked = agent.rank(state.candidates, constraints, context=context)
 
         # If agent used deterministic fallback (no LLM "ranked" key), use old multi-factor scorer
@@ -276,7 +278,7 @@ class PlanningPipeline:
         state = graph_state["state"]
         constraints = require_constraints(state)
         context = AgentContext(user_id=state.context.get("user_id", "default"))
-        agent = ValidatorAgent(self.llm, registry=self.tools)
+        agent = ValidatorAgent(self.chat_model or self.llm, registry=self.tools)
         constraints_data = {
             "scenario": constraints.scenario,
             "budget_level": constraints.preferences.get("budget_level", "medium"),
@@ -314,7 +316,7 @@ class PlanningPipeline:
         itinerary_summary = [{"type": step.type, "place_id": step.place_id, "title": step.title} for step in state.itinerary]
         alternatives = {k: list(v) for k, v in state.ranked.items()}
         context = AgentContext(user_id=state.context.get("user_id", "default"))
-        agent = RecoveryAgent(self.llm, registry=self.tools)
+        agent = RecoveryAgent(self.chat_model or self.llm, registry=self.tools)
         decision = agent.recover(issues, itinerary_summary, alternatives, context=context)
         state.agent_decisions["recovery"] = decision
 
