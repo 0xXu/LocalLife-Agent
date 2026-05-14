@@ -117,6 +117,51 @@ class LocalToolRegistry:
     def compare_alternatives(self, before: str, after: str, reason: str) -> ToolResult:
         return ToolResult("compare_alternatives", {"changed": reason.split("_")[0], "from": before, "to": after, "reason": reason})
 
+    def get_poi_details(self, poi_id: str) -> ToolResult:
+        """Get full details of a single POI."""
+        poi = self.catalog.get_poi(poi_id)
+        return ToolResult("get_poi_details", dict(poi))
+
+    def check_weather(self, date_key: str = "today") -> ToolResult:
+        """Get weather for a date."""
+        weather = dict(self.catalog.weather.get(date_key, self.catalog.weather["today"]))
+        return ToolResult("check_weather", weather)
+
+    def check_opening_hours(self, poi_id: str, time: str) -> ToolResult:
+        """Check if a POI is open at a given time."""
+        poi = self.catalog.get_poi(poi_id)
+        is_open = False
+        for hours in poi.get("open_hours", []):
+            start = hours.get("start", "00:00")
+            end = hours.get("end", "23:59")
+            if start <= time <= end:
+                is_open = True
+                break
+        return ToolResult("check_opening_hours", {
+            "poi_id": poi_id,
+            "time": time,
+            "is_open": is_open,
+            "open_hours": poi.get("open_hours", []),
+        })
+
+    def search_alternatives(self, category: str, exclude_ids: list[str], radius_km: float, tags: list[str]) -> ToolResult:
+        """Search for alternative POIs, excluding specified IDs."""
+        items = self.catalog.search_pois(category, None, radius_km, tags)
+        filtered = [item for item in items if item["id"] not in set(exclude_ids)]
+        return ToolResult("search_alternatives", {"items": filtered[:8]})
+
+    def estimate_cost(self, poi_id: str, party_size: int) -> ToolResult:
+        """Estimate total cost for a POI visit."""
+        poi = self.catalog.get_poi(poi_id)
+        per_person = int(poi.get("avg_price", 100))
+        total = per_person * party_size
+        return ToolResult("estimate_cost", {
+            "poi_id": poi_id,
+            "party_size": party_size,
+            "per_person": per_person,
+            "total_cost": total,
+        })
+
     def execute_action(self, action: PlanAction) -> ToolResult:
         prefix = {
             "reserve_activity": "TKT",
