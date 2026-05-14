@@ -1,15 +1,47 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
-from backend.agents.base import BaseAgent
+from backend.agents.base import BaseAgent, build_react_agent, extract_json_object
+from backend.agents.tools import AgentContext, build_validator_tools
 from backend.models.schemas import ItineraryStep, ParsedConstraints, to_dict
+from backend.tools.registry import LocalToolRegistry
 from backend.validation.rules import validate_itinerary
 
 
+VALIDATOR_SYSTEM_PROMPT = """You are ValidatorAgent — a plan validator for a local-life planner.
+
+Your job: verify the feasibility of an existing itinerary.
+
+Rules:
+- Use check_weather to verify outdoor activities are weather-safe
+- Use check_opening_hours to verify each POI is open at its planned time
+- Use check_availability to verify reservations are possible
+- Use check_route_time to verify the route is efficient
+- Do NOT search for alternatives — that's RecoveryAgent's job
+- Do NOT re-rank candidates — that's RankerAgent's job
+
+Final answer MUST be a JSON object:
+{
+  "valid": true/false,
+  "issues": [{"code": "...", "detail": "...", "severity": "blocking|warning"}],
+  "suggestions": ["..."],
+  "overall_score": 0-100
+}"""
+
+
 class ValidatorAgent(BaseAgent):
-    def __init__(self, llm: Any) -> None:
+    def __init__(self, llm: Any, registry: LocalToolRegistry | None = None) -> None:
         super().__init__("ValidatorAgent", llm)
+        self.registry = registry
+        self._react_graph = None
+
+    def _ensure_graph(self, context: AgentContext):
+        if self._react_graph is None:
+            tools = build_validator_tools(self.registry, context)
+            self._react_graph = build_react_agent(self.llm, tools=tools, prompt=VALIDATOR_SYSTEM_PROMPT)
+        return self._react_graph
 
     def validate(
         self,
@@ -18,26 +50,27 @@ class ValidatorAgent(BaseAgent):
         weather: dict[str, Any],
         candidate_lookup: dict[str, dict] | None = None,
         route: dict[str, Any] | None = None,
+        context: AgentContext | None = None,
     ) -> dict[str, Any]:
-        system_prompt = (
-            "You are a plan validator for a local-life planner. Evaluate the itinerary holistically. "
-            "Check: 1) Do activities match the scenario? 2) Are times reasonable? 3) Is budget appropriate? "
-            "4) Does weather conflict with outdoor activities? 5) Is the route efficient? "
-            "Return JSON: {\"valid\": bool, \"issues\": [{\"code\": \"...\", \"detail\": \"...\", \"severity\": \"blocking|warning\"}], "
-            "\"suggestions\": [\"...\"], \"overall_score\": int(0-100)}"
+        context = context or AgentContext(user_id="default")
+
+        task_message = (
+            f"Validate this itinerary.\n\n"
+            f"Itinerary:\n{json.dumps([to_dict(step) for step in itinerary], ensure_ascii=False)}\n\n"
+            f"Constraints:\n{json.dumps(constraints_data, ensure_ascii=False)}\n\n"
+            f"Weather:\n{json.dumps(weather, ensure_ascii=False)}\n\n"
+            f"Route:\n{json.dumps(route or {}, ensure_ascii=False)}"
         )
-        context = {
-            "itinerary": [to_dict(step) for step in itinerary],
-            "constraints": constraints_data,
-            "weather": weather,
-        }
 
-        result = self.run_llm(system_prompt, context)
-        if result and "valid" in result:
-            return result
-
-        # Fallback: rule-based validation
-        return self._rule_based_fallback(itinerary, constraints_data, weather, candidate_lookup, route)
+        try:
+            graph = self._ensure_graph(context)
+            result = graph.invoke({"messages": [{"role": "user", "content": task_message}]})
+            final_message = result["messages"][-1].content
+            parsed = json.loads(extract_json_object(final_message))
+            return parsed
+        except Exception:
+            # Fallback to rule-based validation
+            return self._rule_based_fallback(itinerary, constraints_data, weather, candidate_lookup, route)
 
     def _rule_based_fallback(
         self,
