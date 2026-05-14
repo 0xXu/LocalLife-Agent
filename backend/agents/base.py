@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any
+from typing import Any, Callable
 
 from backend.models.schemas import TraceStep
 from backend.observability.spans import span
@@ -42,3 +42,15 @@ def extract_json_object(content: str) -> str:
     if start == -1 or end == -1 or end < start:
         raise ValueError("llm_json_not_found")
     return stripped[start:end + 1]
+
+
+def build_react_agent(llm, tools: list, prompt: str | Callable, checkpointer=None):
+    """Build a ReAct agent subgraph. Wraps create_react_agent for future migration."""
+    from langgraph.prebuilt import create_react_agent
+
+    return create_react_agent(
+        llm,
+        tools=tools,
+        prompt=prompt,
+        checkpointer=checkpointer,
+    )
