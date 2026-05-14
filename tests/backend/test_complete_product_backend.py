@@ -1,5 +1,6 @@
 import json
 import unittest
+from tempfile import TemporaryDirectory
 
 from fastapi.testclient import TestClient
 
@@ -7,8 +8,9 @@ from backend.api.app import create_app
 from backend.data.catalog import LocalDataCatalog
 from backend.llm.config import LLMConfig
 from backend.services.planning_service import PlanningService
+from backend.services.workflow_service import WorkflowService
 from backend.tools.registry import LocalToolRegistry
-from tests.backend.helpers import configured_test_llm_config, planning_service_with_fake_llm
+from tests.backend.helpers import RuleBasedLLMClient, configured_test_llm_config, planning_service_with_fake_llm
 
 
 class OpenDomainLLMClient:
@@ -233,7 +235,21 @@ class CompleteBackendTest(unittest.TestCase):
 
 class CompleteApiTest(unittest.TestCase):
     def setUp(self):
-        self.client = TestClient(create_app(planning_service_with_fake_llm()))
+        self._tmp = TemporaryDirectory()
+        workflow = WorkflowService(
+            repository_path=f"{self._tmp.name}/workflow.sqlite",
+            llm_config=LLMConfig(
+                base_url="https://example.test/v1",
+                api_key="secret",
+                model="test-model",
+                remote_enabled=True,
+            ),
+        )
+        workflow.pipeline.llm = RuleBasedLLMClient()
+        self.client = TestClient(create_app(planning_service_with_fake_llm(), workflow_service=workflow))
+
+    def tearDown(self):
+        self._tmp.cleanup()
 
     def request(self, method, path, body=None):
         response = self.client.request(method, path, json=body)
@@ -250,28 +266,37 @@ class CompleteApiTest(unittest.TestCase):
 
         status, fetched = self.request("GET", f"/api/plans/{plan_id}")
         self.assertEqual(status, 200)
+        self.assertEqual(fetched["plan_id"], plan_id)
         self.assertEqual(fetched["plan"]["id"], plan_id)
 
         status, patched = self.request("PATCH", f"/api/plans/{plan_id}/constraints", {"radius_km": 3})
-        self.assertEqual(status, 200)
-        self.assertEqual(patched["constraints"]["constraints"]["radius_km"], 3)
+        self.assertEqual(status, 410)
+        self.assertEqual(patched["error"]["code"], "legacy_endpoint_disabled")
 
         status, alternatives = self.request("POST", f"/api/plans/{plan_id}/alternatives", {})
+        self.assertEqual(status, 410)
+        self.assertEqual(alternatives["error"]["code"], "legacy_endpoint_disabled")
+
+        status, versions = self.request("GET", f"/api/plans/{plan_id}/versions")
         self.assertEqual(status, 200)
-        self.assertGreaterEqual(len(alternatives["variants"]), 3)
-        self.assertGreaterEqual(len(alternatives["alternatives"]), 3)
+        self.assertEqual(versions["plan_id"], plan_id)
+        self.assertEqual(len(versions["versions"]), 1)
 
         status, rejected = self.request("POST", f"/api/plans/{plan_id}/execute", {"confirmed": False})
-        self.assertEqual(status, 403)
-        self.assertEqual(rejected["error"]["code"], "confirmation_required")
+        self.assertEqual(status, 410)
+        self.assertEqual(rejected["error"]["code"], "legacy_endpoint_disabled")
 
         status, confirmed = self.request("POST", f"/api/plans/{plan_id}/confirm", {"confirmed": True})
-        self.assertEqual(status, 200)
-        self.assertEqual(confirmed["plan"]["status"], "confirmed")
+        self.assertEqual(status, 410)
+        self.assertEqual(confirmed["error"]["code"], "legacy_endpoint_disabled")
 
         status, executed = self.request("POST", f"/api/plans/{plan_id}/execute", {"confirmed": True})
-        self.assertEqual(status, 200)
-        self.assertEqual(executed["plan"]["status"], "completed")
+        self.assertEqual(status, 410)
+        self.assertEqual(executed["error"]["code"], "legacy_endpoint_disabled")
+
+        status, revised = self.request("POST", f"/api/plans/{plan_id}/revise", {"feedback_text": "shorter"})
+        self.assertEqual(status, 410)
+        self.assertEqual(revised["error"]["code"], "legacy_endpoint_disabled")
 
     def test_api_errors_are_stable_json(self):
         status, data = self.request("GET", "/api/plans/missing-plan")
@@ -279,5 +304,5 @@ class CompleteApiTest(unittest.TestCase):
         self.assertEqual(data["error"]["code"], "plan_not_found")
 
         status, data = self.request("PATCH", "/api/plans/missing-plan/constraints", {"radius_km": -1})
-        self.assertEqual(status, 404)
-        self.assertEqual(data["error"]["code"], "plan_not_found")
+        self.assertEqual(status, 410)
+        self.assertEqual(data["error"]["code"], "legacy_endpoint_disabled")

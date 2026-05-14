@@ -12,16 +12,17 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from backend.llm import LLMConfig
 from backend.profile.models import UserPreference, UserProfile
-from backend.services import PlanningService
+from backend.services import PlanningService, WorkflowService
 
 
-def create_app(service: PlanningService | None = None) -> FastAPI:
+def create_app(service: PlanningService | None = None, workflow_service: WorkflowService | None = None) -> FastAPI:
     api = FastAPI(
         title="WeekendPilot Backend",
         description="FastAPI backend for the WeekendPilot local-life planning workflow.",
         version="0.1.0",
     )
     api.state.planning_service = service or PlanningService()
+    api.state.workflow_service = workflow_service or WorkflowService()
     api.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -89,20 +90,33 @@ def create_app(service: PlanningService | None = None) -> FastAPI:
 
     @api.get("/api/plans")
     async def list_plans(request: Request) -> dict[str, Any]:
-        return planning_service(request).list_plans()
+        listed = workflow(request).list_plans()
+        return {
+            "plans": [_workflow_summary(summary) for summary in listed["plans"]],
+            "total": listed["total"],
+        }
 
-    @api.get("/api/plans/{plan_id}")
-    async def get_plan(plan_id: str, request: Request) -> dict[str, Any]:
-        return planning_service(request).get_plan(plan_id)
+    @api.post("/api/plans/runs")
+    async def start_plan_run(request: Request) -> dict[str, Any]:
+        body = await read_json_object(request)
+        return workflow(request).start_run(
+            str(body.get("goal", "")),
+            user_id=str(body.get("user_id", "local_demo_user")),
+        )
 
     @api.post("/api/plans/build")
     async def build_plan(request: Request) -> dict[str, Any]:
         body = await read_json_object(request)
-        return planning_service(request).build_plan(str(body.get("goal", "")), user_id=str(body.get("user_id", "local_demo_user")))
+        started = workflow(request).start_run(
+            str(body.get("goal", "")),
+            user_id=str(body.get("user_id", "local_demo_user")),
+        )
+        built = workflow(request).get_plan(started["plan_id"])
+        return {**started, **workflow_plan_payload(built)}
 
     @api.get("/api/plans/build/stream")
     async def build_plan_stream(goal: str, request: Request) -> StreamingResponse:
-        svc = planning_service(request)
+        svc = workflow(request)
         queue: asyncio.Queue[tuple[str, str] | tuple[str, str, str] | None] = asyncio.Queue()
         loop = asyncio.get_running_loop()
 
@@ -120,7 +134,8 @@ def create_app(service: PlanningService | None = None) -> FastAPI:
 
             def run():
                 try:
-                    result_holder["data"] = svc.build_plan(goal, on_progress=on_progress, on_token=on_token)
+                    started = svc.start_run(goal)
+                    result_holder["data"] = {**started, **workflow_plan_payload(svc.get_plan(started["plan_id"]))}
                 except Exception as exc:
                     error_holder["error"] = str(exc)
                 finally:
@@ -153,51 +168,59 @@ def create_app(service: PlanningService | None = None) -> FastAPI:
             },
         )
 
+    @api.get("/api/plans/{plan_id}/versions")
+    async def plan_versions(plan_id: str, request: Request) -> dict[str, Any]:
+        workflow(request).get_plan(plan_id)
+        return {"plan_id": plan_id, "versions": workflow(request).repository.list_revisions(plan_id)}
+
+    @api.post("/api/plans/{plan_id}/resume")
+    async def resume_plan(plan_id: str, request: Request) -> dict[str, Any]:
+        body = await read_json_object(request)
+        return workflow_plan_payload(workflow(request).resume(plan_id, body))
+
+    @api.get("/api/plans/{plan_id}")
+    async def get_plan(plan_id: str, request: Request) -> dict[str, Any]:
+        return workflow_plan_payload(workflow(request).get_plan(plan_id))
+
     @api.post("/api/plans/{plan_id}/alternatives")
-    async def build_alternatives(plan_id: str, request: Request) -> dict[str, Any]:
-        response = planning_service(request).build_alternatives(plan_id)
-        response["variants"] = response.get("alternatives", [])
-        return response
+    async def build_alternatives(plan_id: str, _request: Request) -> JSONResponse:
+        _ = plan_id
+        return error_response("legacy_endpoint_disabled", 410)
 
     @api.post("/api/plans/{plan_id}/confirm")
-    async def confirm_plan(plan_id: str, request: Request) -> dict[str, Any]:
-        body = await read_json_object(request)
-        return planning_service(request).confirm_plan(plan_id, bool(body.get("confirmed")))
+    async def confirm_plan(plan_id: str, _request: Request) -> JSONResponse:
+        _ = plan_id
+        return error_response("legacy_endpoint_disabled", 410)
 
     @api.post("/api/plans/{plan_id}/execute")
-    async def execute_plan(plan_id: str, request: Request) -> dict[str, Any]:
-        body = await read_json_object(request)
-        selected_action_ids = body.get("selected_action_ids")
-        return planning_service(request).execute_plan(
-            plan_id,
-            bool(body.get("confirmed")),
-            selected_action_ids=selected_action_ids if isinstance(selected_action_ids, list) else None,
-            idempotency_key=str(body.get("idempotency_key", "")),
-        )
+    async def execute_plan(plan_id: str, _request: Request) -> JSONResponse:
+        _ = plan_id
+        return error_response("legacy_endpoint_disabled", 410)
 
     @api.post("/api/plans/{plan_id}/recover")
-    async def recover_plan(plan_id: str, request: Request) -> dict[str, Any]:
-        body = await read_json_object(request)
-        return planning_service(request).recover_plan(plan_id, str(body.get("reason", "restaurant_unavailable")))
+    async def recover_plan(plan_id: str, _request: Request) -> JSONResponse:
+        _ = plan_id
+        return error_response("legacy_endpoint_disabled", 410)
 
     @api.post("/api/plans/{plan_id}/feedback")
-    async def plan_feedback(plan_id: str, request: Request) -> dict[str, Any]:
-        body = await read_json_object(request)
-        return planning_service(request).revise_plan(plan_id, body)
+    async def plan_feedback(plan_id: str, _request: Request) -> JSONResponse:
+        _ = plan_id
+        return error_response("legacy_endpoint_disabled", 410)
 
     @api.post("/api/plans/{plan_id}/revise")
-    async def revise_plan(plan_id: str, request: Request) -> dict[str, Any]:
-        body = await read_json_object(request)
-        return planning_service(request).revise_plan(plan_id, body)
+    async def revise_plan(plan_id: str, _request: Request) -> JSONResponse:
+        _ = plan_id
+        return error_response("legacy_endpoint_disabled", 410)
 
     @api.get("/api/plans/{plan_id}/revisions")
-    async def plan_revisions(plan_id: str, request: Request) -> dict[str, Any]:
-        return planning_service(request).list_revisions(plan_id)
+    async def plan_revisions(plan_id: str, _request: Request) -> JSONResponse:
+        _ = plan_id
+        return error_response("legacy_endpoint_disabled", 410)
 
     @api.patch("/api/plans/{plan_id}/constraints")
-    async def patch_constraints(plan_id: str, request: Request) -> dict[str, Any]:
-        body = await read_json_object(request)
-        return planning_service(request).patch_constraints(plan_id, body)
+    async def patch_constraints(plan_id: str, _request: Request) -> JSONResponse:
+        _ = plan_id
+        return error_response("legacy_endpoint_disabled", 410)
 
     return api
 
@@ -217,6 +240,38 @@ async def read_json_object(request: Request) -> dict[str, Any]:
 
 def planning_service(request: Request) -> PlanningService:
     return request.app.state.planning_service
+
+
+def workflow(request: Request) -> WorkflowService:
+    return request.app.state.workflow_service
+
+
+def workflow_plan_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    revision = dict(payload["revision"])
+    plan = dict(revision.get("plan", {}))
+    plan_id = str(payload["plan_id"])
+    phase = str(revision.get("phase", plan.get("status", "")))
+    plan["id"] = plan_id
+    plan["status"] = phase
+    revision["plan"] = plan
+    return {
+        **payload,
+        "revision": revision,
+        "plan": plan,
+        "pending_actions": payload.get("actions", []),
+    }
+
+
+def _workflow_summary(summary: dict[str, Any]) -> dict[str, Any]:
+    phase = str(summary.get("phase", ""))
+    timestamp = str(summary.get("created_at", ""))
+    return {
+        **summary,
+        "status": phase,
+        "created_at": timestamp,
+        "updated_at": str(summary.get("updated_at", timestamp)),
+        "tags": summary.get("tags", ["本地生活"]),
+    }
 
 
 def error_response(error: str, status_code: int) -> JSONResponse:

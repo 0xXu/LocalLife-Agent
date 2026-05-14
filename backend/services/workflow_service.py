@@ -502,6 +502,9 @@ class WorkflowService:
             "id": revision["plan_id"],
             "revision_id": revision["revision_id"],
             "phase": revision["phase"],
+            "created_at": str(revision.get("created_at", "")),
+            "updated_at": str(revision.get("created_at", "")),
+            "tags": ["本地生活"],
             "title": str(plan.get("title", "")),
             "summary": str(plan.get("summary", "")),
         }

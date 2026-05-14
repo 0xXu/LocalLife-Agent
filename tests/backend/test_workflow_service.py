@@ -94,6 +94,9 @@ def test_start_run_creates_durable_ids_and_latest_revision(tmp_path: Path):
             "id": result["plan_id"],
             "revision_id": plan["revision"]["revision_id"],
             "phase": "pending_approval",
+            "created_at": plan["revision"]["created_at"],
+            "updated_at": plan["revision"]["created_at"],
+            "tags": ["本地生活"],
             "title": plan["revision"]["plan"]["title"],
             "summary": plan["revision"]["plan"]["summary"],
         }
