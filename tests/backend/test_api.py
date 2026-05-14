@@ -51,28 +51,42 @@ class BackendApiTest(unittest.TestCase):
         )
         return response.status_code, response.json()
 
-    def test_openapi_documents_required_paths(self):
+    def start_run(self, goal="family afternoon with child age 5"):
+        status, started = self.request("POST", "/api/plans/runs", {"goal": goal, "user_id": "user_1"})
+        self.assertEqual(status, 200)
+        return started
+
+    def test_openapi_documents_graph_run_paths_and_removes_legacy_paths(self):
         response = self.client.get("/openapi.json")
 
         self.assertEqual(response.status_code, 200)
         paths = response.json()["paths"]
         for path in [
             "/api/health",
-            "/api/plans/build",
+            "/api/plans/runs",
+            "/api/plans/runs/{run_id}/stream",
             "/api/plans/{plan_id}",
+            "/api/plans/{plan_id}/resume",
+            "/api/plans/{plan_id}/versions",
+            "/api/tool-schemas",
+            "/api/traces/{plan_id}",
+        ]:
+            self.assertIn(path, paths)
+        for path in [
+            "/api/plans/build",
+            "/api/plans/build/stream",
             "/api/plans/{plan_id}/confirm",
             "/api/plans/{plan_id}/execute",
             "/api/plans/{plan_id}/recover",
             "/api/plans/{plan_id}/constraints",
             "/api/plans/{plan_id}/alternatives",
-            "/api/tool-schemas",
-            "/api/traces/{plan_id}",
+            "/api/plans/{plan_id}/revise",
         ]:
-            self.assertIn(path, paths)
+            self.assertNotIn(path, paths)
 
     def test_cors_preflight_allows_frontend_origin(self):
         response = self.client.options(
-            "/api/plans/build",
+            "/api/plans/runs",
             headers={
                 "Origin": "http://127.0.0.1:4173",
                 "Access-Control-Request-Method": "POST",
@@ -92,23 +106,17 @@ class BackendApiTest(unittest.TestCase):
         self.assertEqual(data["mode"], "fastapi-python-service")
         self.assertGreaterEqual(data["agents"], 7)
 
-    def test_build_and_disabled_execute_endpoints(self):
-        status, built = self.request(
-            "POST",
-            "/api/plans/build",
-            {"goal": "今天下午带 5 岁孩子出门，老婆减脂，别太远"},
-        )
-        self.assertEqual(status, 200)
-        self.assertEqual(built["plan"]["status"], "pending_approval")
-        plan_id = built["plan"]["id"]
+    def test_run_api_and_removed_execute_endpoint(self):
+        started = self.start_run()
+        plan_id = started["plan_id"]
 
         status, executed = self.request(
             "POST",
             f"/api/plans/{plan_id}/execute",
             {"confirmed": True},
         )
-        self.assertEqual(status, 410)
-        self.assertEqual(executed["error"]["code"], "legacy_endpoint_disabled")
+        self.assertEqual(status, 404)
+        self.assertEqual(executed["error"]["code"], "not_found")
 
         status, fetched = self.request("GET", f"/api/plans/{plan_id}")
         self.assertEqual(status, 200)
@@ -116,13 +124,8 @@ class BackendApiTest(unittest.TestCase):
         self.assertEqual(fetched["plan"]["id"], plan_id)
 
     def test_plan_list_endpoint_uses_workflow_backend_plans(self):
-        status, built = self.request(
-            "POST",
-            "/api/plans/build",
-            {"goal": "今天下午朋友4个人出去玩，先活动再吃饭"},
-        )
-        self.assertEqual(status, 200)
-        plan_id = built["plan"]["id"]
+        started = self.start_run("friends afternoon, four adults, activity before dinner")
+        plan_id = started["plan_id"]
 
         status, listed = self.request("GET", "/api/plans")
 
@@ -135,11 +138,12 @@ class BackendApiTest(unittest.TestCase):
         self.assertIn("tags", listed["plans"][0])
         self.assertIn(listed["plans"][0]["phase"], {"pending_approval", "partially_completed"})
 
-    def test_execute_legacy_endpoint_is_disabled_with_selected_action_ids(self):
-        status, built = self.request("POST", "/api/plans/build", {"goal": "我想找个地方写代码一小时"})
+    def test_execute_legacy_endpoint_is_removed_with_selected_action_ids(self):
+        started = self.start_run("write code for one hour")
+        plan_id = started["plan_id"]
+        status, plan = self.request("GET", f"/api/plans/{plan_id}")
         self.assertEqual(status, 200)
-        plan_id = built["plan"]["id"]
-        action_id = built["pending_actions"][0]["action_id"]
+        action_id = plan["actions"][0]["action_id"]
 
         status, executed = self.request(
             "POST",
@@ -147,11 +151,11 @@ class BackendApiTest(unittest.TestCase):
             {"confirmed": True, "selected_action_ids": [action_id], "idempotency_key": "test-idem-1"},
         )
 
-        self.assertEqual(status, 410)
-        self.assertEqual(executed["error"]["code"], "legacy_endpoint_disabled")
+        self.assertEqual(status, 404)
+        self.assertEqual(executed["error"]["code"], "not_found")
 
     def test_invalid_json_returns_400_response(self):
-        status, data = self.raw_request("POST", "/api/plans/build", "{bad json")
+        status, data = self.raw_request("POST", "/api/plans/runs", "{bad json")
 
         self.assertEqual(status, 400)
         self.assertEqual(data["error"]["code"], "invalid_json")
@@ -171,7 +175,7 @@ class BackendApiTest(unittest.TestCase):
         workflow.pipeline.llm = FailingLLMClient()
         client = TestClient(create_app(service, workflow_service=workflow), raise_server_exceptions=False)
 
-        response = client.post("/api/plans/build", json={"goal": "friends dinner this afternoon"})
+        response = client.post("/api/plans/runs", json={"goal": "friends dinner this afternoon"})
 
         self.assertEqual(response.status_code, 500)
         data = response.json()

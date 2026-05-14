@@ -260,9 +260,9 @@ class CompleteApiTest(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(len(schemas["tools"]), 15)
 
-        status, built = self.request("POST", "/api/plans/build", {"goal": "friends afternoon, four adults, activity before dinner"})
+        status, built = self.request("POST", "/api/plans/runs", {"goal": "friends afternoon, four adults, activity before dinner", "user_id": "user_1"})
         self.assertEqual(status, 200)
-        plan_id = built["plan"]["id"]
+        plan_id = built["plan_id"]
 
         status, fetched = self.request("GET", f"/api/plans/{plan_id}")
         self.assertEqual(status, 200)
@@ -270,12 +270,12 @@ class CompleteApiTest(unittest.TestCase):
         self.assertEqual(fetched["plan"]["id"], plan_id)
 
         status, patched = self.request("PATCH", f"/api/plans/{plan_id}/constraints", {"radius_km": 3})
-        self.assertEqual(status, 410)
-        self.assertEqual(patched["error"]["code"], "legacy_endpoint_disabled")
+        self.assertEqual(status, 404)
+        self.assertEqual(patched["error"]["code"], "not_found")
 
         status, alternatives = self.request("POST", f"/api/plans/{plan_id}/alternatives", {})
-        self.assertEqual(status, 410)
-        self.assertEqual(alternatives["error"]["code"], "legacy_endpoint_disabled")
+        self.assertEqual(status, 404)
+        self.assertEqual(alternatives["error"]["code"], "not_found")
 
         status, versions = self.request("GET", f"/api/plans/{plan_id}/versions")
         self.assertEqual(status, 200)
@@ -283,20 +283,20 @@ class CompleteApiTest(unittest.TestCase):
         self.assertEqual(len(versions["versions"]), 1)
 
         status, rejected = self.request("POST", f"/api/plans/{plan_id}/execute", {"confirmed": False})
-        self.assertEqual(status, 410)
-        self.assertEqual(rejected["error"]["code"], "legacy_endpoint_disabled")
+        self.assertEqual(status, 404)
+        self.assertEqual(rejected["error"]["code"], "not_found")
 
         status, confirmed = self.request("POST", f"/api/plans/{plan_id}/confirm", {"confirmed": True})
-        self.assertEqual(status, 410)
-        self.assertEqual(confirmed["error"]["code"], "legacy_endpoint_disabled")
+        self.assertEqual(status, 404)
+        self.assertEqual(confirmed["error"]["code"], "not_found")
 
         status, executed = self.request("POST", f"/api/plans/{plan_id}/execute", {"confirmed": True})
-        self.assertEqual(status, 410)
-        self.assertEqual(executed["error"]["code"], "legacy_endpoint_disabled")
+        self.assertEqual(status, 404)
+        self.assertEqual(executed["error"]["code"], "not_found")
 
         status, revised = self.request("POST", f"/api/plans/{plan_id}/revise", {"feedback_text": "shorter"})
-        self.assertEqual(status, 410)
-        self.assertEqual(revised["error"]["code"], "legacy_endpoint_disabled")
+        self.assertEqual(status, 404)
+        self.assertEqual(revised["error"]["code"], "not_found")
 
     def test_api_errors_are_stable_json(self):
         status, data = self.request("GET", "/api/plans/missing-plan")
@@ -304,5 +304,5 @@ class CompleteApiTest(unittest.TestCase):
         self.assertEqual(data["error"]["code"], "plan_not_found")
 
         status, data = self.request("PATCH", "/api/plans/missing-plan/constraints", {"radius_km": -1})
-        self.assertEqual(status, 410)
-        self.assertEqual(data["error"]["code"], "legacy_endpoint_disabled")
+        self.assertEqual(status, 404)
+        self.assertEqual(data["error"]["code"], "not_found")
