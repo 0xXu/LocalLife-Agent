@@ -21,7 +21,27 @@ class RuleBasedLLMClient:
 
     def chat_stream(self, messages):
         self.calls.append(messages)
-        goal = messages[-1]["content"]
+        system = messages[0]["content"] if messages else ""
+        lower = system.lower()
+
+        # Ranker agent prompt
+        if "ranker" in lower or "planning ranker" in lower:
+            # Return no "ranked" key -> triggers deterministic fallback in RankerAgent
+            yield json.dumps({"reasoning": "test: using deterministic fallback"}, ensure_ascii=False)
+            return
+
+        # Validator agent prompt
+        if "validator" in lower or "plan validator" in lower:
+            yield json.dumps({"valid": True, "issues": [], "suggestions": [], "overall_score": 88})
+            return
+
+        # Recovery agent prompt
+        if "recovery" in lower:
+            yield json.dumps({"action": "adjust", "reason": "Minor fix"})
+            return
+
+        # Default: intent parsing (existing behavior)
+        goal = messages[-1]["content"] if len(messages) > 1 else ""
         constraints = deterministic_constraints(goal)
         normalized = goal.lower()
         if "friends" in normalized:
