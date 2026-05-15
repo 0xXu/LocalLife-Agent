@@ -28,36 +28,28 @@ export function streamRunUpdates(
   runId: string,
   callbacks: {
     onGraphUpdate?: (event: GraphRunEvent) => void | Promise<void>;
+    onFinal?: (event: GraphRunEvent) => void | Promise<void>;
     onError?: (error: Error) => void;
   },
 ) {
   const es = new EventSource(resolveApiUrl(`/api/plans/runs/${runId}/stream`));
 
-  const timeoutId = setTimeout(() => {
-    if (es.readyState !== EventSource.CLOSED) {
-      es.close();
-      callbacks.onError?.(new Error('SSE stream timeout after 60s'));
-    }
-  }, 60_000);
-
   es.addEventListener('graph_update', (event) => {
     const data = JSON.parse((event as MessageEvent).data) as GraphRunEvent;
     void callbacks.onGraphUpdate?.(data);
     if (data.is_final) {
-      clearTimeout(timeoutId);
       es.close();
+      void callbacks.onFinal?.(data);
     }
   });
 
   es.onerror = () => {
     if (es.readyState === EventSource.CLOSED) {
-      clearTimeout(timeoutId);
       callbacks.onError?.(new Error('SSE connection failed'));
     }
   };
 
   return () => {
-    clearTimeout(timeoutId);
     es.close();
   };
 }

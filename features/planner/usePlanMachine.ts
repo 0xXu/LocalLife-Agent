@@ -215,15 +215,40 @@ export function usePlanMachine() {
       if (!mountedRef.current) return;
       dispatch({ type: 'RUN_STARTED', run });
 
-      if (typeof EventSource !== 'undefined') {
+      // Wait for the SSE is_final event before fetching the plan.
+      // The pipeline runs in a background thread; the plan won't exist
+      // in the DB until the pipeline completes.
+      const finalEvent = await new Promise<GraphRunEvent>((resolve, reject) => {
+        if (typeof EventSource === 'undefined') {
+          reject(new Error('EventSource not available'));
+          return;
+        }
+        let settled = false;
         stopStreamRef.current = streamRunUpdates(run.run_id, {
           onGraphUpdate: (event) => {
             if (mountedRef.current) dispatch({ type: 'GRAPH_UPDATED', event });
           },
+          onFinal: (event) => {
+            if (!settled) {
+              settled = true;
+              resolve(event);
+            }
+          },
           onError: (error) => {
-            if (mountedRef.current) dispatch({ type: 'UPDATE_PROGRESS', step: error.message });
+            if (!settled) {
+              settled = true;
+              reject(error);
+            }
           },
         });
+      });
+
+      if (!mountedRef.current) return;
+
+      // If the pipeline failed, don't try to fetch the plan.
+      if (finalEvent.phase === 'failed') {
+        dispatch({ type: 'PLAN_FAILED', error: String(finalEvent.error ?? '计划生成失败') });
+        return;
       }
 
       const result = await getPlan(run.plan_id);

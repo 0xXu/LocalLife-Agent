@@ -45,7 +45,7 @@ class BackendApiTest(unittest.TestCase):
         return response.status_code, response.json()
 
     def start_run(self, goal="family afternoon with child age 5"):
-        status, started = self.request("POST", "/api/plans/runs", {"goal": goal, "user_id": "user_1"})
+        status, started = self.request("POST", "/api/plans/runs", {"goal": goal, "user_id": "user_1", "sync": True})
         self.assertEqual(status, 200)
         return started
 
@@ -166,7 +166,7 @@ class BackendApiTest(unittest.TestCase):
         workflow.pipeline.chat_model = FailingChatModel()
         client = TestClient(create_app(workflow), raise_server_exceptions=False)
 
-        response = client.post("/api/plans/runs", json={"goal": "friends dinner this afternoon"})
+        response = client.post("/api/plans/runs", json={"goal": "friends dinner this afternoon", "sync": True})
 
         self.assertEqual(response.status_code, 500)
         data = response.json()

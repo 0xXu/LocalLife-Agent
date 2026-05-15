@@ -265,6 +265,7 @@ export const GraphRunEventSchema = z.object({
   step_label: z.string().optional(),
   step_detail: z.string().optional(),
   is_final: z.boolean().optional(),
+  error: z.string().optional(),
 });
 
 export const RecoveryDiffSchema = z.object({

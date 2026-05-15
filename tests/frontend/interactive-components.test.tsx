@@ -18,7 +18,7 @@ const { DietSection } = await import('../../components/settings/DietSection');
 const { LocationSection } = await import('../../components/settings/LocationSection');
 const { SettingsView } = await import('../../components/settings/SettingsView');
 
-globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+(globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
 
 test('home composer gives immediate plan and voice feedback', async () => {
   const planned: string[] = [];
@@ -197,8 +197,8 @@ function render(element: React.ReactElement) {
   globalThis.Event = dom.window.Event;
   globalThis.KeyboardEvent = dom.window.KeyboardEvent;
   globalThis.MouseEvent = dom.window.MouseEvent;
-  dom.window.HTMLElement.prototype.attachEvent = () => {};
-  dom.window.HTMLElement.prototype.detachEvent = () => {};
+  (dom.window.HTMLElement.prototype as unknown as Record<string, unknown>).attachEvent = () => {};
+  (dom.window.HTMLElement.prototype as unknown as Record<string, unknown>).detachEvent = () => {};
 
   const container = dom.window.document.getElementById('root')!;
   const root = createRoot(container);
@@ -270,7 +270,7 @@ function makePlanSummary() {
   return {
     id: 'plan_001',
     title: 'Family science half day',
-    status: 'saved',
+    status: 'saved' as const,
     summary: 'Science museum and nearby cafe.',
     created_at: '2026-05-08T10:00:00Z',
     updated_at: '2026-05-08T10:30:00Z',
@@ -278,7 +278,7 @@ function makePlanSummary() {
     location: 'city center',
     estimated_cost: '320',
     itinerary_count: 4,
-  } as const;
+  };
 }
 
 function makeConstraintsFixture() {

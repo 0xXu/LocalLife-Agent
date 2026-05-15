@@ -95,11 +95,10 @@ def create_app(workflow_service: WorkflowService | None = None) -> FastAPI:
         body = await read_json_object(request)
         goal = str(body.get("goal", ""))
         user_id = str(body.get("user_id", "local_demo_user"))
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(
-            None,
-            lambda: workflow(request).start_run(goal, user_id=user_id),
-        )
+        svc = workflow(request)
+        if body.get("sync"):
+            return svc.start_run(goal, user_id=user_id)
+        return svc.start_run_background(goal, user_id=user_id)
 
     @api.get("/api/plans/runs/{run_id}/stream")
     async def stream_plan_run(run_id: str, request: Request) -> StreamingResponse:

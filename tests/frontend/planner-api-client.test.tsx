@@ -135,6 +135,7 @@ test('streamRunUpdates closes compact graph streams after the first graph update
     plan_id: 'plan_1',
     revision_id: 'rev_1',
     phase: 'pending_approval',
+    is_final: true,
     revision: {
       revision_id: 'rev_1',
       phase: 'pending_approval',

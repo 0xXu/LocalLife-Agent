@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import threading
 from collections.abc import AsyncIterator, Mapping
 from datetime import date, timedelta
 from pathlib import Path
@@ -10,6 +11,7 @@ from backend.actions.durable_ledger import DurableActionLedger
 from backend.actions.policy import build_executable_actions
 from backend.data.catalog import LocalDataCatalog
 from backend.graph.events import (
+    _RunEventQueue,
     get_or_create_run_queue,
     progress_sse_event,
     remove_run_queue,
@@ -58,6 +60,7 @@ class WorkflowService:
         self.profile_store = UserProfileStore(profile_store_path or Path(".weekendpilot/profiles.sqlite"))
 
     def start_run(self, goal: str, user_id: str = "local_demo_user") -> dict[str, str]:
+        """Start a planning run. Synchronous — waits for pipeline to complete."""
         if not goal.strip():
             raise ValueError("validation_error")
 
@@ -68,97 +71,145 @@ class WorkflowService:
 
         self.repository.create_thread(thread_id, run_id, plan_id, user_id, PHASE_PLANNING)
 
-        # --- Per-run event queue for real-time SSE progress ---
         queue = get_or_create_run_queue(run_id)
-        event_counter = {"n": 0}
-
-        def _on_progress(label: str, detail: str) -> None:
-            event_counter["n"] += 1
-            event_id = f"evt_{event_counter['n']:06d}"
-            queue.put(progress_sse_event(event_id, label, detail, PHASE_PLANNING))
-
-        state = self.pipeline.build(goal, on_progress=_on_progress)
-        state.plan_id = plan_id
-
-        if state.status == PHASE_NEEDS_CLARIFICATION:
-            phase = PHASE_NEEDS_CLARIFICATION
-            constraints = to_dict(state.constraints) if state.constraints else {}
-            missing_fields = list(state.context.get("missing_fields", []))
-            plan_payload = {
-                "id": plan_id,
-                "status": PHASE_NEEDS_CLARIFICATION,
-                "missing_fields": missing_fields,
-                "clarifying_questions": list(state.context.get("clarifying_questions", [])),
-            }
-            validation = {
-                "valid": False,
-                "blocking": [{"code": PHASE_NEEDS_CLARIFICATION, "missing_fields": missing_fields}],
-                "warnings": [],
-            }
-            actions: list[dict[str, Any]] = []
-        else:
-            plan_payload = state.plan_dict()
-            plan_payload["id"] = plan_id
-            if state.route:
-                plan_payload["route"] = state.route
-            self._ensure_origin_route_leg(plan_payload)
-            self._sync_route_totals(plan_payload)
-
-            constraints = dict(plan_payload.get("constraints") or {})
-            constraints["user_id"] = user_id
-
-            candidate_lookup = self._candidate_lookup(state.ranked)
-            if self._uses_seed_catalog(candidate_lookup):
-                self._normalize_seed_catalog_plan_for_validation(plan_payload, candidate_lookup, constraints)
-            actions = build_executable_actions(revision_id, plan_payload, candidate_lookup, constraints)
-            validation = validate_revision_for_approval(
-                plan_payload,
-                candidate_lookup,
-                constraints,
-                actions,
-                state.context.get("weather", {}),
-            )
-            if validation["valid"]:
-                phase = PHASE_PENDING_APPROVAL if actions else PHASE_READY
-            else:
-                phase = PHASE_VALIDATION_FAILED
-            plan_payload["actions"] = actions if phase == PHASE_PENDING_APPROVAL else []
-
-        self.repository.save_revision(
-            revision_id,
-            plan_id,
-            1,
-            phase,
-            goal,
-            constraints,
-            plan_payload,
-            validation,
-        )
-        if actions and phase == PHASE_PENDING_APPROVAL:
-            self.ledger.seed_actions(revision_id, actions)
-        self.repository.update_thread_status(thread_id, phase)
-
-        # --- Push terminal event into the run queue ---
-        event_counter["n"] += 1
-        final_event_id = f"evt_{event_counter['n']:06d}"
-        queue.put(sse_event(
-            final_event_id,
-            "graph_update",
-            {
-                "run_id": run_id,
-                "thread_id": thread_id,
-                "plan_id": plan_id,
-                "revision_id": revision_id,
-                "phase": phase,
-                "revision": self._response_revision(
-                    self.repository.get_latest_revision(plan_id), phase, actions
-                ),
-                "is_final": True,
-            },
-        ))
-        queue.close()
+        self._run_pipeline_worker(goal, user_id, run_id, thread_id, plan_id, revision_id, queue, reraise=True)
 
         return {"run_id": run_id, "thread_id": thread_id, "plan_id": plan_id}
+
+    def start_run_background(self, goal: str, user_id: str = "local_demo_user") -> dict[str, str]:
+        """Start a planning run in a background thread. Returns immediately."""
+        if not goal.strip():
+            raise ValueError("validation_error")
+
+        run_id = new_run_id()
+        thread_id = new_thread_id()
+        plan_id = new_plan_id()
+        revision_id = new_revision_id()
+
+        self.repository.create_thread(thread_id, run_id, plan_id, user_id, PHASE_PLANNING)
+
+        queue = get_or_create_run_queue(run_id)
+        thread = threading.Thread(
+            target=self._run_pipeline_worker,
+            args=(goal, user_id, run_id, thread_id, plan_id, revision_id, queue),
+            daemon=True,
+        )
+        thread.start()
+
+        return {"run_id": run_id, "thread_id": thread_id, "plan_id": plan_id}
+
+    def _run_pipeline_worker(
+        self,
+        goal: str,
+        user_id: str,
+        run_id: str,
+        thread_id: str,
+        plan_id: str,
+        revision_id: str,
+        queue: _RunEventQueue,
+        *,
+        reraise: bool = False,
+    ) -> None:
+        """Execute pipeline and push progress + terminal events to queue."""
+        try:
+            event_counter = {"n": 0}
+
+            def _on_progress(label: str, detail: str) -> None:
+                event_counter["n"] += 1
+                event_id = f"evt_{event_counter['n']:06d}"
+                queue.put(progress_sse_event(event_id, label, detail, PHASE_PLANNING))
+
+            state = self.pipeline.build(goal, on_progress=_on_progress)
+            state.plan_id = plan_id
+
+            if state.status == PHASE_NEEDS_CLARIFICATION:
+                phase = PHASE_NEEDS_CLARIFICATION
+                constraints = to_dict(state.constraints) if state.constraints else {}
+                missing_fields = list(state.context.get("missing_fields", []))
+                plan_payload = {
+                    "id": plan_id,
+                    "status": PHASE_NEEDS_CLARIFICATION,
+                    "missing_fields": missing_fields,
+                    "clarifying_questions": list(state.context.get("clarifying_questions", [])),
+                }
+                validation = {
+                    "valid": False,
+                    "blocking": [{"code": PHASE_NEEDS_CLARIFICATION, "missing_fields": missing_fields}],
+                    "warnings": [],
+                }
+                actions: list[dict[str, Any]] = []
+            else:
+                plan_payload = state.plan_dict()
+                plan_payload["id"] = plan_id
+                if state.route:
+                    plan_payload["route"] = state.route
+                self._ensure_origin_route_leg(plan_payload)
+                self._sync_route_totals(plan_payload)
+
+                constraints = dict(plan_payload.get("constraints") or {})
+                constraints["user_id"] = user_id
+
+                candidate_lookup = self._candidate_lookup(state.ranked)
+                if self._uses_seed_catalog(candidate_lookup):
+                    self._normalize_seed_catalog_plan_for_validation(plan_payload, candidate_lookup, constraints)
+                actions = build_executable_actions(revision_id, plan_payload, candidate_lookup, constraints)
+                validation = validate_revision_for_approval(
+                    plan_payload,
+                    candidate_lookup,
+                    constraints,
+                    actions,
+                    state.context.get("weather", {}),
+                )
+                if validation["valid"]:
+                    phase = PHASE_PENDING_APPROVAL if actions else PHASE_READY
+                else:
+                    phase = PHASE_VALIDATION_FAILED
+                plan_payload["actions"] = actions if phase == PHASE_PENDING_APPROVAL else []
+
+            self.repository.save_revision(
+                revision_id,
+                plan_id,
+                1,
+                phase,
+                goal,
+                constraints,
+                plan_payload,
+                validation,
+            )
+            if actions and phase == PHASE_PENDING_APPROVAL:
+                self.ledger.seed_actions(revision_id, actions)
+            self.repository.update_thread_status(thread_id, phase)
+
+            # Push terminal event
+            event_counter["n"] += 1
+            final_event_id = f"evt_{event_counter['n']:06d}"
+            queue.put(sse_event(
+                final_event_id,
+                "graph_update",
+                {
+                    "run_id": run_id,
+                    "thread_id": thread_id,
+                    "plan_id": plan_id,
+                    "revision_id": revision_id,
+                    "phase": phase,
+                    "revision": self._response_revision(
+                        self.repository.get_latest_revision(plan_id), phase, actions
+                    ),
+                    "is_final": True,
+                },
+            ))
+        except Exception as exc:
+            # Push error event so SSE consumer isn't stuck forever
+            queue.put(sse_event("evt_error", "graph_update", {
+                "run_id": run_id,
+                "phase": "failed",
+                "error": str(exc),
+                "is_final": True,
+            }))
+            if reraise:
+                raise
+        finally:
+            queue.close()
 
     def get_plan(self, plan_id: str) -> dict[str, Any]:
         revision = self.repository.get_latest_revision(plan_id)

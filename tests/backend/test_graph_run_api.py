@@ -52,7 +52,7 @@ def test_sse_event_serializes_sorted_unicode_raw_payload():
 def test_start_run_get_plan_versions_list_and_resume(tmp_path):
     client = make_client(tmp_path)
 
-    start = client.post("/api/plans/runs", json={"goal": "family with child wants low fat lunch", "user_id": "user_1"})
+    start = client.post("/api/plans/runs", json={"goal": "family with child wants low fat lunch", "user_id": "user_1", "sync": True})
     assert start.status_code == 200
     plan_id = start.json()["plan_id"]
     assert start.json()["run_id"].startswith("run_")
@@ -90,7 +90,7 @@ def test_start_run_get_plan_versions_list_and_resume(tmp_path):
 
 def test_run_stream_returns_stable_graph_update_without_creating_new_revision(tmp_path):
     client = make_client(tmp_path)
-    start = client.post("/api/plans/runs", json={"goal": "family with child wants low fat lunch", "user_id": "user_1"})
+    start = client.post("/api/plans/runs", json={"goal": "family with child wants low fat lunch", "user_id": "user_1", "sync": True})
     run_id = start.json()["run_id"]
     thread_id = start.json()["thread_id"]
     plan_id = start.json()["plan_id"]
