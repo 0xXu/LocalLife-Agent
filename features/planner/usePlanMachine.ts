@@ -46,6 +46,17 @@ export function getActionKey(action: Record<string, unknown>): string {
   return String(action.action_id ?? action.id ?? `${action.tool ?? action.type}_${action.target ?? action.label ?? action.place_id ?? 'default'}`);
 }
 
+const PHASE_TO_STEP: Record<string, number> = {
+  constraints_parsed: 0,    // step 0 done, step 1 running
+  context_ready: 1,         // step 1 done, step 2 running
+  candidates_ready: 2,      // step 2 done, step 3 running
+  ranked: 3,                // step 3 done, step 4 running
+  itinerary_built: 4,       // step 4 done, step 5 running
+  pending_confirmation: 5,  // all done
+  needs_clarification: -1,  // special path
+  recovering: 5,            // retry - step 5 running
+};
+
 function graphPhaseOf(result: PlanResponse): GraphPhase {
   return String(result.revision?.phase ?? result.plan.status ?? 'idle') as GraphPhase;
 }
@@ -92,14 +103,18 @@ function reducer(state: PlanState, action: Action): PlanState {
         progress: [...state.progress, 'Graph run created'],
         currentStep: Math.max(state.currentStep + 1, 1),
       };
-    case 'GRAPH_UPDATED':
+    case 'GRAPH_UPDATED': {
+      const mappedStep = PHASE_TO_STEP[action.event.phase] ?? state.currentStep;
+      const newStep = mappedStep >= 0 ? mappedStep + 1 : state.currentStep;
       return {
         ...state,
         graphPhase: action.event.phase as GraphPhase,
         revisionId: action.event.revision_id,
         progress: [...state.progress, `Graph phase: ${action.event.phase}`],
-        currentStep: state.currentStep + 1,
+        currentStep: newStep,
+        streamingText: action.event.step_detail ?? state.streamingText,
       };
+    }
     case 'UPDATE_PROGRESS':
       return {
         ...state,
@@ -121,6 +136,7 @@ function reducer(state: PlanState, action: Action): PlanState {
         error: null,
         loadingAction: null,
         loadingMessage: '',
+        currentStep: 6,
       };
     }
     case 'CLARIFICATION_LOADED':

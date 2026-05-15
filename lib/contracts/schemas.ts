@@ -262,6 +262,9 @@ export const GraphRunEventSchema = z.object({
   revision_id: z.string(),
   phase: z.string(),
   revision: PlanRevisionSnapshotSchema,
+  step_label: z.string().optional(),
+  step_detail: z.string().optional(),
+  is_final: z.boolean().optional(),
 });
 
 export const RecoveryDiffSchema = z.object({

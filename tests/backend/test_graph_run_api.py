@@ -106,15 +106,30 @@ def test_run_stream_returns_stable_graph_update_without_creating_new_revision(tm
     assert second.headers["content-type"].startswith("text/event-stream")
     first_events = parse_sse_events(first.text)
     second_events = parse_sse_events(second.text)
-    assert first_events[0]["id"] == "evt_000001"
-    assert second_events[0]["id"] == "evt_000001"
-    assert second_events[0] == first_events[0]
-    assert first_events[0]["event"] == "graph_update"
-    assert first_events[0]["data"]["run_id"] == run_id
-    assert first_events[0]["data"]["thread_id"] == thread_id
-    assert first_events[0]["data"]["plan_id"] == plan_id
-    assert first_events[0]["data"]["revision_id"] == latest_revision_before["revision_id"]
-    assert first_events[0]["data"]["phase"] == latest_revision_before["phase"]
+
+    # The first stream delivers progress events followed by a final event.
+    # The final event has is_final: True and contains full revision data.
+    first_final = [e for e in first_events if e.get("data", {}).get("is_final")]
+    assert len(first_final) == 1
+    final = first_final[0]
+    assert final["event"] == "graph_update"
+    assert final["data"]["run_id"] == run_id
+    assert final["data"]["thread_id"] == thread_id
+    assert final["data"]["plan_id"] == plan_id
+    assert final["data"]["revision_id"] == latest_revision_before["revision_id"]
+    assert final["data"]["phase"] == latest_revision_before["phase"]
+    assert final["data"]["is_final"] is True
+
+    # Progress events (if any) have step_label and step_detail.
+    progress_events = [e for e in first_events if not e.get("data", {}).get("is_final")]
+    for evt in progress_events:
+        assert evt["event"] == "graph_update"
+        assert "step_label" in evt["data"]
+        assert evt["data"]["is_final"] is False
+
+    # Second stream falls back to DB-based events (queue was consumed).
+    assert second_events[0]["event"] == "graph_update"
+    assert second_events[0]["data"]["run_id"] == run_id
     assert client.get(f"/api/plans/{plan_id}/versions").json()["versions"] == versions_before
     assert client.get("/api/plans").json()["total"] == 1
 

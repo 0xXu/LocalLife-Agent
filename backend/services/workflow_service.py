@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+import asyncio
+from collections.abc import AsyncIterator, Mapping
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -8,6 +9,12 @@ from typing import Any
 from backend.actions.durable_ledger import DurableActionLedger
 from backend.actions.policy import build_executable_actions
 from backend.data.catalog import LocalDataCatalog
+from backend.graph.events import (
+    get_or_create_run_queue,
+    progress_sse_event,
+    remove_run_queue,
+    sse_event,
+)
 from backend.graph.state import (
     PHASE_APPROVED,
     PHASE_CANCELLED,
@@ -60,7 +67,17 @@ class WorkflowService:
         revision_id = new_revision_id()
 
         self.repository.create_thread(thread_id, run_id, plan_id, user_id, PHASE_PLANNING)
-        state = self.pipeline.build(goal)
+
+        # --- Per-run event queue for real-time SSE progress ---
+        queue = get_or_create_run_queue(run_id)
+        event_counter = {"n": 0}
+
+        def _on_progress(label: str, detail: str) -> None:
+            event_counter["n"] += 1
+            event_id = f"evt_{event_counter['n']:06d}"
+            queue.put(progress_sse_event(event_id, label, detail, PHASE_PLANNING))
+
+        state = self.pipeline.build(goal, on_progress=_on_progress)
         state.plan_id = plan_id
 
         if state.status == PHASE_NEEDS_CLARIFICATION:
@@ -120,6 +137,26 @@ class WorkflowService:
         if actions and phase == PHASE_PENDING_APPROVAL:
             self.ledger.seed_actions(revision_id, actions)
         self.repository.update_thread_status(thread_id, phase)
+
+        # --- Push terminal event into the run queue ---
+        event_counter["n"] += 1
+        final_event_id = f"evt_{event_counter['n']:06d}"
+        queue.put(sse_event(
+            final_event_id,
+            "graph_update",
+            {
+                "run_id": run_id,
+                "thread_id": thread_id,
+                "plan_id": plan_id,
+                "revision_id": revision_id,
+                "phase": phase,
+                "revision": self._response_revision(
+                    self.repository.get_latest_revision(plan_id), phase, actions
+                ),
+                "is_final": True,
+            },
+        ))
+        queue.close()
 
         return {"run_id": run_id, "thread_id": thread_id, "plan_id": plan_id}
 
@@ -212,6 +249,30 @@ class WorkflowService:
                 },
             }
         ]
+
+    async def iter_run_events(self, run_id: str) -> AsyncIterator[str]:
+        """Yield SSE-formatted event strings from the run's event queue.
+
+        Each ``get()`` is wrapped in ``run_in_executor`` so the async event
+        loop is never blocked.  The generator terminates when it receives
+        ``None`` (the sentinel pushed by ``queue.close()``).
+        """
+        queue = get_or_create_run_queue(run_id)
+        loop = asyncio.get_running_loop()
+        max_wait_seconds = 300  # 5 minutes safety cap
+        try:
+            while True:
+                raw = await asyncio.wait_for(
+                    loop.run_in_executor(None, queue.get),
+                    timeout=max_wait_seconds,
+                )
+                if raw is None:
+                    break
+                yield raw
+        except (asyncio.TimeoutError, asyncio.CancelledError):
+            pass
+        finally:
+            remove_run_queue(run_id)
 
     def _current_phase(self, plan_id: str, revision: Mapping[str, Any]) -> str:
         thread = self.repository.get_thread_by_plan(plan_id)

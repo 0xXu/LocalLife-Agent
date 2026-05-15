@@ -33,18 +33,33 @@ export function streamRunUpdates(
 ) {
   const es = new EventSource(resolveApiUrl(`/api/plans/runs/${runId}/stream`));
 
+  const timeoutId = setTimeout(() => {
+    if (es.readyState !== EventSource.CLOSED) {
+      es.close();
+      callbacks.onError?.(new Error('SSE stream timeout after 60s'));
+    }
+  }, 60_000);
+
   es.addEventListener('graph_update', (event) => {
-    void callbacks.onGraphUpdate?.(JSON.parse((event as MessageEvent).data));
-    es.close();
+    const data = JSON.parse((event as MessageEvent).data) as GraphRunEvent;
+    void callbacks.onGraphUpdate?.(data);
+    if (data.is_final) {
+      clearTimeout(timeoutId);
+      es.close();
+    }
   });
 
   es.onerror = () => {
     if (es.readyState === EventSource.CLOSED) {
+      clearTimeout(timeoutId);
       callbacks.onError?.(new Error('SSE connection failed'));
     }
   };
 
-  return () => es.close();
+  return () => {
+    clearTimeout(timeoutId);
+    es.close();
+  };
 }
 
 export async function resumePlan(planId: string, selectedActionIds: string[]) {

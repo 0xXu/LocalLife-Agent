@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from json import JSONDecodeError
 from typing import Any
@@ -92,14 +93,37 @@ def create_app(workflow_service: WorkflowService | None = None) -> FastAPI:
     @api.post("/api/plans/runs")
     async def start_plan_run(request: Request) -> dict[str, Any]:
         body = await read_json_object(request)
-        return workflow(request).start_run(
-            str(body.get("goal", "")),
-            user_id=str(body.get("user_id", "local_demo_user")),
+        goal = str(body.get("goal", ""))
+        user_id = str(body.get("user_id", "local_demo_user"))
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None,
+            lambda: workflow(request).start_run(goal, user_id=user_id),
         )
 
     @api.get("/api/plans/runs/{run_id}/stream")
     async def stream_plan_run(run_id: str, request: Request) -> StreamingResponse:
-        events = workflow(request).stream_run_events(run_id)
+        svc = workflow(request)
+
+        # Try queue-based streaming first (real-time progress events).
+        # Fall back to DB-based events if the queue doesn't exist (e.g. old
+        # runs that completed before the queue infra was added, or queue was
+        # already consumed and removed).
+        from backend.graph.events import has_run_queue
+
+        if has_run_queue(run_id):
+            return StreamingResponse(
+                svc.iter_run_events(run_id),
+                media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "X-Accel-Buffering": "no",
+                    "Connection": "keep-alive",
+                },
+            )
+
+        # Fallback: DB-based events (backward compat)
+        events = svc.stream_run_events(run_id)
 
         async def event_stream():
             for event in events:
