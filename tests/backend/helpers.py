@@ -52,6 +52,9 @@ class RuleBasedChatModel:
             if isinstance(m, dict) and m.get("role") == "user":
                 goal = m.get("content", "")
                 break
+        # Extract actual user input from structured prompt
+        if "## 用户输入\n" in goal:
+            goal = goal.split("## 用户输入\n", 1)[1]
         constraints = deterministic_constraints(goal)
         normalized = goal.lower()
         if "friends" in normalized:

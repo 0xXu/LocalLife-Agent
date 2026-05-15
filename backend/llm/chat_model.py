@@ -188,6 +188,13 @@ def build_chat_model(config: LLMConfig, temperature: float = 0.2) -> ChatOpenAI:
         raise RuntimeError("LLM is not configured.")
     if not config.remote_enabled:
         raise RuntimeError("LLM remote is disabled.")
+    extra_kwargs: dict[str, Any] = {}
+    if config.disable_thinking:
+        extra_kwargs["extra_body"] = {
+            "chat_template_kwargs": {"enable_thinking": False}
+        }
+    if config.response_format:
+        extra_kwargs["response_format"] = {"type": config.response_format}
     return ChatOpenAI(
         base_url=config.base_url,
         api_key=config.api_key,
@@ -196,6 +203,7 @@ def build_chat_model(config: LLMConfig, temperature: float = 0.2) -> ChatOpenAI:
         max_tokens=config.max_tokens,
         timeout=config.timeout_seconds,
         streaming=True,
+        **extra_kwargs,
     )
 
 
@@ -205,6 +213,13 @@ def build_mimo_chat_model(config: LLMConfig, temperature: float = 0.2) -> MiMoCh
         raise RuntimeError("LLM is not configured.")
     if not config.remote_enabled:
         raise RuntimeError("LLM remote is disabled.")
+    extra_kwargs: dict[str, Any] = {}
+    if config.disable_thinking:
+        extra_kwargs["extra_body"] = {
+            "chat_template_kwargs": {"enable_thinking": False}
+        }
+    if config.response_format:
+        extra_kwargs["response_format"] = {"type": config.response_format}
     return MiMoChatOpenAI(
         base_url=config.base_url,
         api_key=config.api_key,
@@ -213,4 +228,5 @@ def build_mimo_chat_model(config: LLMConfig, temperature: float = 0.2) -> MiMoCh
         max_tokens=config.max_tokens,
         timeout=config.timeout_seconds,
         streaming=True,
+        **extra_kwargs,
     )

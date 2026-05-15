@@ -515,20 +515,89 @@ class PlanningPipeline:
         if not self.chat_model:
             raise LLMIntentParsingError("Chat model not initialized.")
         messages = [
-            SystemMessage(content=(
-                "You are a JSON extraction tool. Return ONLY a valid JSON object. No markdown, no prose, no reasoning.\n"
-                "Keys: scenario (open-domain snake_case label), origin, time_window, people, preferences (with activity tags, intent_label, budget_level, distance, diet), constraints, required_actions.\n"
-                "preferences.activity: 3-8 English tags like hiking, outdoor, pet, quiet, cafe, wifi, work, sports, badminton, basketball, birthday, photo, museum, art, cinema, shopping, wellness, spa, ktv, nightlife, child_friendly, indoor, rain_safe, walkable.\n"
-                "preferences.intent_label: short Chinese label.\n"
-                "Only include restaurant/coupon/order actions when user asks for eating. Always include send_plan_message and create_calendar_event.\n"
-                "Example: {\"scenario\":\"label\",\"origin\":{\"type\":\"current_location\",\"label\":\"home\",\"lat\":38.26,\"lng\":140.88},\"time_window\":{\"date\":\"today\",\"start\":\"14:00\",\"duration_hours\":3,\"flexible\":true},\"people\":{\"adults\":1,\"children\":[],\"relationship\":\"solo\"},\"preferences\":{\"distance\":\"nearby\",\"diet\":[],\"activity\":[\"tag1\"],\"budget_level\":\"medium\",\"intent_label\":\"标签\"},\"constraints\":{\"radius_km\":8,\"max_wait_minutes\":15,\"avoid\":[\"long_queue\"]},\"required_actions\":[\"send_plan_message\",\"create_calendar_event\"]}"
+            SystemMessage(content="你是约束解析器。只输出 JSON，不输出其他内容。"),
+            HumanMessage(content=(
+                "## 任务规则\n"
+                "从用户输入中提取约束，返回一个 JSON 对象。\n"
+                "## 字段定义\n"
+                "- scenario: 开放域 snake_case 标签\n"
+                "- origin: {type, label, lat, lng}\n"
+                "- time_window: {date, start, duration_hours, flexible}\n"
+                "- people: {adults, children, relationship}\n"
+                "- preferences: {activity, intent_label, budget_level, distance, diet}\n"
+                "  - activity: 3-8 个英文标签，如 hiking, outdoor, pet, quiet, cafe, wifi, work, sports, badminton, basketball, birthday, photo, museum, art, cinema, shopping, wellness, spa, ktv, nightlife, child_friendly, indoor, rain_safe, walkable\n"
+                "  - intent_label: 简短中文标签\n"
+                "- constraints: {radius_km, max_wait_minutes, avoid}\n"
+                "- required_actions: 数组，用户要求吃饭时才含 restaurant/coupon/order，始终含 send_plan_message 和 create_calendar_event\n"
+                "## 用户输入\n"
+                f"{goal}"
             )),
-            HumanMessage(content=goal),
         ]
+        invoke_kwargs: dict[str, Any] = {}
+        if self.llm_config.response_format == "json_object":
+            invoke_kwargs["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "parse_constraints",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "scenario": {"type": "string"},
+                            "origin": {
+                                "type": "object",
+                                "properties": {
+                                    "type": {"type": "string"},
+                                    "label": {"type": "string"},
+                                    "lat": {"type": "number"},
+                                    "lng": {"type": "number"},
+                                },
+                                "required": ["type"],
+                            },
+                            "time_window": {
+                                "type": "object",
+                                "properties": {
+                                    "date": {"type": "string"},
+                                    "start": {"type": "string"},
+                                    "duration_hours": {"type": "number"},
+                                    "flexible": {"type": "boolean"},
+                                },
+                            },
+                            "people": {
+                                "type": "object",
+                                "properties": {
+                                    "adults": {"type": "integer"},
+                                    "children": {"type": "array", "items": {}},
+                                    "relationship": {"type": "string"},
+                                },
+                            },
+                            "preferences": {
+                                "type": "object",
+                                "properties": {
+                                    "activity": {"type": "array", "items": {"type": "string"}},
+                                    "intent_label": {"type": "string"},
+                                    "budget_level": {"type": "string"},
+                                    "distance": {"type": "string"},
+                                    "diet": {"type": "array", "items": {"type": "string"}},
+                                },
+                            },
+                            "constraints": {
+                                "type": "object",
+                                "properties": {
+                                    "radius_km": {"type": "number"},
+                                    "max_wait_minutes": {"type": "integer"},
+                                    "avoid": {"type": "array", "items": {"type": "string"}},
+                                },
+                            },
+                            "required_actions": {"type": "array", "items": {"type": "string"}},
+                        },
+                        "required": ["scenario", "preferences", "required_actions"],
+                    },
+                },
+            }
         try:
-            result = self.chat_model.invoke(messages)
+            result = self.chat_model.invoke(messages, **invoke_kwargs)
             content = result.content
-            # MiMo model may put JSON in reasoning_content instead of content
+            # Fallback: MiMo parser misroute may put JSON in reasoning_content
             if not content or "{" not in content:
                 rc = result.additional_kwargs.get("reasoning_content", "")
                 if rc and "{" in rc:
