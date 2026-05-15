@@ -6,12 +6,7 @@ from fastapi.testclient import TestClient
 from backend.api.app import create_app
 from backend.llm.config import LLMConfig
 from backend.services.workflow_service import WorkflowService
-from tests.backend.helpers import RuleBasedLLMClient
-
-
-class FailingLLMClient:
-    def chat_stream(self, _messages):
-        raise RuntimeError("LLM request timed out after 30 seconds.")
+from tests.backend.helpers import RuleBasedChatModel, FailingChatModel
 
 
 class BackendApiTest(unittest.TestCase):
@@ -33,7 +28,7 @@ class BackendApiTest(unittest.TestCase):
                 remote_enabled=True,
             ),
         )
-        workflow.pipeline.llm = RuleBasedLLMClient()
+        workflow.pipeline.chat_model = RuleBasedChatModel()
         return workflow
 
     def request(self, method, path, body=None):
@@ -168,7 +163,7 @@ class BackendApiTest(unittest.TestCase):
                 remote_enabled=True,
             ),
         )
-        workflow.pipeline.llm = FailingLLMClient()
+        workflow.pipeline.chat_model = FailingChatModel()
         client = TestClient(create_app(workflow), raise_server_exceptions=False)
 
         response = client.post("/api/plans/runs", json={"goal": "friends dinner this afternoon"})

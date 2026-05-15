@@ -6,7 +6,7 @@ from backend.api.app import create_app
 from backend.graph.events import sse_event
 from backend.llm.config import LLMConfig
 from backend.services.workflow_service import WorkflowService
-from tests.backend.helpers import RuleBasedLLMClient
+from tests.backend.helpers import RuleBasedChatModel
 
 
 def make_workflow_service(tmp_path):
@@ -19,7 +19,7 @@ def make_workflow_service(tmp_path):
             remote_enabled=True,
         ),
     )
-    workflow.pipeline.llm = RuleBasedLLMClient()
+    workflow.pipeline.chat_model = RuleBasedChatModel()
     return workflow
 
 

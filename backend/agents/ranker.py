@@ -78,9 +78,6 @@ class RankerAgent(BaseAgent):
             self.last_reasoning = "ReAct agent failed, using deterministic fallback."
             return _deterministic_fallback(candidates)
 
-    # Keep old interface for backward compatibility
-    def rank_legacy(self, candidates, constraints):
-        return self.rank(candidates, constraints)
 
 
 def _merge_ranked_with_candidates(ranked: dict[str, list[dict]], candidates: dict[str, list[dict]]) -> dict[str, list[dict]]:

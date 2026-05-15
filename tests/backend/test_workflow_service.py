@@ -2,7 +2,7 @@ from pathlib import Path
 
 from backend.llm.config import LLMConfig
 from backend.services.workflow_service import WorkflowService
-from tests.backend.helpers import RuleBasedLLMClient
+from tests.backend.helpers import RuleBasedChatModel
 
 
 def make_service(tmp_path: Path, repository_path: Path | None = None) -> WorkflowService:
@@ -15,7 +15,7 @@ def make_service(tmp_path: Path, repository_path: Path | None = None) -> Workflo
             remote_enabled=True,
         ),
     )
-    service.pipeline.llm = RuleBasedLLMClient()
+    service.pipeline.chat_model = RuleBasedChatModel()
     return service
 
 

@@ -9,36 +9,33 @@ from backend.data.catalog import LocalDataCatalog
 from backend.llm.config import LLMConfig
 from backend.services.workflow_service import WorkflowService
 from backend.tools.registry import LocalToolRegistry
-from tests.backend.helpers import RuleBasedLLMClient, configured_test_llm_config
+from tests.backend.helpers import RuleBasedChatModel, configured_test_llm_config
 
 
-class OpenDomainLLMClient:
+class _FakeMsg:
+    def __init__(self, content: str):
+        self.content = content
+        self.tool_calls = []
+        self.additional_kwargs = {}
+
+
+class OpenDomainChatModel:
     def __init__(self, scenario: str, label: str, activity_tags: list[str], duration_hours: float = 3, required_actions: list[str] | None = None):
-        self.scenario = scenario
-        self.label = label
-        self.activity_tags = activity_tags
-        self.duration_hours = duration_hours
-        self.required_actions = required_actions or ["send_plan_message", "create_calendar_event"]
+        self._intent_json = json.dumps({
+            "scenario": scenario,
+            "origin": {"type": "current_location", "label": "home", "lat": 38.2601, "lng": 140.8824},
+            "time_window": {"date": "today", "start": "14:00", "duration_hours": duration_hours, "flexible": True},
+            "people": {"adults": 1, "children": [], "relationship": "solo"},
+            "preferences": {"distance": "nearby", "diet": [], "activity": activity_tags, "budget_level": "medium", "intent_label": label},
+            "constraints": {"radius_km": 8, "max_wait_minutes": 15, "avoid": ["long_queue"]},
+            "required_actions": required_actions or ["send_plan_message", "create_calendar_event"],
+        }, ensure_ascii=False)
 
-    def chat_stream(self, _messages):
-        yield json.dumps(
-            {
-                "scenario": self.scenario,
-                "origin": {"type": "current_location", "label": "home", "lat": 38.2601, "lng": 140.8824},
-                "time_window": {"date": "today", "start": "14:00", "duration_hours": self.duration_hours, "flexible": True},
-                "people": {"adults": 1, "children": [], "relationship": "solo"},
-                "preferences": {
-                    "distance": "nearby",
-                    "diet": [],
-                    "activity": self.activity_tags,
-                    "budget_level": "medium",
-                    "intent_label": self.label,
-                },
-                "constraints": {"radius_km": 8, "max_wait_minutes": 15, "avoid": ["long_queue"]},
-                "required_actions": self.required_actions,
-            },
-            ensure_ascii=False,
-        )
+    def invoke(self, _messages, **kwargs):
+        return _FakeMsg(self._intent_json)
+
+    def bind_tools(self, tools):
+        return self
 
 
 class CompleteBackendTest(unittest.TestCase):
@@ -98,7 +95,7 @@ class CompleteApiTest(unittest.TestCase):
                 remote_enabled=True,
             ),
         )
-        workflow.pipeline.llm = RuleBasedLLMClient()
+        workflow.pipeline.chat_model = RuleBasedChatModel()
         self.client = TestClient(create_app(workflow))
 
     def tearDown(self):

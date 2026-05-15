@@ -7,6 +7,7 @@ from typing import Any, TypedDict
 from uuid import uuid4
 
 from langchain_core._api.deprecation import LangChainPendingDeprecationWarning
+from langchain_core.messages import HumanMessage, SystemMessage
 
 warnings.filterwarnings("ignore", category=LangChainPendingDeprecationWarning)
 
@@ -17,7 +18,7 @@ from backend.agents.recovery import RecoveryAgent
 from backend.agents.tools import AgentContext
 from backend.agents.validator import ValidatorAgent
 from backend.data.catalog import LocalDataCatalog
-from backend.llm import LLMClient, LLMConfig
+from backend.llm import LLMConfig
 from backend.llm.chat_model import build_mimo_chat_model
 from backend.models.schemas import (
     ItineraryStep,
@@ -97,7 +98,6 @@ class PlanningPipeline:
         self.catalog = catalog or LocalDataCatalog()
         self.tools = LocalToolRegistry(self.catalog)
         self.llm_config = llm_config or LLMConfig.from_env_file()
-        self.llm = LLMClient(self.llm_config)
         self.chat_model = build_mimo_chat_model(self.llm_config) if self.llm_config.is_configured and self.llm_config.remote_enabled else None
         self.graph = self._compile_graph()
 
@@ -332,56 +332,6 @@ class PlanningPipeline:
         emit_progress(graph_state, f"异常恢复 #{state.recovery_attempts}", decision.get("reason", ""))
         return {"state": state}
 
-    def _search_candidates_node(self, graph_state: BuildGraphState) -> BuildGraphState:
-        state = graph_state["state"]
-        constraints = require_constraints(state)
-        radius = float(constraints.constraints["radius_km"])
-        activity_tags = list(constraints.preferences.get("activity", []))
-        restaurant_tags = list(constraints.preferences.get("diet", [])) or ["booking_supported"]
-        activity_result = self.tools.search_places(constraints.scenario, radius, activity_tags)
-        restaurant_result = self.tools.search_restaurants(constraints.scenario, radius, restaurant_tags)
-        walk_result = self.tools.search_places("date" if constraints.scenario == "date" else "family", radius, ["walkable"])
-        state.add_tool_result(activity_result, {"scenario": constraints.scenario, "radius_km": radius})
-        state.add_tool_result(restaurant_result, {"scenario": constraints.scenario, "radius_km": radius})
-        state.candidates = {
-            "activities": activity_result.output["items"],
-            "restaurants": restaurant_result.output["items"],
-            "walks": self.catalog.search_pois("dessert_walk", None, radius, ["walkable"])[:6] or walk_result.output["items"],
-        }
-        state.status = "candidates_ready"
-        state.add_trace(span("CandidateSearchAgent", "search_places", "ok", "检索活动、餐厅、甜品散步点和本地供给。", "tool", {}, {key: len(value) for key, value in state.candidates.items()}, 260, {"provider": "local_seed_catalog"}))
-        emit_progress(graph_state, "筛选本地供给", "检索活动、餐厅、甜品散步点和本地供给。")
-        return {"state": state}
-
-    def _rank_candidates_node(self, graph_state: BuildGraphState) -> BuildGraphState:
-        state = graph_state["state"]
-        constraints = require_constraints(state)
-        ranked: dict[str, list[dict]] = {}
-        candidate_sets: dict[str, list[dict[str, Any]]] = {}
-        rejected: dict[str, list[dict[str, Any]]] = {}
-        preferred_tags = list(constraints.preferences.get("activity", [])) + list(constraints.preferences.get("diet", []))
-        for key, items in state.candidates.items():
-            grounded = [ground_place(item, confidence_for_tags(item, preferred_tags)) for item in items]
-            result = rank_candidates(grounded, constraints)
-            ranked[key] = [candidate.place.as_poi_dict() for candidate in result.items]
-            candidate_sets[key] = [
-                {
-                    "place": candidate.place.as_poi_dict(),
-                    "total_score": candidate.total_score,
-                    "score_breakdown": candidate.breakdown,
-                    "explanation": candidate.explanation,
-                }
-                for candidate in result.items
-            ]
-            rejected[key] = result.rejected
-        state.ranked = ranked
-        state.candidate_sets = candidate_sets
-        state.rejected_candidates = rejected
-        state.status = "ranked"
-        state.add_trace(span("RankerAgent", "rank_candidates", "ok", "按语义、距离、质量、等待、预算、来源和风险排序。", "planning", {}, {key: [item["place"]["id"] for item in value[:3]] for key, value in candidate_sets.items()}, 180))
-        emit_progress(graph_state, "多目标排序", "按语义、距离、质量、等待、预算、来源和风险排序。")
-        return {"state": state}
-
     def _build_itinerary_node(self, graph_state: BuildGraphState) -> BuildGraphState:
         state = graph_state["state"]
         constraints = require_constraints(state)
@@ -423,29 +373,6 @@ class PlanningPipeline:
         state.add_trace(span("RouteSchedulerAgent", "optimize_route", "ok", "按用户时长生成可执行时间轴和顺路路线。", "tool", {}, route, 220, {"provider": route.get("provider", "local_seed_route_matrix")}))
         emit_progress(graph_state, "生成时间轴和路线", "按用户时长生成可执行时间轴和顺路路线。")
         return {"state": state, "activity": activity, "restaurant": restaurant, "walk": walk, "route": route, "build_result": build_result.output}
-
-    def _validate_plan_node(self, graph_state: BuildGraphState) -> BuildGraphState:
-        state = graph_state["state"]
-        constraints = require_constraints(state)
-        restaurant = graph_state.get("restaurant")
-        route = graph_state["route"]
-        build_result = graph_state["build_result"]
-        party_size = party_size_of(constraints)
-        available = True
-        if restaurant:
-            availability_result = self.tools.check_availability(restaurant["id"], restaurant_time_from_steps(state.itinerary), party_size)
-            state.add_tool_result(availability_result, {"place_id": restaurant["id"], "party_size": party_size})
-            available = bool(availability_result.output["available"])
-        validation = self.tools.validate_plan(available, route["total_travel_minutes"], build_result["estimated_budget"]).output
-        lookup = {item["id"]: item for group in state.ranked.values() for item in group}
-        detailed_report = validate_itinerary(state.itinerary, constraints, lookup, state.context.get("weather", {}), route)
-        state.validation_issues = detailed_report.issues
-        validation["valid"] = validation["valid"] and detailed_report.valid
-        validation["issues"] = unique_list([*validation.get("issues", []), *[issue["code"] for issue in detailed_report.issues]])
-        state.status = "pending_confirmation" if validation["valid"] else "recovering"
-        state.add_trace(span("PlanValidatorAgent", "validate_plan", "ok" if validation["valid"] else "warning", "校验营业时间、路线、预算和可订性。", "validation", {}, validation, 170))
-        emit_progress(graph_state, "校验可订性和约束", "校验营业时间、路线、预算和可订性。")
-        return {"state": state, "validation": validation}
 
     def _prepare_confirmation_node(self, graph_state: BuildGraphState) -> BuildGraphState:
         state = graph_state["state"]
@@ -585,27 +512,30 @@ class PlanningPipeline:
     def parse_constraints(self, goal: str, on_token: Callable[[str], None] | None = None) -> tuple[ParsedConstraints, bool]:
         if not self.llm_config.is_configured or not self.llm_config.remote_enabled:
             raise LLMIntentParsingError("Remote LLM is required. Configure LLM_BASE_URL, LLM_API_KEY, LLM_MODEL, and LLM_REMOTE_ENABLED=true.")
+        if not self.chat_model:
+            raise LLMIntentParsingError("Chat model not initialized.")
         messages = [
-            {
-                "role": "system",
-                "content": (
-                    "Extract planning info as one JSON object only. Do not use markdown, prose, or reasoning.\n"
-                    "Do not force the user's goal into a fixed enum. The scenario value should be a short open-domain snake_case label such as hiking, pet_friendly_walk, deep_work_cafe, birthday_surprise, badminton, museum_day, ktv_night, parent_child_science, rainy_indoor, or family_picnic.\n"
-                    "preferences.activity must be 3-8 concrete retrieval tags for tools, using natural English tags like hiking, outdoor, pet, quiet, cafe, wifi, work, sports, badminton, basketball, birthday, photo, museum, art, cinema, shopping, wellness, spa, ktv, nightlife, child_friendly, indoor, rain_safe, walkable.\n"
-                    "preferences.intent_label should be a short Chinese display label, for example 宠物散步, 写代码自习, 羽毛球运动, 生日惊喜, 雨天室内.\n"
-                    "Only include restaurant/coupon/order actions when the user asks for eating, dining, booking a meal, coupons, or ordering. Always include send_plan_message and create_calendar_event.\n"
-                    '{"scenario":"open_domain_label","origin":{"type":"current_location","label":"home","lat":38.26,"lng":140.88},"time_window":{"date":"today","start":"HH:MM","duration_hours":3,"flexible":true},"people":{"adults":1,"children":[],"relationship":"solo"},"preferences":{"distance":"nearby","diet":[],"activity":["tag1","tag2"],"budget_level":"medium","intent_label":"中文短标签"},"constraints":{"radius_km":8,"max_wait_minutes":15,"avoid":["long_queue"]},"required_actions":["send_plan_message","create_calendar_event"]}'
-                ),
-            },
-            {"role": "user", "content": goal},
+            SystemMessage(content=(
+                "You are a JSON extraction tool. Return ONLY a valid JSON object. No markdown, no prose, no reasoning.\n"
+                "Keys: scenario (open-domain snake_case label), origin, time_window, people, preferences (with activity tags, intent_label, budget_level, distance, diet), constraints, required_actions.\n"
+                "preferences.activity: 3-8 English tags like hiking, outdoor, pet, quiet, cafe, wifi, work, sports, badminton, basketball, birthday, photo, museum, art, cinema, shopping, wellness, spa, ktv, nightlife, child_friendly, indoor, rain_safe, walkable.\n"
+                "preferences.intent_label: short Chinese label.\n"
+                "Only include restaurant/coupon/order actions when user asks for eating. Always include send_plan_message and create_calendar_event.\n"
+                "Example: {\"scenario\":\"label\",\"origin\":{\"type\":\"current_location\",\"label\":\"home\",\"lat\":38.26,\"lng\":140.88},\"time_window\":{\"date\":\"today\",\"start\":\"14:00\",\"duration_hours\":3,\"flexible\":true},\"people\":{\"adults\":1,\"children\":[],\"relationship\":\"solo\"},\"preferences\":{\"distance\":\"nearby\",\"diet\":[],\"activity\":[\"tag1\"],\"budget_level\":\"medium\",\"intent_label\":\"标签\"},\"constraints\":{\"radius_km\":8,\"max_wait_minutes\":15,\"avoid\":[\"long_queue\"]},\"required_actions\":[\"send_plan_message\",\"create_calendar_event\"]}"
+            )),
+            HumanMessage(content=goal),
         ]
         try:
-            content = ""
-            for token in self.llm.chat_stream(messages):
-                content += token
-                if on_token:
-                    on_token(token)
-            parsed = json.loads(extract_json_object(content))
+            result = self.chat_model.invoke(messages)
+            content = result.content
+            # MiMo model may put JSON in reasoning_content instead of content
+            if not content or "{" not in content:
+                rc = result.additional_kwargs.get("reasoning_content", "")
+                if rc and "{" in rc:
+                    content = rc
+            if on_token:
+                on_token(content)
+            parsed = json.loads(extract_json_object(content), strict=False)
             constraints = constraints_from_dict(parsed)
             return normalize_constraints_for_goal(goal, constraints), False
         except Exception as exc:

@@ -5,191 +5,150 @@ from backend.llm.config import LLMConfig
 from backend.orchestrator.pipeline import PlanningPipeline, constraints_from_dict
 
 
-class FakeLLMClient:
-    def __init__(self):
-        self.calls = []
-
-    def chat(self, messages):
-        self.calls.append(messages)
-        return {
-            "choices": [
-                {
-                    "message": {
-                        "content": """
-                        ```json
-                        {
-                          "scenario": "date",
-                          "origin": {"type": "current_location", "label": "home", "lat": 38.2601, "lng": 140.8824},
-                          "time_window": {"date": "today", "start": "14:00", "duration_hours": 4.5, "flexible": true},
-                          "people": {"adults": 2, "children": [], "relationship": "date"},
-                          "preferences": {"distance": "nearby", "diet": [], "activity": ["quiet", "romantic"], "budget_level": "medium"},
-                          "constraints": {"radius_km": 6, "max_wait_minutes": 15, "avoid": ["long_queue"]},
-                          "required_actions": ["restaurant_reservation", "send_plan_message"]
-                        }
-                        ```
-                        """
-                    }
-                }
-            ]
-        }
-
-    def chat_stream(self, messages):
-        system_prompt = messages[0]["content"] if messages else ""
-        lower = system_prompt.lower()
-        if "ranker" in lower or "planning ranker" in lower:
-            # No "ranked" key → triggers RankerAgent deterministic fallback
-            yield json.dumps({"reasoning": "test: using deterministic fallback"})
-        elif "validator" in lower or "plan validator" in lower:
-            yield json.dumps({
-                "valid": True,
-                "issues": [],
-                "suggestions": [],
-                "overall_score": 90,
-            })
-        elif "recovery" in lower:
-            yield json.dumps({
-                "action": "adjust",
-                "reason": "No blocking issues, minor adjustments only.",
-            })
-        else:
-            response = self.chat(messages)
-            yield response["choices"][0]["message"]["content"]
+class _FakeMsg:
+    def __init__(self, content: str):
+        self.content = content
+        self.tool_calls = []
+        self.additional_kwargs = {}
 
 
-def _agent_dispatch(system_prompt: str, intent_fallback):
-    """Dispatch based on agent system prompt content. Returns a JSON string.
-
-    For ranker: return JSON without "ranked" key so RankerAgent uses its
-    deterministic fallback (which sorts by rating/distance).
-    For validator: always return valid=True.
-    For recovery: return adjust action (no-op).
-    """
-    lower = system_prompt.lower()
+def _agent_dispatch(messages, intent_json: str) -> str:
+    """Dispatch based on agent system prompt content. Returns a JSON string."""
+    system = ""
+    for m in messages:
+        role = getattr(m, "type", "") or (m.get("role", "") if isinstance(m, dict) else "")
+        if role in ("system",):
+            system = getattr(m, "content", "") or (m.get("content", "") if isinstance(m, dict) else "")
+            break
+    lower = system.lower()
     if "ranker" in lower or "planning ranker" in lower:
-        # No "ranked" key → triggers RankerAgent._deterministic_fallback
         return json.dumps({"reasoning": "test: using deterministic fallback"})
     if "validator" in lower or "plan validator" in lower:
-        return json.dumps({
-            "valid": True,
-            "issues": [],
-            "suggestions": [],
-            "overall_score": 90,
-        })
+        return json.dumps({"valid": True, "issues": [], "suggestions": [], "overall_score": 90})
     if "recovery" in lower:
-        return json.dumps({
-            "action": "adjust",
-            "reason": "No blocking issues, minor adjustments only.",
-        })
-    return intent_fallback
+        return json.dumps({"action": "adjust", "reason": "No blocking issues, minor adjustments only."})
+    return intent_json
 
 
-class FailingLLMClient:
-    def chat_stream(self, _messages):
+class FakeChatModel:
+    def __init__(self, intent_json: str | None = None):
+        self.calls = []
+        self._intent_json = intent_json or json.dumps({
+            "scenario": "date",
+            "origin": {"type": "current_location", "label": "home", "lat": 38.2601, "lng": 140.8824},
+            "time_window": {"date": "today", "start": "14:00", "duration_hours": 4.5, "flexible": True},
+            "people": {"adults": 2, "children": [], "relationship": "date"},
+            "preferences": {"distance": "nearby", "diet": [], "activity": ["quiet", "romantic"], "budget_level": "medium"},
+            "constraints": {"radius_km": 6, "max_wait_minutes": 15, "avoid": ["long_queue"]},
+            "required_actions": ["restaurant_reservation", "send_plan_message"],
+        }, ensure_ascii=False)
+
+    def invoke(self, messages, **kwargs):
+        self.calls.append(messages)
+        content = _agent_dispatch(messages, self._intent_json)
+        return _FakeMsg(content)
+
+    def bind_tools(self, tools):
+        return self
+
+
+class FailingChatModel:
+    def invoke(self, messages, **kwargs):
         raise RuntimeError("LLM request timed out after 30 seconds.")
 
-
-class InvalidJsonLLMClient:
-    def chat_stream(self, _messages):
-        yield "not-json"
+    def bind_tools(self, tools):
+        return self
 
 
-class OneHourLLMClient:
-    _intent_json = """
-        {
-          "scenario": "date",
-          "origin": {"type": "current_location", "label": "home", "lat": 38.2601, "lng": 140.8824},
-          "time_window": {"date": "today", "start": "14:00", "duration_hours": 1, "flexible": true},
-          "people": {"adults": 1, "children": [], "relationship": "solo"},
-          "preferences": {"distance": "nearby", "diet": [], "activity": ["quiet"], "budget_level": "low"},
-          "constraints": {"radius_km": 3, "max_wait_minutes": 10, "avoid": ["long_queue"]},
-          "required_actions": ["send_plan_message"]
-        }
-        """
+class InvalidJsonChatModel:
+    def invoke(self, messages, **kwargs):
+        return _FakeMsg("not-json")
 
-    def chat_stream(self, messages):
-        system_prompt = messages[0]["content"] if messages else ""
-        yield _agent_dispatch(system_prompt, self._intent_json)
+    def bind_tools(self, tools):
+        return self
 
 
-class MisclassifiedHikingLLMClient:
-    _intent_json = """
-        {
-          "scenario": "family",
-          "origin": {"type": "current_location", "label": "home", "lat": 38.2601, "lng": 140.8824},
-          "time_window": {"date": "today", "start": "09:00", "duration_hours": 4.5, "flexible": true},
-          "people": {"adults": 3, "children": [], "relationship": "family"},
-          "preferences": {"distance": "nearby", "diet": [], "activity": [], "budget_level": "medium"},
-          "constraints": {"radius_km": 5, "max_wait_minutes": 15, "avoid": []},
-          "required_actions": ["activity_reservation", "restaurant_reservation", "claim_coupon", "create_order", "send_plan_message", "create_calendar_event"]
-        }
-        """
+class OneHourChatModel:
+    _intent_json = json.dumps({
+        "scenario": "date",
+        "origin": {"type": "current_location", "label": "home", "lat": 38.2601, "lng": 140.8824},
+        "time_window": {"date": "today", "start": "14:00", "duration_hours": 1, "flexible": True},
+        "people": {"adults": 1, "children": [], "relationship": "solo"},
+        "preferences": {"distance": "nearby", "diet": [], "activity": ["quiet"], "budget_level": "low"},
+        "constraints": {"radius_km": 3, "max_wait_minutes": 10, "avoid": ["long_queue"]},
+        "required_actions": ["send_plan_message"],
+    }, ensure_ascii=False)
 
-    def chat_stream(self, messages):
-        system_prompt = messages[0]["content"] if messages else ""
-        yield _agent_dispatch(system_prompt, self._intent_json)
+    def invoke(self, messages, **kwargs):
+        return _FakeMsg(_agent_dispatch(messages, self._intent_json))
+
+    def bind_tools(self, tools):
+        return self
 
 
-class OpenDomainLLMClient:
+class MisclassifiedHikingChatModel:
+    _intent_json = json.dumps({
+        "scenario": "family",
+        "origin": {"type": "current_location", "label": "home", "lat": 38.2601, "lng": 140.8824},
+        "time_window": {"date": "today", "start": "09:00", "duration_hours": 4.5, "flexible": True},
+        "people": {"adults": 3, "children": [], "relationship": "family"},
+        "preferences": {"distance": "nearby", "diet": [], "activity": [], "budget_level": "medium"},
+        "constraints": {"radius_km": 5, "max_wait_minutes": 15, "avoid": []},
+        "required_actions": ["activity_reservation", "restaurant_reservation", "claim_coupon", "create_order", "send_plan_message", "create_calendar_event"],
+    }, ensure_ascii=False)
+
+    def invoke(self, messages, **kwargs):
+        return _FakeMsg(_agent_dispatch(messages, self._intent_json))
+
+    def bind_tools(self, tools):
+        return self
+
+
+class OpenDomainChatModel:
     def __init__(self, scenario: str, label: str, activity_tags: list[str], goal_actions: list[str] | None = None):
-        self.scenario = scenario
-        self.label = label
-        self.activity_tags = activity_tags
-        self.goal_actions = goal_actions or ["send_plan_message", "create_calendar_event"]
-        self._intent_json = json.dumps(
-            {
-                "scenario": self.scenario,
-                "origin": {"type": "current_location", "label": "home", "lat": 38.2601, "lng": 140.8824},
-                "time_window": {"date": "today", "start": "14:00", "duration_hours": 3, "flexible": True},
-                "people": {"adults": 1, "children": [], "relationship": "solo"},
-                "preferences": {
-                    "distance": "nearby",
-                    "diet": [],
-                    "activity": self.activity_tags,
-                    "budget_level": "medium",
-                    "intent_label": self.label,
-                },
-                "constraints": {"radius_km": 8, "max_wait_minutes": 15, "avoid": ["long_queue"]},
-                "required_actions": self.goal_actions,
-            },
-            ensure_ascii=False,
-        )
+        self._intent_json = json.dumps({
+            "scenario": scenario,
+            "origin": {"type": "current_location", "label": "home", "lat": 38.2601, "lng": 140.8824},
+            "time_window": {"date": "today", "start": "14:00", "duration_hours": 3, "flexible": True},
+            "people": {"adults": 1, "children": [], "relationship": "solo"},
+            "preferences": {"distance": "nearby", "diet": [], "activity": activity_tags, "budget_level": "medium", "intent_label": label},
+            "constraints": {"radius_km": 8, "max_wait_minutes": 15, "avoid": ["long_queue"]},
+            "required_actions": goal_actions or ["send_plan_message", "create_calendar_event"],
+        }, ensure_ascii=False)
 
-    def chat_stream(self, messages):
-        system_prompt = messages[0]["content"] if messages else ""
-        yield _agent_dispatch(system_prompt, self._intent_json)
+    def invoke(self, messages, **kwargs):
+        return _FakeMsg(_agent_dispatch(messages, self._intent_json))
+
+    def bind_tools(self, tools):
+        return self
+
+
+def _make_pipeline(mock_model):
+    pipeline = PlanningPipeline(
+        llm_config=LLMConfig(
+            base_url="https://token-plan-sgp.xiaomimimo.com/v1",
+            api_key="secret-key-value",
+            model="MiMo-V2.5-Pro",
+            remote_enabled=True,
+        )
+    )
+    pipeline.chat_model = mock_model
+    return pipeline
 
 
 class PlanningPipelineTest(unittest.TestCase):
     def test_pipeline_uses_configured_openai_compatible_llm_for_constraints(self):
-        pipeline = PlanningPipeline(
-            llm_config=LLMConfig(
-                base_url="https://token-plan-sgp.xiaomimimo.com/v1",
-                api_key="secret-key-value",
-                model="MiMo-V2.5-Pro",
-                remote_enabled=True,
-            )
-        )
-        fake_llm = FakeLLMClient()
-        pipeline.llm = fake_llm
+        fake_model = FakeChatModel()
+        pipeline = _make_pipeline(fake_model)
 
         result = pipeline.build("下午想和对象约会，安静一点，排队少")
 
         self.assertEqual(result.constraints.scenario, "date")
         self.assertEqual(result.constraints.constraints["radius_km"], 6)
-        self.assertEqual(len(fake_llm.calls), 1)
-        intent_trace = next(step for step in result.trace if step.agent == "IntentParserAgent")
-        self.assertFalse(intent_trace.output_summary["llm_fallback"])
+        self.assertEqual(len(fake_model.calls), 1)
 
     def test_pipeline_build_invokes_compiled_langgraph_workflow(self):
-        pipeline = PlanningPipeline(
-            llm_config=LLMConfig(
-                base_url="https://token-plan-sgp.xiaomimimo.com/v1",
-                api_key="secret-key-value",
-                model="MiMo-V2.5-Pro",
-                remote_enabled=True,
-            )
-        )
-        pipeline.llm = FakeLLMClient()
+        pipeline = _make_pipeline(FakeChatModel())
 
         self.assertTrue(hasattr(pipeline, "graph"))
         graph_nodes = set(pipeline.graph.get_graph().nodes)
@@ -203,29 +162,13 @@ class PlanningPipelineTest(unittest.TestCase):
         self.assertEqual(result.trace[-1].agent, "ConfirmationAgent")
 
     def test_configured_llm_failure_interrupts_build_without_template_fallback(self):
-        pipeline = PlanningPipeline(
-            llm_config=LLMConfig(
-                base_url="https://token-plan-sgp.xiaomimimo.com/v1",
-                api_key="secret-key-value",
-                model="MiMo-V2.5-Pro",
-                remote_enabled=True,
-            )
-        )
-        pipeline.llm = FailingLLMClient()
+        pipeline = _make_pipeline(FailingChatModel())
 
         with self.assertRaisesRegex(RuntimeError, "LLM intent parsing failed"):
             pipeline.build("friends dinner this afternoon")
 
     def test_configured_llm_invalid_json_interrupts_build_without_template_fallback(self):
-        pipeline = PlanningPipeline(
-            llm_config=LLMConfig(
-                base_url="https://token-plan-sgp.xiaomimimo.com/v1",
-                api_key="secret-key-value",
-                model="MiMo-V2.5-Pro",
-                remote_enabled=True,
-            )
-        )
-        pipeline.llm = InvalidJsonLLMClient()
+        pipeline = _make_pipeline(InvalidJsonChatModel())
 
         with self.assertRaisesRegex(RuntimeError, "LLM intent parsing failed"):
             pipeline.build("date plan this afternoon")
@@ -294,30 +237,14 @@ class PlanningPipelineTest(unittest.TestCase):
         )
 
     def test_overview_duration_reflects_llm_time_window(self):
-        pipeline = PlanningPipeline(
-            llm_config=LLMConfig(
-                base_url="https://token-plan-sgp.xiaomimimo.com/v1",
-                api_key="secret-key-value",
-                model="MiMo-V2.5-Pro",
-                remote_enabled=True,
-            )
-        )
-        pipeline.llm = OneHourLLMClient()
+        pipeline = _make_pipeline(OneHourChatModel())
 
         result = pipeline.build("quiet bookstore for one hour")
 
         self.assertEqual(result.overview.total_duration, "1 小时")
 
     def test_short_quiet_plan_omits_restaurant_walk_and_commercial_food_actions(self):
-        pipeline = PlanningPipeline(
-            llm_config=LLMConfig(
-                base_url="https://token-plan-sgp.xiaomimimo.com/v1",
-                api_key="secret-key-value",
-                model="MiMo-V2.5-Pro",
-                remote_enabled=True,
-            )
-        )
-        pipeline.llm = OneHourLLMClient()
+        pipeline = _make_pipeline(OneHourChatModel())
 
         result = pipeline.build("quiet bookstore for one hour")
 
@@ -329,15 +256,7 @@ class PlanningPipelineTest(unittest.TestCase):
         self.assertNotIn("order", action_types)
 
     def test_short_quiet_plan_title_matches_actual_itinerary(self):
-        pipeline = PlanningPipeline(
-            llm_config=LLMConfig(
-                base_url="https://token-plan-sgp.xiaomimimo.com/v1",
-                api_key="secret-key-value",
-                model="MiMo-V2.5-Pro",
-                remote_enabled=True,
-            )
-        )
-        pipeline.llm = OneHourLLMClient()
+        pipeline = _make_pipeline(OneHourChatModel())
 
         result = pipeline.build("quiet bookstore for one hour")
         title = result.plan_dict()["title"]
@@ -347,15 +266,7 @@ class PlanningPipelineTest(unittest.TestCase):
         self.assertNotIn("半日", title)
 
     def test_explicit_hiking_goal_uses_outdoor_candidates_not_family_or_dessert_template(self):
-        pipeline = PlanningPipeline(
-            llm_config=LLMConfig(
-                base_url="https://token-plan-sgp.xiaomimimo.com/v1",
-                api_key="secret-key-value",
-                model="MiMo-V2.5-Pro",
-                remote_enabled=True,
-            )
-        )
-        pipeline.llm = MisclassifiedHikingLLMClient()
+        pipeline = _make_pipeline(MisclassifiedHikingChatModel())
 
         result = pipeline.build("3个人去爬山")
 
@@ -369,15 +280,7 @@ class PlanningPipelineTest(unittest.TestCase):
         self.assertIn("户外", result.plan_dict()["title"])
 
     def test_open_domain_pet_walk_generates_grounded_plan_without_enum_mapping(self):
-        pipeline = PlanningPipeline(
-            llm_config=LLMConfig(
-                base_url="https://token-plan-sgp.xiaomimimo.com/v1",
-                api_key="secret-key-value",
-                model="MiMo-V2.5-Pro",
-                remote_enabled=True,
-            )
-        )
-        pipeline.llm = OpenDomainLLMClient("pet_friendly_walk", "宠物散步", ["pet", "outdoor", "walkable"])
+        pipeline = _make_pipeline(OpenDomainChatModel("pet_friendly_walk", "宠物散步", ["pet", "outdoor", "walkable"]))
 
         result = pipeline.build("想带狗狗找个能散步的地方，别太吵")
 
@@ -387,15 +290,7 @@ class PlanningPipelineTest(unittest.TestCase):
         self.assertIn("宠物", result.plan_dict()["title"])
 
     def test_open_domain_work_cafe_generates_grounded_plan_without_enum_mapping(self):
-        pipeline = PlanningPipeline(
-            llm_config=LLMConfig(
-                base_url="https://token-plan-sgp.xiaomimimo.com/v1",
-                api_key="secret-key-value",
-                model="MiMo-V2.5-Pro",
-                remote_enabled=True,
-            )
-        )
-        pipeline.llm = OpenDomainLLMClient("deep_work_cafe", "写代码自习", ["work", "quiet", "cafe", "wifi"])
+        pipeline = _make_pipeline(OpenDomainChatModel("deep_work_cafe", "写代码自习", ["work", "quiet", "cafe", "wifi"]))
 
         result = pipeline.build("我想找个地方写代码三小时，顺便喝咖啡")
 

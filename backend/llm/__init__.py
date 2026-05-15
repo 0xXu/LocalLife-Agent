@@ -1,5 +1,4 @@
-from backend.llm.chat_model import build_chat_model
-from backend.llm.client import LLMClient
+from backend.llm.chat_model import build_mimo_chat_model
 from backend.llm.config import LLMConfig
 
-__all__ = ["LLMClient", "LLMConfig", "build_chat_model"]
+__all__ = ["LLMConfig", "build_mimo_chat_model"]
