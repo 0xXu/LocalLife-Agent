@@ -19,6 +19,7 @@ import { ProfileSection } from './ProfileSection';
 import { DietSection } from './DietSection';
 import { LocationSection } from './LocationSection';
 import { NotificationSection } from './NotificationSection';
+import { SystemStatus } from './SystemStatus';
 import styles from './SettingsView.module.css';
 
 type SettingsTab = 'profile' | 'diet' | 'location' | 'notifications';
@@ -178,6 +179,9 @@ export function SettingsView() {
           </div>
         </aside>
       </div>
+
+      <SystemStatus />
+
       {showSaved && (
         <div className={styles.saveIndicator}><CheckCircle2 size={16} /> 已保存</div>
       )}

@@ -76,3 +76,53 @@ export async function getToolSchemas() {
 export async function getHealth() {
   return apiRequest<{ status: string; service: string; mode: string }>('/api/health');
 }
+
+// --- User Profile ---
+
+export interface BackendUserPreference {
+  key: string;
+  value: unknown;
+  source: string;
+  confidence: number;
+  scope: string;
+  evidence: string;
+  expires_at: string;
+  user_editable: boolean;
+  sensitive: boolean;
+}
+
+export interface BackendUserProfile {
+  user_id: string;
+  explicit_preferences: BackendUserPreference[];
+  learned_preferences: BackendUserPreference[];
+  session_preferences: BackendUserPreference[];
+}
+
+export async function getUserProfile(userId: string) {
+  return apiRequest<BackendUserProfile>(`/api/users/${userId}/profile`);
+}
+
+export async function saveUserProfile(userId: string, profile: BackendUserProfile) {
+  return apiRequest<BackendUserProfile>(`/api/users/${userId}/profile`, {
+    method: 'POST',
+    body: profile as unknown as Record<string, unknown>,
+  });
+}
+
+// --- LLM Status ---
+
+export interface LlmStatus {
+  provider: string;
+  protocol: string;
+  base_url: string;
+  model: string;
+  api_key: string;
+  configured: boolean;
+  remote_enabled: boolean;
+  response_format: string;
+  disable_thinking: boolean;
+}
+
+export async function getLlmStatus() {
+  return apiRequest<LlmStatus>('/api/llm/status');
+}
