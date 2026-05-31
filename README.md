@@ -1,278 +1,222 @@
-# WeekendPilot 本地生活规划助手
-
-WeekendPilot 是一个前后端分离的本地生活规划 Demo。前端使用 Next.js 进行页面渲染，后端由 FastAPI 提供 API 服务，并包含完整的 AI 规划流水线。
-
-## 功能特性
-
-- 智能生活规划：基于 AI 的本地活动、餐厅、路线推荐
-- 实时流式更新：通过 SSE 实时展示规划进度
-- 多智能体系统：Ranker、Validator、Recovery 等专业智能体协作
-- 用户偏好管理：支持显式和隐式偏好学习
-- 响应式设计：适配桌面和移动设备
-
-## 技术栈
-
-### 前端
-- **框架**: Next.js 15 + React 19
-- **语言**: TypeScript (strict mode)
-- **样式**: Tailwind CSS
-- **状态管理**: React Hooks
-- **测试**: Playwright (E2E), tsx (单元测试)
-
-### 后端
-- **框架**: FastAPI
-- **语言**: Python 3.11+
-- **AI/ML**: LangChain + LangGraph
-- **数据库**: SQLite (workflow + profiles)
-- **测试**: pytest
-- **包管理**: uv
-
-## 快速开始
-
-### 环境要求
-
-- Node.js 18+
-- Python 3.11+
-- uv (Python 包管理器)
-
-### 安装依赖
-
-```bash
-# 前端依赖
-npm install
-
-# 后端依赖
-uv sync
-```
-
-### 配置环境变量
-
-```bash
-# 复制示例配置
-cp .env.example .env
-
-# 编辑 .env 文件，填入你的 API 密钥
-# LLM_API_KEY=your-api-key-here
-```
-
-### 启动开发服务器
-
-```bash
-# 同时启动前后端
-npm run dev:full
-
-# 或分别启动
-npm run dev          # 前端 (http://127.0.0.1:4174)
-npm run dev:backend  # 后端 (http://127.0.0.1:8787)
-```
-
-## 开发指南
-
-### 测试
-
-```bash
-# 运行所有测试
-npm run test:all
-
-# 分类测试
-npm run test:frontend   # 前端单元测试
-npm run test:backend    # 后端 pytest 测试
-npm run test:contracts  # 前后端契约测试
-
-# 端到端测试
-npx playwright test
-
-# 构建检查
-npm run build
-```
-
-### 运行单个测试
-
-```bash
-# 后端单个测试
-uv run pytest tests/backend/test_api.py -q
-
-# 前端单个测试
-tsx --test tests/frontend/component.test.ts
-
-# E2E 单个测试
-npx playwright test tests/e2e/feature.spec.ts
-```
-
-### 代码检查
-
-```bash
-# TypeScript 类型检查
-npx tsc --noEmit
-
-# Python 代码检查 (如果配置了)
-uv run ruff check backend/
-```
-
-## 项目架构
-
-### 目录结构
-
-```
-├── app/                    # Next.js 应用入口
-├── components/             # React 组件
-├── features/planner/       # 规划功能模块
-├── lib/                    # 共享库和工具
-├── backend/                # FastAPI 后端
-│   ├── api/               # API 路由和中间件
-│   ├── services/          # 业务逻辑服务
-│   ├── orchestrator/      # 规划流水线
-│   ├── agents/            # AI 智能体
-│   ├── llm/               # LLM 集成
-│   └── tools/             # 工具注册表
-├── tests/                  # 测试文件
-│   ├── backend/           # 后端测试
-│   ├── frontend/          # 前端测试
-│   ├── contracts/         # 契约测试
-│   └── e2e/               # 端到端测试
-└── types/                  # TypeScript 类型定义
-```
-
-### 请求流程
-
-```
-用户界面 → API 客户端 → FastAPI 路由 → 业务服务 → 规划流水线 → AI 智能体
-```
-
-### 核心组件
-
-**前端**
-- `app/page.tsx`: 主页面入口
-- `components/`: UI 组件库
-- `features/planner/apiClient.ts`: API 客户端封装
-- `lib/api/client.ts`: HTTP 请求工具
-
-**后端**
-- `backend/api/app.py`: FastAPI 应用和路由定义
-- `backend/services/workflow_service.py`: 核心业务逻辑
-- `backend/orchestrator/pipeline.py`: LangGraph 规划流水线
-- `backend/agents/`: AI 智能体实现
-
-### AI 智能体系统
-
-规划流水线使用 LangGraph 构建，包含多个专业智能体：
-
-- **RankerAgent**: 对候选方案进行评分和排序
-- **ValidatorAgent**: 验证方案是否符合约束条件
-- **RecoveryAgent**: 处理错误并生成恢复方案
-- **MemoryAgent**: 管理用户偏好和会话上下文
-
-## API 文档
-
-后端 API 文档地址: `http://127.0.0.1:8787/docs`
-
-### 主要端点
-
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | `/api/health` | 健康检查 |
-| GET | `/api/llm/status` | LLM 状态信息 |
-| POST | `/api/plans/runs` | 创建规划任务 |
-| GET | `/api/plans/runs/{run_id}/stream` | SSE 实时更新流 |
-| GET | `/api/plans/{plan_id}` | 获取规划详情 |
-| GET | `/api/plans` | 获取所有规划列表 |
-
-## 配置说明
-
-### 环境变量
-
-| 变量名 | 描述 | 默认值 |
-|--------|------|--------|
-| `NEXT_PUBLIC_API_URL` | 后端 API 地址 | `http://127.0.0.1:8787` |
-| `LLM_PROVIDER` | LLM 提供商 | - |
-| `LLM_BASE_URL` | LLM API 地址 | - |
-| `LLM_API_KEY` | LLM API 密钥 | - |
-| `LLM_MODEL` | 使用的模型 | - |
-| `LLM_REMOTE_ENABLED` | 启用远程 LLM | `true` |
-| `LLM_TEMPERATURE` | 生成温度 | `0.2` |
-| `LLM_MAX_TOKENS` | 最大 token 数 | `2048` |
-| `LLM_TIMEOUT_SECONDS` | 请求超时时间 | `90` |
-
-### 数据存储
-
-- 工作流数据: `.weekendpilot/workflow.sqlite`
-- 用户配置: `.weekendpilot/profiles.sqlite`
-
-## 部署
-
-### 生产环境构建
-
-```bash
-# 构建前端
-npm run build
-
-# 启动生产服务器
-npm run start
-```
-
-### Docker 部署 (可选)
-
-```bash
-# 构建镜像
-docker build -t weekendpilot .
-
-# 运行容器
-docker run -p 4174:4174 -p 8787:8787 weekendpilot
-```
-
-## 故障排除
-
-### 常见问题
-
-1. **LLM 连接失败**
-   - 检查 `.env` 文件中的 API 密钥是否正确
-   - 确认 `LLM_REMOTE_ENABLED=true`
-   - 验证网络连接和 API 端点可用性
-
-2. **前端无法连接后端**
-   - 确认后端服务已启动 (端口 8787)
-   - 检查 `NEXT_PUBLIC_API_URL` 配置
-   - 查看浏览器控制台的网络请求
-
-3. **测试失败**
-   - 确保所有依赖已安装: `npm install` 和 `uv sync`
-   - 检查 Python 版本是否符合要求 (3.11+)
-   - 查看测试输出中的具体错误信息
-
-### 日志查看
-
-```bash
-# 后端日志
-npm run dev:backend 2>&1 | tee backend.log
-
-# 前端日志
-npm run dev 2>&1 | tee frontend.log
-```
-
-## 贡献指南
-
-1. Fork 项目
-2. 创建功能分支: `git checkout -b feature/your-feature`
-3. 提交更改: `git commit -m 'Add some feature'`
-4. 推送分支: `git push origin feature/your-feature`
-5. 创建 Pull Request
-
-### 代码规范
-
-- 前端: TypeScript strict mode, ESLint
-- 后端: Python 3.11+ 类型提示, pytest 测试覆盖
-- 提交信息: 使用中文，格式为 `类型: 描述`
-
-## 许可证
-
-本项目为演示项目，仅供学习和参考使用。
-
-## 联系方式
-
-如有问题或建议，请通过以下方式联系:
-- 提交 Issue
-- 发送邮件至项目维护者
+# 🚀 LocalLife-Agent (WeekendPilot) 本地生活闭环智能体助手
+
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Next.js 15](https://img.shields.io/badge/Next.js%2015-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![React 19](https://img.shields.io/badge/React%2019-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-🟠-black?style=for-the-badge)](https://github.com/langchain-ai/langgraph)
+[![SQLite](https://img.shields.io/badge/SQLite-074D5B?style=for-the-badge&logo=sqlite&logoColor=white)](https://sqlite.org/)
+
+> **LocalLife-Agent（又名 WeekendPilot）** 是一个面向本地生活场景的“规划到执行”闭环智能体 Demo。它将用户一句模糊的自然语言目标（如“雨天亲子半日游”、“朋友运动后聚餐”），转化为可解释的行程、可比较的候选方案、可审计的工具调用轨迹，以及**必须经用户确认后才幂等执行**的预约、领券、点单等具体动作。
+>
+> 💡 本项目不是一个静态推荐列表，而是一个完整的 **Agentic Workflow（智能体工作流）** 最佳实践展示。
 
 ---
 
-**注意**: 本项目使用远程 LLM 服务，需要有效的 API 密钥才能运行完整功能。
+## 🌟 核心产品定位与设计哲学
+
+在真实的本地生活服务场景中，纯大模型（LLM）的开放生成往往面临**幻觉多、约束不一致、执行无回执**等稳定性瓶颈。本项目通过创新的混合架构解决这些问题：
+- **混合供给模式**：采用“远程 LLM + 本地可复现种子供给库（Seed Catalog）”的架构。LLM 负责顶层意图理解与多步骤逻辑推理，本地种子数据库则模拟真实的 POI、天气、菜单、优惠券、路线及可用性，不连接真实的外部支付或生产预约系统，确保演示现场百分之百可复现与稳定。
+- **规划与执行分离**：明确区分为**只读规划工具**和**有副作用执行动作**。在规划阶段，智能体仅生成待确认动作（Pending Actions），绝对不会产生实际的订座、领券或下单行为。
+- **可审计与可观测**：前端提供 Evidence（推荐证据面板）和 Trace（执行链路面板），让评委和用户清晰看到“大模型为什么推荐这个”、“调用了什么工具”、“哪里进行了约束校验”。
+
+---
+
+## 🗺️ 系统架构设计
+
+本项目采用前后端分离的现代化技术架构。
+
+![LocalLife-Agent 系统架构图](docs/assets/locallife-architecture.png)
+
+### 💻 前端：Next.js 15 + React 19 单页工作台
+- **交互状态机**：利用定制的 `usePlanMachine` 状态钩子优雅地管理 `idle ➔ planning ➔ clarifying/results ➔ executing ➔ completed` 整个交互状态。
+- **实时数据渲染**：结果页同时展示多维度时间轴、路线渲染、多候选 Variants 对比、证据链（Evidence Panel）、智能体中间状态 Trace 以及最终的待批准动作台账（Action Ledger）。
+- **实时流式更新**：通过 Server-Sent Events (SSE) 技术，将后端的规划进度实时推送到前端页面，实现流畅的交互体感。
+
+### ⚙️ 后端：FastAPI + LangGraph + SQLite 引擎
+- **生命周期管理**：通过核心 `WorkflowService` 统一组织 Graph Run、Thread、Plan、Revision 的生命周期和持久化。
+- **数据库设计**：利用 SQLite 存储所有的工作流运行历史（`workflow.sqlite`）和用户显隐式画像（`profiles.sqlite`）。
+
+---
+
+## 🤖 智能规划执行工作流
+
+整个规划流水线的顶层控制核心位于 `backend/orchestrator/pipeline.py`，其状态图转移流如下所示：
+
+![LocalLife-Agent 规划执行流程图](docs/assets/locallife-planning-flow.png)
+
+### ⚡ 核心 Pipeline 步骤解析
+
+1. **`parse_intent`（意图解析与结构化）**
+   - 远程 OpenAI 兼容模型将用户的自然语言解构成结构化的约束对象 `ParsedConstraints`（含场景、起点、时间窗、同行人偏好、硬约束等）。
+   - > [!IMPORTANT]
+     > 当用户意图过于模糊时（例如仅输入“随便逛逛”），系统会流式返回 `needs_clarification` 并进入澄清态，交互式收集用户偏好，决不盲目伪造计划。
+2. **`build_context`（多维上下文补全）**
+   - 自动获取实时天气以及 SQLite 中缓存的用户画像，作为约束背景。
+3. **`parallel_search`（本地供给并行检索）**
+   - 活动点（Activities）、餐厅（Restaurants）和散步点（Walks）三个节点并行检索本地 Catalog，根据天气安全性、距离半径、偏好进行硬性过滤。
+4. **多智能体决策循环（Ranker ➔ Validator ➔ Recovery）**
+   - 🤖 **RankerAgent**：负责分析候选 POI，基于用户偏好和时序完成多目标推荐和排序。
+   - 🤖 **ValidatorAgent**：扮演“安检员”角色，强校验营业时间、餐厅容量、天气风险、路线效率和硬约束的匹配程度。
+   - 🤖 **RecoveryAgent**：当校验发现阻塞性冲突时（如暴雨天推荐了户外项目），该智能体将**仅替换冲突节点**，并动态回退到 Ranker 进行二次排程。
+   - > [!NOTE]
+     > 智能体推理发生意外时有强规则保障 Fallback，且恢复循环最多迭代 3 次，防止死循环。最终生成 `ready`、`pending_approval` 或 `validation_failed` 状态的路线方案。
+
+---
+
+## 🔒 执行安全与可观测性保障
+
+> [!WARNING]
+> 为了防范 AI 智能体的“越权执行”与“重复操作”，本项目在执行侧实施了极其严苛的金融级安全隔离与幂等设计。
+
+- **副作用动作隔离**：`reserve_activity`、`create_reservation`、`claim_coupon`、`create_order`、`send_plan_message`、`create_calendar_event` 等动作均被标记为 `side_effect=true` 和 `requires_confirmation=true`。
+- **显式用户授权**：规划出的动作仅仅作为 Pending Actions 记录在 Ledger 中。只有当用户在前端工作台逐一手动勾选确认后，调用 `/api/plans/{plan_id}/resume` 接口，系统才会以原子化的方式执行。
+- **并发与幂等控制**：后端执行利用 SQLite 的 `BEGIN IMMEDIATE` 排他锁锁库，结合唯一的 `Idempotency Key`、Action Attempts 和 Receipts 回执，杜绝用户在前端多次点击导致的多重领券或重复点单。
+
+---
+
+## 🛠️ 快速开始
+
+### 📋 环境要求
+* **Node.js** 18+
+* **Python** 3.11+
+* **uv** (极速 Python 包与依赖管理器)
+
+### 1. 安装项目依赖
+
+```bash
+# 克隆项目后，在根目录下分别安装前端和后端依赖
+# 安装前端依赖
+npm install
+
+# 安装后端依赖 (使用 uv 极大缩减安装时间)
+uv sync
+```
+
+### 2. 配置环境变量
+
+复制示例环境变量配置文件并填入您的 LLM API 配置：
+
+```bash
+# 复制环境变量模板
+cp .env.example .env
+
+# 编辑 .env 文件并填入您所用的 LLM 服务配置
+# 示例配置：
+# LLM_PROVIDER=openai
+# LLM_BASE_URL=https://api.openai.com/v1
+# LLM_API_KEY=your-api-key-here
+# LLM_MODEL=gpt-4o
+# LLM_REMOTE_ENABLED=true
+```
+
+### 3. 启动开发服务器
+
+你可以利用我们集成好的并发启动脚本**一键拉起**前端与后端服务：
+
+```bash
+# 一键并发拉起前后端服务
+npm run dev:full
+```
+
+或者，你也可以选择在两个不同的终端窗口中分别启动：
+
+```bash
+# 启动前端服务 (运行于 http://127.0.0.1:4174)
+npm run dev
+
+# 启动后端 FastAPI 服务 (运行于 http://127.0.0.1:8787)
+npm run dev:backend
+```
+
+后端 API 的交互式 Swagger 文档会在 [http://127.0.0.1:8787/docs](http://127.0.0.1:8787/docs) 可用。
+
+---
+
+## 🧪 自动化测试套件
+
+为保证 Hackathon 现场修改与演示的绝对稳定性，项目配备了极高覆盖率的前后端与契约测试网络。
+
+```bash
+# 一键运行全部测试
+npm run test:all
+```
+
+### 🔬 分门别类测试命令
+
+* **前端单元测试**：使用 TypeScript 原生测试框架快速对核心组件和状态机进行断言。
+  ```bash
+  npm run test:frontend
+  ```
+* **后端单元测试**：使用 `pytest` 覆盖核心 API、SSE 推送、LangGraph 状态迁移、Agent 决策算法与 Action 幂等性。
+  ```bash
+  npm run test:backend
+  ```
+* **前后端契约测试（Contract Tests）**：使用 `tsx` 运行，强校验前端 API 客户端与后端 FastAPI 数据响应字段的 100% 映射契约。
+  ```bash
+  npm run test:contracts
+  ```
+* **端到端（E2E）集成测试**：使用 Playwright 模拟用户自然语言输入、流式等待、方案修改与执行流确认。
+  ```bash
+  npm run test:e2e
+  ```
+
+---
+
+## 📁 项目目录结构解析
+
+```
+├── app/                    # Next.js 15 页面布局及路由入口 (App Router)
+├── components/             # 复用 React 组件库
+├── features/planner/       # 规划器（Planner）核心前端状态机与 API 客户端
+│   ├── usePlanMachine.ts   # 控制 idle -> planning -> clarify -> results 状态转移的核心
+│   └── apiClient.ts        # 对接 SSE 与 Resume API 动作
+├── lib/                    # 前端基础库与 HTTP 工具包
+├── backend/                # FastAPI 后端工程
+│   ├── api/                # FastAPI 路由、SSE 推送机制及 App 初始化
+│   ├── services/           # 业务逻辑服务层 (Workflow, User Profile 核心服务)
+│   ├── orchestrator/       # 基于 LangGraph 的规划 pipeline (pipeline.py)
+│   ├── agents/             # 多智能体协同实现 (Ranker, Validator, Recovery)
+│   ├── llm/                # LLM 多适配器客户端封装
+│   └── tools/              # 只读规划工具及有副作用 Action 工具注册表
+├── tests/                  # 高度覆盖的测试层
+│   ├── backend/            # 后端 pytest 逻辑测试
+│   ├── frontend/           # 前端状态与渲染测试
+│   ├── contracts/          # 强契约测试
+│   └── e2e/                # Playwright 端到端浏览器自动化测试
+└── types/                  # 共享 TypeScript 类型定义文件
+```
+
+---
+
+## 📡 核心 API 端点与 SSE 流式说明
+
+### 🛠️ 关键 HTTP 接口清单
+
+| 请求方法 | 路由地址 | 功能描述 | 核心有效负载（Payload） / 返回信息 |
+| :--- | :--- | :--- | :--- |
+| **POST** | `/api/plans/runs` | 发起一个新的规划任务 | 入参为用户 Prompt，返回唯一工作流运行 ID `run_id` |
+| **GET** | `/api/plans/runs/{run_id}/stream` | **SSE 流式数据传输** | 实时推送智能体所处的节点信息、约束条件解析及生成进度 |
+| **GET** | `/api/plans/{plan_id}` | 获取最终规划快照与路线详情 | 返回完整的时序 Itinerary、推荐证据 Evidence、中间 Trace 等 |
+| **POST** | `/api/plans/{plan_id}/resume` | 提交并执行选中的 Actions | 用于原子化确认执行 Pending Actions，返回执行回执（Receipts） |
+| **GET** | `/api/llm/status` | LLM 连接与心跳健康检查 | 用于演示前的网关稳定性检查 |
+
+---
+
+## 🛡️ 演示最佳实践与数据存储
+
+- **多用户沙箱**：通过指定 `x-user-id` 请求头，系统可以在同一环境上轻松模拟多种不同兴趣画像（如“亲子偏好”、“高消费偏好”）的智能体交互逻辑。
+- **本地 SQLite 路径**：
+  - 工作流状态数据库：存储于根目录的 `.weekendpilot/workflow.sqlite`
+  - 用户画像冷启动库：存储于根目录的 `.weekendpilot/profiles.sqlite`
+
+---
+
+## 🤝 贡献规范
+
+1. 创建新功能分支：`git checkout -b feature/amazing-feature`
+2. 提交修改：`git commit -m "feat: 描述"`
+3. 推送分支并提交 PR，请确保所有测试指令（`npm run test:all`）通过后再进行 Merge。
+
+---
+
+*本项目专为 Hackathon 和 Agentic Workflow 设计方案展示而定制，预留了对接高德/百度地图 API、美团/大众点评商户真实供给、腾讯微信/阿里钉钉/Google 日历消息通道的完整适配器层。*
