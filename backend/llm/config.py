@@ -18,6 +18,7 @@ class LLMConfig:
     remote_enabled: bool = False
     response_format: str = "json_object"
     disable_thinking: bool = True
+    trust_env_proxy: bool = False
 
     @classmethod
     def from_env_file(cls, env_path: Path | None = None) -> "LLMConfig":
@@ -45,6 +46,7 @@ class LLMConfig:
             remote_enabled=remote_enabled,
             response_format=merged.get("LLM_RESPONSE_FORMAT", "json_object").strip(),
             disable_thinking=merged.get("LLM_DISABLE_THINKING", "true").lower() in {"1", "true", "yes", "on"},
+            trust_env_proxy=merged.get("LLM_TRUST_ENV_PROXY", "false").lower() in {"1", "true", "yes", "on"},
         )
 
     @property
@@ -62,6 +64,7 @@ class LLMConfig:
             "remote_enabled": self.remote_enabled,
             "response_format": self.response_format or "disabled",
             "disable_thinking": self.disable_thinking,
+            "trust_env_proxy": self.trust_env_proxy,
         }
 
 

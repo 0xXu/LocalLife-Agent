@@ -36,6 +36,7 @@ class LLMConfigTest(unittest.TestCase):
         self.assertEqual(config.safe_status()["api_key"], "configured")
         self.assertTrue(config.remote_enabled)
         self.assertEqual(config.timeout_seconds, 90)
+        self.assertFalse(config.trust_env_proxy)
 
     def test_env_can_explicitly_disable_remote_llm(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -56,6 +57,26 @@ class LLMConfigTest(unittest.TestCase):
                 config = LLMConfig.from_env_file(env_path)
 
         self.assertFalse(config.remote_enabled)
+
+    def test_env_can_enable_system_proxy_for_llm(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            env_path.write_text(
+                "\n".join(
+                    [
+                        "LLM_BASE_URL=https://token-plan-sgp.xiaomimimo.com/v1",
+                        "LLM_API_KEY=secret-key-value",
+                        "LLM_MODEL=MiMo-V2.5-Pro",
+                        "LLM_TRUST_ENV_PROXY=true",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            with patch.dict(os.environ, {}, clear=True):
+                config = LLMConfig.from_env_file(env_path)
+
+        self.assertTrue(config.trust_env_proxy)
 
 
 if __name__ == "__main__":

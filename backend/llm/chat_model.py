@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
+import httpx
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk
 from langchain_openai import ChatOpenAI
@@ -198,6 +199,8 @@ def build_chat_model(config: LLMConfig, temperature: float = 0.2) -> ChatOpenAI:
         model_kwargs["response_format"] = {"type": config.response_format}
     if model_kwargs:
         extra_kwargs["model_kwargs"] = model_kwargs
+    extra_kwargs["http_client"] = httpx.Client(trust_env=config.trust_env_proxy)
+    extra_kwargs["http_async_client"] = httpx.AsyncClient(trust_env=config.trust_env_proxy)
     return ChatOpenAI(
         base_url=config.base_url,
         api_key=config.api_key,
@@ -226,6 +229,8 @@ def build_mimo_chat_model(config: LLMConfig, temperature: float = 0.2) -> MiMoCh
         model_kwargs["response_format"] = {"type": config.response_format}
     if model_kwargs:
         extra_kwargs["model_kwargs"] = model_kwargs
+    extra_kwargs["http_client"] = httpx.Client(trust_env=config.trust_env_proxy)
+    extra_kwargs["http_async_client"] = httpx.AsyncClient(trust_env=config.trust_env_proxy)
     return MiMoChatOpenAI(
         base_url=config.base_url,
         api_key=config.api_key,
