@@ -1,0 +1,45 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: locallife-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - locallife-data:/app/.weekendpilot
+    healthcheck:
+      test:
+        - CMD
+        - .venv/bin/python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8787/api/llm/status')"
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - gateway
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        NEXT_PUBLIC_API_URL: https://local-life.vectornest.space
+    container_name: locallife-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - gateway
+
+volumes:
+  locallife-data:
+
+networks:
+  gateway:
+    external: true
+    name: gateway-net
