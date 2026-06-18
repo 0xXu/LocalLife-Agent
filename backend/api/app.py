@@ -47,7 +47,9 @@ def create_app(workflow_service: WorkflowService | None = None, run_service: Run
         return error_response(str(exc) or "validation_error", 400)
 
     @api.exception_handler(RequestValidationError)
-    async def request_validation_error_handler(_request: Request, _exc: RequestValidationError) -> JSONResponse:
+    async def request_validation_error_handler(_request: Request, exc: RequestValidationError) -> JSONResponse:
+        if any(error.get("type") == "json_invalid" for error in exc.errors()):
+            return error_response("invalid_json", 400)
         return error_response("validation_error", 400)
 
     @api.exception_handler(StarletteHTTPException)

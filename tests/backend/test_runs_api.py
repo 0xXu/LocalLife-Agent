@@ -42,3 +42,26 @@ class RunsApiTest(unittest.TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["error"]["code"], "validation_error")
+
+    def test_malformed_json_returns_invalid_json(self):
+        response = self.client.post("/api/runs", content=b'{"goal":', headers={"content-type": "application/json"})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"]["code"], "invalid_json")
+
+    def test_stream_missing_run_returns_not_found(self):
+        response = self.client.get("/api/runs/run_missing/events")
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()["error"]["code"], "run_not_found")
+
+    def test_stream_skips_duplicate_replayed_event_ids(self):
+        created = self.client.post("/api/runs", json={"goal": "family afternoon"}).json()
+        self.run_service.events.close_queue(created["run_id"])
+
+        with self.client.stream("GET", f"/api/runs/{created['run_id']}/events") as response:
+            body = response.read().decode("utf-8")
+
+        event_ids = [line.removeprefix("id: ") for line in body.splitlines() if line.startswith("id: ")]
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(event_ids, [f"{created['run_id']}_evt_000001"])
