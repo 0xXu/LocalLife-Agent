@@ -6,23 +6,27 @@ from json import JSONDecodeError
 from typing import Any
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from backend.api.routes.runs import router as runs_router
+from backend.application.run_service import RunService
 from backend.graph.events import sse_event
 from backend.llm import LLMConfig
 from backend.profile.models import UserPreference, UserProfile
 from backend.services import WorkflowService
 
 
-def create_app(workflow_service: WorkflowService | None = None) -> FastAPI:
+def create_app(workflow_service: WorkflowService | None = None, run_service: RunService | None = None) -> FastAPI:
     api = FastAPI(
         title="WeekendPilot Backend",
         description="FastAPI backend for the WeekendPilot local-life planning workflow.",
         version="0.1.0",
     )
     api.state.workflow_service = workflow_service or WorkflowService()
+    api.state.run_service = run_service or RunService()
     api.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -41,6 +45,10 @@ def create_app(workflow_service: WorkflowService | None = None) -> FastAPI:
     @api.exception_handler(ValueError)
     async def value_error_handler(_request: Request, exc: ValueError) -> JSONResponse:
         return error_response(str(exc) or "validation_error", 400)
+
+    @api.exception_handler(RequestValidationError)
+    async def request_validation_error_handler(_request: Request, _exc: RequestValidationError) -> JSONResponse:
+        return error_response("validation_error", 400)
 
     @api.exception_handler(StarletteHTTPException)
     async def http_error_handler(_request: Request, exc: StarletteHTTPException) -> JSONResponse:
@@ -151,6 +159,8 @@ def create_app(workflow_service: WorkflowService | None = None) -> FastAPI:
     @api.get("/api/plans/{plan_id}")
     async def get_plan(plan_id: str, request: Request) -> dict[str, Any]:
         return workflow_plan_payload(workflow(request).get_plan(plan_id))
+
+    api.include_router(runs_router)
 
     return api
 
