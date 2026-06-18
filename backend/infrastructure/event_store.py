@@ -55,7 +55,7 @@ class EventStore:
                 (run_id,),
             ).fetchone()
             seq = int(row["next_seq"])
-            event_id = f"evt_{seq:06d}"
+            event_id = f"{run_id}_evt_{seq:06d}"
             conn.execute(
                 """
                 insert into run_events(event_id, run_id, plan_id, seq, event_type, payload_json, created_at)

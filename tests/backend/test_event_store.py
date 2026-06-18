@@ -33,3 +33,19 @@ class EventStoreTest(unittest.TestCase):
         raw = asyncio.run(read_once())
         self.assertIn(f"id: {event.event_id}", raw)
         self.assertIn("event: run.event", raw)
+
+    def test_multiple_runs_start_at_seq_one_with_unique_event_ids(self):
+        self.store.open_queue("run_2")
+
+        first = self.store.append("run_1", None, "run.started", {})
+        second = self.store.append("run_2", None, "run.started", {})
+
+        self.assertEqual(first.seq, 1)
+        self.assertEqual(second.seq, 1)
+        self.assertNotEqual(first.event_id, second.event_id)
+
+        async def read_once():
+            return await self.store.next_sse("run_2")
+
+        raw = asyncio.run(read_once())
+        self.assertIn(f"id: {second.event_id}", raw)
