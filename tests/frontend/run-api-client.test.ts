@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { approveRunActions, createRun, rejectRun } from '../../features/runs/api';
+import { approveRunActions, createRun, rejectRun, streamRunEvents } from '../../features/runs/api';
 
 type FetchCall = { url: string; init?: RequestInit };
 
@@ -28,4 +28,67 @@ test('run API client uses run-centered endpoints', async () => {
     ['http://127.0.0.1:8787/api/runs/run_1/actions/reject', 'POST'],
   ]);
   assert.equal(calls[0].init?.body, JSON.stringify({ goal: '家庭半日计划', user_id: 'user_1', mode: 'plan' }));
+});
+
+class FakeEventSource {
+  static instances: FakeEventSource[] = [];
+
+  readyState = 0;
+  closeCount = 0;
+  listeners: Record<string, Array<(event: MessageEvent) => void>> = {};
+
+  constructor(public url: string) {
+    FakeEventSource.instances.push(this);
+  }
+
+  addEventListener(type: string, listener: (event: MessageEvent) => void) {
+    this.listeners[type] = [...(this.listeners[type] ?? []), listener];
+  }
+
+  emit(type: string, data: Record<string, unknown>) {
+    for (const listener of this.listeners[type] ?? []) {
+      listener({ data: JSON.stringify(data) } as MessageEvent);
+    }
+  }
+
+  close() {
+    this.closeCount += 1;
+  }
+}
+
+test('streamRunEvents listens to named run.event frames and closes on terminal events', () => {
+  delete process.env.NEXT_PUBLIC_API_URL;
+  FakeEventSource.instances = [];
+  globalThis.EventSource = FakeEventSource as unknown as typeof EventSource;
+  const received: string[] = [];
+
+  streamRunEvents('run_1', {
+    onEvent: (event) => {
+      received.push(event.type);
+    },
+  });
+
+  const source = FakeEventSource.instances[0];
+  assert.equal(source.url, 'http://127.0.0.1:8787/api/runs/run_1/events');
+  assert.equal(source.listeners['run.event'].length, 1);
+
+  source.emit('run.event', {
+    type: 'run.started',
+    run_id: 'run_1',
+    plan_id: 'plan_1',
+    seq: 1,
+    timestamp: '2026-06-19T00:00:00Z',
+    payload: {},
+  });
+  source.emit('run.event', {
+    type: 'run.completed',
+    run_id: 'run_1',
+    plan_id: 'plan_1',
+    seq: 2,
+    timestamp: '2026-06-19T00:00:01Z',
+    payload: {},
+  });
+
+  assert.deepEqual(received, ['run.started', 'run.completed']);
+  assert.equal(source.closeCount, 1);
 });

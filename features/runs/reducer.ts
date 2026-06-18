@@ -38,11 +38,11 @@ export function runReducer(state: RunState, event: RunEventEnvelope): RunState {
     case 'run.completed':
       return { ...nextState, status: 'completed', pendingActions: [] };
     case 'run.failed':
-      return { ...nextState, status: 'failed', error: event.payload.error ?? event.payload };
+      return { ...nextState, status: 'failed', pendingActions: [], error: event.payload.error ?? event.payload };
     case 'run.rejected':
       return { ...nextState, status: 'rejected', pendingActions: [] };
     case 'guardrail.triggered':
-      return { ...nextState, status: 'validation_failed', error: event.payload };
+      return { ...nextState, status: 'validation_failed', pendingActions: [], error: event.payload };
     default:
       return nextState;
   }

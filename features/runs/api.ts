@@ -43,10 +43,13 @@ export async function rejectRun(runId: string, reason = 'user_rejected') {
 export function streamRunEvents(runId: string, callbacks: RunEventCallbacks = {}) {
   const es = new EventSource(resolveApiUrl(`/api/runs/${runId}/events`));
 
-  es.onmessage = (message) => {
+  es.addEventListener('run.event', (message) => {
     const event = RunEventEnvelopeSchema.parse(JSON.parse(message.data));
     void callbacks.onEvent?.(event);
-  };
+    if (isTerminalRunEvent(event.type)) {
+      es.close();
+    }
+  });
 
   es.onerror = () => {
     if (es.readyState === EventSource.CLOSED) {
@@ -57,4 +60,8 @@ export function streamRunEvents(runId: string, callbacks: RunEventCallbacks = {}
   return () => {
     es.close();
   };
+}
+
+function isTerminalRunEvent(type: RunEventEnvelope['type']) {
+  return type === 'run.completed' || type === 'run.failed' || type === 'run.rejected';
 }
