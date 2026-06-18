@@ -56,39 +56,41 @@ class FakeEventSource {
   }
 }
 
-test('streamRunEvents listens to named run.event frames and closes on terminal events', () => {
-  delete process.env.NEXT_PUBLIC_API_URL;
-  FakeEventSource.instances = [];
-  globalThis.EventSource = FakeEventSource as unknown as typeof EventSource;
-  const received: string[] = [];
+for (const terminalType of ['run.completed', 'run.failed', 'run.rejected'] as const) {
+  test(`streamRunEvents listens to named run.event frames and closes on ${terminalType}`, () => {
+    delete process.env.NEXT_PUBLIC_API_URL;
+    FakeEventSource.instances = [];
+    globalThis.EventSource = FakeEventSource as unknown as typeof EventSource;
+    const received: string[] = [];
 
-  streamRunEvents('run_1', {
-    onEvent: (event) => {
-      received.push(event.type);
-    },
+    streamRunEvents('run_1', {
+      onEvent: (event) => {
+        received.push(event.type);
+      },
+    });
+
+    const source = FakeEventSource.instances[0];
+    assert.equal(source.url, 'http://127.0.0.1:8787/api/runs/run_1/events');
+    assert.equal(source.listeners['run.event'].length, 1);
+
+    source.emit('run.event', {
+      type: 'run.started',
+      run_id: 'run_1',
+      plan_id: 'plan_1',
+      seq: 1,
+      timestamp: '2026-06-19T00:00:00Z',
+      payload: {},
+    });
+    source.emit('run.event', {
+      type: terminalType,
+      run_id: 'run_1',
+      plan_id: 'plan_1',
+      seq: 2,
+      timestamp: '2026-06-19T00:00:01Z',
+      payload: {},
+    });
+
+    assert.deepEqual(received, ['run.started', terminalType]);
+    assert.equal(source.closeCount, 1);
   });
-
-  const source = FakeEventSource.instances[0];
-  assert.equal(source.url, 'http://127.0.0.1:8787/api/runs/run_1/events');
-  assert.equal(source.listeners['run.event'].length, 1);
-
-  source.emit('run.event', {
-    type: 'run.started',
-    run_id: 'run_1',
-    plan_id: 'plan_1',
-    seq: 1,
-    timestamp: '2026-06-19T00:00:00Z',
-    payload: {},
-  });
-  source.emit('run.event', {
-    type: 'run.completed',
-    run_id: 'run_1',
-    plan_id: 'plan_1',
-    seq: 2,
-    timestamp: '2026-06-19T00:00:01Z',
-    payload: {},
-  });
-
-  assert.deepEqual(received, ['run.started', 'run.completed']);
-  assert.equal(source.closeCount, 1);
-});
+}
