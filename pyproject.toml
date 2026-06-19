@@ -8,6 +8,7 @@ dependencies = [
     "fastapi>=0.136.1",
     "langchain-openai>=0.3.0",
     "langgraph>=1.1.10",
+    "openai-agents>=0.17.5",
     "uvicorn[standard]>=0.46.0",
 ]
 
