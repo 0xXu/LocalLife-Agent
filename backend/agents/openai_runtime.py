@@ -8,6 +8,7 @@ from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
 from openai import AsyncOpenAI
 
 from backend.agents.guardrails import require_grounded_action
+from backend.agents.final_validation_tool import FINAL_VALIDATION_DONE_KEY, FinalValidationTool
 from backend.agents.intent_extraction_tool import (
     CLARIFICATION_QUEUE_KEY,
     LLM_MISSING_FIELDS_KEY,
@@ -34,6 +35,7 @@ class OpenAIAgentsRuntime:
         planner_model: Any | None = None,
         constraint_extractor: ConstraintExtractor | None = None,
         intent_tool: IntentExtractionTool | None = None,
+        final_validation_tool: FinalValidationTool | None = None,
     ) -> None:
         self.dry_run = dry_run
         self.model = model
@@ -42,6 +44,10 @@ class OpenAIAgentsRuntime:
             dry_run=dry_run,
             model=planner_model or model,
             constraint_extractor=constraint_extractor,
+        )
+        self.final_validation_tool = final_validation_tool or FinalValidationTool(
+            dry_run=dry_run,
+            model=planner_model or model,
         )
 
     @classmethod
@@ -86,6 +92,29 @@ class OpenAIAgentsRuntime:
                 clarification=clarification,
                 validation={"valid": False, "missing_fields": missing_fields},
             )
+
+        if not constraints.get(FINAL_VALIDATION_DONE_KEY):
+            validation_result = await self.final_validation_tool.validate(
+                request,
+                constraints=constraints,
+                sink=sink,
+            )
+            constraints = dict(validation_result.get("constraints", constraints))
+            missing_fields = [
+                str(field)
+                for field in validation_result.get("missing_fields", [])
+                if str(field) in self._required_field_priority() and not constraints.get(str(field))
+            ]
+            if missing_fields:
+                constraints[CLARIFICATION_QUEUE_KEY] = missing_fields
+                clarification = self._clarification_for(missing_fields[0], constraints)
+                await sink("clarification.required", clarification)
+                return PlanRunResult(
+                    status="needs_clarification",
+                    clarification=clarification,
+                    validation={"valid": False, "missing_fields": missing_fields},
+                )
+            constraints[FINAL_VALIDATION_DONE_KEY] = True
 
         if self.dry_run:
             return await self._approval_plan_result(

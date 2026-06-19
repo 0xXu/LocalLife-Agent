@@ -148,6 +148,75 @@ class OpenAIAgentsRuntimeTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.clarification["question"]["id"], "start_location")
         self.assertIn(("agent.completed", {"agent": "intent_tool"}), events)
 
+    async def test_final_validation_runs_once_after_clarification_queue_is_complete(self):
+        class FakeFinalValidationTool:
+            def __init__(self):
+                self.calls = 0
+
+            async def validate(self, _request, *, constraints, sink):
+                self.calls += 1
+                await sink("agent.completed", {"agent": "final_validation"})
+                return {"constraints": constraints, "missing_fields": []}
+
+        validator = FakeFinalValidationTool()
+        runtime = OpenAIAgentsRuntime(dry_run=True, final_validation_tool=validator)
+        events = []
+
+        async def sink(event_type, payload):
+            events.append((event_type, payload))
+
+        result = await runtime.start_plan(
+            PlanRunRequest(
+                goal="我想出去玩",
+                user_id="user_1",
+                answers={
+                    "time_window": "今天下午 2 点",
+                    "start_location": "家附近",
+                    "party_size": 2,
+                    "activity_preference": "散步逛逛",
+                },
+                constraints={"__clarification_queue": []},
+            ),
+            RuntimeContext(run_id="run_1", plan_id="plan_1", user_id="user_1"),
+            sink,
+        )
+
+        self.assertEqual(validator.calls, 1)
+        self.assertEqual(result.status, "approval_required")
+        self.assertIn(("agent.completed", {"agent": "final_validation"}), events)
+
+    async def test_final_validation_can_request_one_more_clarification(self):
+        class FakeFinalValidationTool:
+            async def validate(self, _request, *, constraints, sink):
+                await sink("agent.completed", {"agent": "final_validation"})
+                return {
+                    "constraints": constraints,
+                    "missing_fields": ["start_location"],
+                }
+
+        runtime = OpenAIAgentsRuntime(dry_run=True, final_validation_tool=FakeFinalValidationTool())
+
+        async def sink(_event_type, _payload):
+            return None
+
+        result = await runtime.start_plan(
+            PlanRunRequest(
+                goal="我想出去玩",
+                user_id="user_1",
+                answers={
+                    "time_window": "今天下午 2 点",
+                    "party_size": 2,
+                    "activity_preference": "散步逛逛",
+                },
+                constraints={"__clarification_queue": []},
+            ),
+            RuntimeContext(run_id="run_1", plan_id="plan_1", user_id="user_1"),
+            sink,
+        )
+
+        self.assertEqual(result.status, "needs_clarification")
+        self.assertEqual(result.clarification["question"]["id"], "start_location")
+
     async def test_local_dry_run_returns_grounded_plan_result(self):
         runtime = OpenAIAgentsRuntime(dry_run=True)
         events = []
@@ -233,11 +302,12 @@ class OpenAIAgentsRuntimeTest(unittest.IsolatedAsyncioTestCase):
                 sink,
             )
 
-        self.assertEqual(len(prompts), 1)
-        self.assertIn('"time_window": "今天下午 2 点"', prompts[0])
-        self.assertIn('"start_location": "家附近"', prompts[0])
-        self.assertIn('"party_size": 2', prompts[0])
-        self.assertIn('"activity_preference": "散步逛逛"', prompts[0])
+        self.assertEqual(len(prompts), 2)
+        planner_prompt = prompts[-1]
+        self.assertIn('"time_window": "今天下午 2 点"', planner_prompt)
+        self.assertIn('"start_location": "家附近"', planner_prompt)
+        self.assertIn('"party_size": 2', planner_prompt)
+        self.assertIn('"activity_preference": "散步逛逛"', planner_prompt)
 
     async def test_execute_actions_uses_runtime_context_for_plan_identity(self):
         runtime = OpenAIAgentsRuntime(dry_run=True)
