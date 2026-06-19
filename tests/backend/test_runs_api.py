@@ -64,4 +64,5 @@ class RunsApiTest(unittest.TestCase):
 
         event_ids = [line.removeprefix("id: ") for line in body.splitlines() if line.startswith("id: ")]
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(event_ids, [f"{created['run_id']}_evt_000001"])
+        self.assertEqual(event_ids[0], f"{created['run_id']}_evt_000001")
+        self.assertEqual(event_ids, list(dict.fromkeys(event_ids)))

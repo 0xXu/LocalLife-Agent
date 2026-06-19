@@ -30,12 +30,4 @@ def extract_json_object(content: str) -> str:
 
 
 def build_react_agent(llm, tools: list, prompt: str | Callable, checkpointer=None):
-    """Build a ReAct agent subgraph. Wraps create_react_agent for future migration."""
-    from langgraph.prebuilt import create_react_agent
-
-    return create_react_agent(
-        llm,
-        tools=tools,
-        prompt=prompt,
-        checkpointer=checkpointer,
-    )
+    raise RuntimeError("legacy_react_runtime_removed")

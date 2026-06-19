@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import json
 from json import JSONDecodeError
 from typing import Any
@@ -8,28 +7,33 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from backend.api.routes.runs import router as runs_router
 from backend.api.schemas.plans import PlanDetailResponse
 from backend.application.approval_service import ApprovalService
 from backend.application.run_service import RunService
-from backend.graph.events import sse_event
 from backend.llm import LLMConfig
 from backend.profile.models import UserPreference, UserProfile
-from backend.services import WorkflowService
+from backend.profile.store import UserProfileStore
+from backend.tools.registry import LocalToolRegistry
 
 
-def create_app(workflow_service: WorkflowService | None = None, run_service: RunService | None = None) -> FastAPI:
+def create_app(
+    run_service: RunService | None = None,
+    profile_store: UserProfileStore | None = None,
+    tool_registry: LocalToolRegistry | None = None,
+) -> FastAPI:
     api = FastAPI(
         title="WeekendPilot Backend",
         description="FastAPI backend for the WeekendPilot local-life planning workflow.",
         version="0.1.0",
     )
-    api.state.workflow_service = workflow_service or WorkflowService()
     api.state.run_service = run_service or RunService()
     api.state.approval_service = ApprovalService(api.state.run_service)
+    api.state.profile_store = profile_store or UserProfileStore(".weekendpilot/profiles.sqlite")
+    api.state.tool_registry = tool_registry or LocalToolRegistry()
     api.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -78,11 +82,11 @@ def create_app(workflow_service: WorkflowService | None = None, run_service: Run
 
     @api.get("/api/tool-schemas")
     async def tool_schemas(request: Request) -> dict[str, Any]:
-        return workflow(request).tool_schemas()
+        return {"tools": request.app.state.tool_registry.schemas()}
 
     @api.get("/api/users/{user_id}/profile")
     async def get_user_profile(user_id: str, request: Request) -> dict[str, Any]:
-        return workflow(request).get_user_profile(user_id)
+        return request.app.state.profile_store.get(user_id).as_dict()
 
     @api.post("/api/users/{user_id}/profile")
     async def save_user_profile(user_id: str, request: Request) -> dict[str, Any]:
@@ -93,68 +97,8 @@ def create_app(workflow_service: WorkflowService | None = None, run_service: Run
             learned_preferences=[UserPreference(**item) for item in body.get("learned_preferences", [])],
             session_preferences=[UserPreference(**item) for item in body.get("session_preferences", [])],
         )
-        return workflow(request).save_user_profile(profile)
-
-    @api.get("/api/plans")
-    async def list_plans(request: Request) -> dict[str, Any]:
-        listed = workflow(request).list_plans()
-        return {
-            "plans": [_workflow_summary(summary) for summary in listed["plans"]],
-            "total": listed["total"],
-        }
-
-    @api.post("/api/plans/runs")
-    async def start_plan_run(request: Request) -> dict[str, Any]:
-        body = await read_json_object(request)
-        goal = str(body.get("goal", ""))
-        user_id = str(body.get("user_id", "local_demo_user"))
-        svc = workflow(request)
-        if body.get("sync"):
-            return svc.start_run(goal, user_id=user_id)
-        return svc.start_run_background(goal, user_id=user_id)
-
-    @api.get("/api/plans/runs/{run_id}/stream")
-    async def stream_plan_run(run_id: str, request: Request) -> StreamingResponse:
-        svc = workflow(request)
-
-        # Try queue-based streaming first (real-time progress events).
-        # Fall back to DB-based events if the queue doesn't exist (e.g. old
-        # runs that completed before the queue infra was added, or queue was
-        # already consumed and removed).
-        from backend.graph.events import has_run_queue
-
-        if has_run_queue(run_id):
-            return StreamingResponse(
-                svc.iter_run_events(run_id),
-                media_type="text/event-stream",
-                headers={
-                    "Cache-Control": "no-cache, no-store, must-revalidate",
-                    "X-Accel-Buffering": "no",
-                    "Connection": "keep-alive",
-                },
-            )
-
-        # Fallback: DB-based events (backward compat)
-        events = svc.stream_run_events(run_id)
-
-        async def event_stream():
-            for event in events:
-                yield sse_event(str(event["id"]), str(event["event"]), event["data"])
-
-        return StreamingResponse(
-            event_stream(),
-            media_type="text/event-stream",
-            headers={
-                "Cache-Control": "no-cache, no-store, must-revalidate",
-                "X-Accel-Buffering": "no",
-                "Connection": "keep-alive",
-            },
-        )
-
-    @api.get("/api/plans/{plan_id}/versions")
-    async def plan_versions(plan_id: str, request: Request) -> dict[str, Any]:
-        workflow(request).get_plan(plan_id)
-        return {"plan_id": plan_id, "versions": workflow(request).repository.list_revisions(plan_id)}
+        request.app.state.profile_store.save(profile)
+        return profile.as_dict()
 
     @api.get("/api/plans/{plan_id}", response_model=PlanDetailResponse)
     async def get_plan(plan_id: str, request: Request) -> PlanDetailResponse:
@@ -176,22 +120,6 @@ async def read_json_object(request: Request) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ValueError("validation_error")
     return data
-
-
-def workflow(request: Request) -> WorkflowService:
-    return request.app.state.workflow_service
-
-
-def _workflow_summary(summary: dict[str, Any]) -> dict[str, Any]:
-    phase = str(summary.get("phase", ""))
-    timestamp = str(summary.get("created_at", ""))
-    return {
-        **summary,
-        "status": phase,
-        "created_at": timestamp,
-        "updated_at": str(summary.get("updated_at", timestamp)),
-        "tags": summary.get("tags", ["本地生活"]),
-    }
 
 
 def error_response(error: str, status_code: int) -> JSONResponse:
