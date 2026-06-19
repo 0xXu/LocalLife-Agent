@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from backend.api.routes.runs import router as runs_router
+from backend.api.schemas.plans import PlanDetailResponse
 from backend.application.run_service import RunService
 from backend.graph.events import sse_event
 from backend.llm import LLMConfig
@@ -158,9 +159,9 @@ def create_app(workflow_service: WorkflowService | None = None, run_service: Run
         body = await read_json_object(request)
         return workflow_plan_payload(workflow(request).resume(plan_id, body))
 
-    @api.get("/api/plans/{plan_id}")
-    async def get_plan(plan_id: str, request: Request) -> dict[str, Any]:
-        return workflow_plan_payload(workflow(request).get_plan(plan_id))
+    @api.get("/api/plans/{plan_id}", response_model=PlanDetailResponse)
+    async def get_plan(plan_id: str, request: Request) -> PlanDetailResponse:
+        return PlanDetailResponse(**request.app.state.run_service.get_plan(plan_id))
 
     api.include_router(runs_router)
 
