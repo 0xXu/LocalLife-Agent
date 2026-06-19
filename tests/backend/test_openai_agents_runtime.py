@@ -1,3 +1,4 @@
+import json
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -254,7 +255,7 @@ class OpenAIAgentsRuntimeTest(unittest.IsolatedAsyncioTestCase):
             }
 
         async def fake_runner_run(_agent, _prompt):
-            return SimpleNamespace(final_output="推荐一个下午轻量出行方案")
+            return SimpleNamespace(final_output=json.dumps(remote_plan_output(), ensure_ascii=False))
 
         runtime = OpenAIAgentsRuntime(dry_run=False, constraint_extractor=fake_llm_extractor)
         events = []
@@ -272,8 +273,134 @@ class OpenAIAgentsRuntimeTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.status, "approval_required")
         self.assertEqual(result.plan["status"], "approval_required")
         self.assertEqual(result.pending_actions[0]["action_id"], "act_send_plan_summary")
-        self.assertIn("推荐一个下午轻量出行方案", result.plan["summary"])
+        self.assertIn("轻量出行方案", result.plan["summary"])
+        self.assertEqual(result.plan["itinerary"][0]["title"], "附近咖啡馆放松")
         self.assertIn("approval.required", [event[0] for event in events])
+
+    async def test_remote_planner_structured_json_drives_plan_contract(self):
+        def fake_llm_extractor(_request):
+            return {
+                "time_window": "今天下午 2 点",
+                "start_location": "当前定位附近",
+                "party_size": 2,
+                "activity_preference": "室内放松",
+            }
+
+        async def fake_runner_run(_agent, prompt):
+            if prompt.startswith("Validate the final"):
+                return SimpleNamespace(final_output='{"constraints":{},"missing_fields":[]}')
+            return SimpleNamespace(
+                final_output=json.dumps(
+                    {
+                        "title": "下午室内放松计划",
+                        "summary": "两人从当前位置出发，优先选择安静、低负担的室内放松方案。",
+                        "overview": {
+                            "theme": "室内放松",
+                            "totalDuration": "约 2.5 小时",
+                            "driveTime": "约 10 分钟",
+                            "walkingDistance": "约 0.8 公里",
+                            "estimatedCost": "人均 80-120 元",
+                            "score": 91,
+                        },
+                        "constraint_fit": {
+                            "overall": 0.91,
+                            "distance": 0.88,
+                            "time": 0.96,
+                            "budget": 0.82,
+                        },
+                        "variants": [
+                            {
+                                "id": "variant_cafe",
+                                "kind": "main",
+                                "title": "咖啡馆聊天",
+                                "summary": "找一家安静咖啡馆，适合坐下来聊天放松。",
+                                "score": 91,
+                                "estimated_budget": 120,
+                                "itinerary": [
+                                    {
+                                        "start": "14:00",
+                                        "end": "15:30",
+                                        "type": "activity",
+                                        "title": "安静咖啡馆聊天",
+                                        "reason": "室内、轻松，适合两人下午放松。",
+                                        "cost": "人均 80-120 元",
+                                    }
+                                ],
+                            }
+                        ],
+                        "itinerary": [
+                            {
+                                "start": "14:00",
+                                "end": "15:30",
+                                "type": "activity",
+                                "title": "安静咖啡馆聊天",
+                                "reason": "室内、轻松，适合两人下午放松。",
+                                "cost": "人均 80-120 元",
+                            }
+                        ],
+                        "badges": ["室内", "两人"],
+                    },
+                    ensure_ascii=False,
+                )
+            )
+
+        runtime = OpenAIAgentsRuntime(dry_run=False, constraint_extractor=fake_llm_extractor)
+
+        async def sink(_event_type, _payload):
+            return None
+
+        with patch("backend.agents.openai_runtime.Runner.run", side_effect=fake_runner_run):
+            result = await runtime.start_plan(
+                PlanRunRequest(goal="今天下午两点我想去玩", user_id="user_1"),
+                RuntimeContext(run_id="run_1", plan_id="plan_1", user_id="user_1"),
+                sink,
+            )
+
+        self.assertEqual(result.plan["title"], "下午室内放松计划")
+        self.assertEqual(result.plan["summary"], "两人从当前位置出发，优先选择安静、低负担的室内放松方案。")
+        self.assertEqual(result.plan["overview"]["driveTime"], "约 10 分钟")
+        self.assertEqual(result.plan["constraint_fit"]["overall"], 0.91)
+        self.assertEqual(result.plan["variants"][0]["title"], "咖啡馆聊天")
+        self.assertEqual(result.plan["itinerary"][0]["title"], "安静咖啡馆聊天")
+        self.assertEqual(result.pending_actions[0]["action_id"], "act_send_plan_summary")
+
+    async def test_remote_planner_rejects_non_structured_output(self):
+        def fake_llm_extractor(_request):
+            return {
+                "time_window": "今天下午 2 点",
+                "start_location": "当前定位附近",
+                "party_size": 2,
+                "activity_preference": "散步逛逛",
+            }
+
+        markdown_output = (
+            "# 🎯 本地生活计划\n"
+            "## 基本信息 | 项目 | 内容 |\n"
+            "| 人数 | 2人 |\n"
+            "### 方案 A：咖啡馆闲聊\n"
+            "**活动**：找一家环境舒适的咖啡馆，点杯饮品聊天放松。\n"
+            "### 方案 B：看电影\n"
+            "**活动**：附近商场选一部正在上映的电影。\n"
+            "请回复告诉我你倾向哪个方案。"
+        )
+
+        async def fake_runner_run(_agent, prompt):
+            if prompt.startswith("Validate the final"):
+                return SimpleNamespace(final_output='{"constraints":{},"missing_fields":[]}')
+            return SimpleNamespace(final_output=markdown_output)
+
+        runtime = OpenAIAgentsRuntime(dry_run=False, constraint_extractor=fake_llm_extractor)
+
+        async def sink(_event_type, _payload):
+            return None
+
+        with patch("backend.agents.openai_runtime.Runner.run", side_effect=fake_runner_run):
+            with self.assertRaisesRegex(RuntimeError, "planner_contract_invalid"):
+                await runtime.start_plan(
+                    PlanRunRequest(goal="我想出去玩", user_id="user_1"),
+                    RuntimeContext(run_id="run_1", plan_id="plan_1", user_id="user_1"),
+                    sink,
+                )
 
     async def test_remote_planner_prompt_includes_clarified_constraints(self):
         def fake_llm_extractor(_request):
@@ -288,7 +415,9 @@ class OpenAIAgentsRuntimeTest(unittest.IsolatedAsyncioTestCase):
 
         async def fake_runner_run(_agent, prompt):
             prompts.append(prompt)
-            return SimpleNamespace(final_output="按家附近、两人、下午两点散步安排")
+            if prompt.startswith("Validate the final"):
+                return SimpleNamespace(final_output='{"constraints":{},"missing_fields":[]}')
+            return SimpleNamespace(final_output=json.dumps(remote_plan_output(), ensure_ascii=False))
 
         runtime = OpenAIAgentsRuntime(dry_run=False, constraint_extractor=fake_llm_extractor)
 
@@ -325,3 +454,46 @@ class OpenAIAgentsRuntimeTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.status, "completed")
         self.assertEqual(result.receipts[0]["plan_id"], "plan_1")
         self.assertIn(("actions.execution.started", {"plan_id": "plan_1", "action_ids": ["act_1"]}), events)
+
+
+def remote_plan_output():
+    itinerary = [
+        {
+            "start": "14:00",
+            "end": "15:30",
+            "type": "activity",
+            "title": "附近咖啡馆放松",
+            "reason": "两人下午轻量出行，适合聊天休息。",
+            "cost": "人均 40-60 元",
+        }
+    ]
+    return {
+        "title": "下午轻量出行方案",
+        "summary": "按家附近、两人、下午两点散步安排一个轻量出行方案。",
+        "overview": {
+            "theme": "轻量出行",
+            "totalDuration": "约 2 小时",
+            "driveTime": "约 10 分钟",
+            "walkingDistance": "约 1 公里",
+            "estimatedCost": "人均 40-60 元",
+            "score": 88,
+        },
+        "constraint_fit": {
+            "distance": 0.9,
+            "time": 0.95,
+            "budget": 0.82,
+        },
+        "variants": [
+            {
+                "id": "variant_main",
+                "kind": "main",
+                "title": "咖啡馆放松",
+                "summary": "附近找一家安静咖啡馆，轻松聊天。",
+                "score": 88,
+                "estimated_budget": 120,
+                "itinerary": itinerary,
+            }
+        ],
+        "itinerary": itinerary,
+        "badges": ["轻量", "两人"],
+    }

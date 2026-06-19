@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from agents import Agent, Runner, set_tracing_disabled
@@ -127,11 +128,13 @@ class OpenAIAgentsRuntime:
 
         run_result = await Runner.run(self.planner, self._planner_prompt(request, constraints))
         final_output = getattr(run_result, "final_output", run_result)
+        planner_plan = self._parse_planner_plan(final_output)
+        self._require_valid_planner_plan(planner_plan)
         return await self._approval_plan_result(
             request=request,
             context=context,
             sink=sink,
-            summary=self._summarize_planner_output(final_output),
+            planner_output=planner_plan,
             constraints=constraints,
             raw_output=run_result,
         )
@@ -142,7 +145,8 @@ class OpenAIAgentsRuntime:
         request: PlanRunRequest,
         context: RuntimeContext,
         sink: EventSink,
-        summary: str,
+        summary: str | None = None,
+        planner_output: Any | None = None,
         constraints: dict[str, Any],
         raw_output: Any | None = None,
     ) -> PlanRunResult:
@@ -158,16 +162,18 @@ class OpenAIAgentsRuntime:
             "payload": {"plan_id": context.plan_id},
         }
         require_grounded_action(pending_action)
+        planner_plan = self._parse_planner_plan(planner_output if planner_output is not None else summary)
         plan = {
             "id": context.plan_id,
             "status": "approval_required",
             "title": "本地生活计划",
-            "summary": summary or request.goal,
+            "summary": self._short_summary(
+                summary or (planner_output if isinstance(planner_output, str) else "") or request.goal
+            ),
             "constraint_fit": {
-                "overall": 0.82,
-                "matches": self._constraint_match_labels(constraints),
-                "risks": ["预算未明确，方案会保留弹性"],
-                "tradeoffs": ["先给轻量候选，确认后再执行发送动作"],
+                "distance": 0.82,
+                "time": 0.82,
+                "budget": 0.7,
             },
             "overview": {
                 "theme": "轻量出行",
@@ -180,8 +186,12 @@ class OpenAIAgentsRuntime:
             "itinerary": [],
             "actions": [pending_action],
             "receipts": [],
-            "badges": ["待确认", "可调整"],
+            "badges": (self._constraint_match_labels(constraints) or ["待确认"])[:4],
         }
+        plan = self._merge_planner_plan(plan, planner_plan)
+        plan["id"] = context.plan_id
+        plan["status"] = "approval_required"
+        plan["actions"] = [pending_action]
         await sink("approval.required", {"plan_id": context.plan_id, "actions": [pending_action]})
         return PlanRunResult(
             status="approval_required",
@@ -190,14 +200,6 @@ class OpenAIAgentsRuntime:
             pending_actions=[pending_action],
             raw_output=raw_output,
         )
-
-    def _summarize_planner_output(self, output: Any) -> str:
-        if isinstance(output, str):
-            return output.strip()
-        try:
-            return json.dumps(output, ensure_ascii=False)
-        except TypeError:
-            return str(output)
 
     def _planner_prompt(self, request: PlanRunRequest, constraints: dict[str, Any]) -> str:
         visible_constraints = self._visible_constraints(constraints)
@@ -209,9 +211,156 @@ class OpenAIAgentsRuntime:
             f"{json.dumps(visible_constraints, ensure_ascii=False)}\n\n"
             "User clarification answers JSON:\n"
             f"{json.dumps(request.answers, ensure_ascii=False)}\n\n"
-            "Return a user-facing Chinese plan summary with specific assumptions, candidate style, "
-            "and next action to confirm."
+            "Return only valid compact JSON. Do not return Markdown. Required shape:\n"
+            "{"
+            "\"title\":\"短标题\","
+            "\"summary\":\"不超过80字的短摘要\","
+            "\"overview\":{\"theme\":\"\",\"totalDuration\":\"\",\"driveTime\":\"\",\"walkingDistance\":\"\",\"estimatedCost\":\"\",\"score\":0},"
+            "\"constraint_fit\":{\"distance\":0.0,\"time\":0.0,\"budget\":0.0},"
+            "\"variants\":[{\"id\":\"variant_main\",\"kind\":\"main\",\"title\":\"\",\"summary\":\"\",\"score\":0,\"estimated_budget\":0,"
+            "\"itinerary\":[{\"start\":\"\",\"end\":\"\",\"type\":\"activity\",\"title\":\"\",\"reason\":\"\",\"cost\":\"\"}]}],"
+            "\"itinerary\":[{\"start\":\"\",\"end\":\"\",\"type\":\"activity\",\"title\":\"\",\"reason\":\"\",\"cost\":\"\"}],"
+            "\"badges\":[\"标签\"]"
+            "}. itinerary and variants must be non-empty."
         )
+
+    def _parse_planner_plan(self, output: Any) -> dict[str, Any]:
+        if isinstance(output, dict):
+            return dict(output)
+        if not isinstance(output, str):
+            return {}
+        text = output.strip()
+        if not text:
+            return {}
+        fenced = re.search(r"```(?:json)?\s*(.*?)\s*```", text, flags=re.DOTALL)
+        if fenced:
+            text = fenced.group(1).strip()
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError:
+            return {}
+        if not isinstance(parsed, dict):
+            return {}
+        nested_plan = parsed.get("plan")
+        return nested_plan if isinstance(nested_plan, dict) else parsed
+
+    def _merge_planner_plan(self, base: dict[str, Any], planner_plan: dict[str, Any]) -> dict[str, Any]:
+        if not planner_plan:
+            return base
+        merged = dict(base)
+        if isinstance(planner_plan.get("title"), str) and planner_plan["title"].strip():
+            merged["title"] = self._plain_text(planner_plan["title"], limit=48)
+        if isinstance(planner_plan.get("summary"), str) and planner_plan["summary"].strip():
+            merged["summary"] = self._short_summary(planner_plan["summary"])
+        if isinstance(planner_plan.get("overview"), dict):
+            merged["overview"] = self._merge_overview(merged["overview"], planner_plan["overview"])
+        if isinstance(planner_plan.get("constraint_fit"), dict):
+            merged["constraint_fit"] = self._merge_constraint_fit(merged["constraint_fit"], planner_plan["constraint_fit"])
+        if isinstance(planner_plan.get("itinerary"), list):
+            merged["itinerary"] = planner_plan["itinerary"]
+        if isinstance(planner_plan.get("variants"), list):
+            merged["variants"] = self._normalize_variants(planner_plan["variants"])
+        if isinstance(planner_plan.get("badges"), list):
+            badges = [self._plain_text(str(badge), limit=16) for badge in planner_plan["badges"] if str(badge).strip()]
+            if badges:
+                merged["badges"] = badges[:4]
+        return merged
+
+    def _require_valid_planner_plan(self, planner_plan: dict[str, Any]) -> None:
+        required_string_fields = ("title", "summary")
+        if not planner_plan or any(not str(planner_plan.get(field) or "").strip() for field in required_string_fields):
+            raise RuntimeError("planner_contract_invalid:missing_title_or_summary")
+        if not isinstance(planner_plan.get("overview"), dict):
+            raise RuntimeError("planner_contract_invalid:missing_overview")
+        if not isinstance(planner_plan.get("constraint_fit"), dict):
+            raise RuntimeError("planner_contract_invalid:missing_constraint_fit")
+        itinerary = planner_plan.get("itinerary")
+        if not self._has_renderable_itinerary(itinerary):
+            raise RuntimeError("planner_contract_invalid:missing_itinerary")
+        variants = planner_plan.get("variants")
+        if not isinstance(variants, list) or not variants:
+            raise RuntimeError("planner_contract_invalid:missing_variants")
+        if not any(
+            isinstance(variant, dict)
+            and str(variant.get("title") or "").strip()
+            and self._has_renderable_itinerary(variant.get("itinerary"))
+            for variant in variants
+        ):
+            raise RuntimeError("planner_contract_invalid:missing_variant_itinerary")
+
+    def _has_renderable_itinerary(self, value: Any) -> bool:
+        return isinstance(value, list) and any(
+            isinstance(step, dict) and str(step.get("title") or "").strip() for step in value
+        )
+
+    def _merge_overview(self, base: dict[str, Any], overview: dict[str, Any]) -> dict[str, Any]:
+        merged = dict(base)
+        for key in ("theme", "totalDuration", "driveTime", "walkingDistance", "estimatedCost"):
+            value = overview.get(key)
+            if isinstance(value, str) and value.strip():
+                merged[key] = self._plain_text(value, limit=48)
+        score = overview.get("score")
+        if isinstance(score, (int, float)):
+            merged["score"] = max(0, min(100, round(score)))
+        return merged
+
+    def _merge_constraint_fit(self, base: dict[str, Any], fit: dict[str, Any]) -> dict[str, Any]:
+        merged = dict(base)
+        for key, value in fit.items():
+            if isinstance(value, (int, float)) and 0 <= value <= 1:
+                merged[str(key)] = float(value)
+        return merged
+
+    def _normalize_variants(self, variants: list[Any]) -> list[dict[str, Any]]:
+        normalized: list[dict[str, Any]] = []
+        for index, variant in enumerate(variants):
+            if not isinstance(variant, dict):
+                continue
+            title = variant.get("title")
+            if not isinstance(title, str) or not title.strip():
+                continue
+            item = {
+                "id": str(variant.get("id") or f"variant_{index + 1}"),
+                "kind": str(variant.get("kind") or "main"),
+                "title": self._plain_text(title, limit=48),
+                "summary": self._short_summary(str(variant.get("summary") or title)),
+                "itinerary": variant.get("itinerary") if isinstance(variant.get("itinerary"), list) else [],
+                "actions": [],
+            }
+            score = variant.get("score")
+            if isinstance(score, (int, float)):
+                item["score"] = max(0, min(100, round(score)))
+            estimated_budget = variant.get("estimated_budget")
+            if isinstance(estimated_budget, (int, float)):
+                item["estimated_budget"] = round(estimated_budget)
+            if isinstance(variant.get("constraint_fit"), dict):
+                item["constraint_fit"] = self._merge_constraint_fit({}, variant["constraint_fit"])
+            if isinstance(variant.get("overview"), dict):
+                item["overview"] = self._merge_overview(
+                    {
+                        "theme": item["title"],
+                        "totalDuration": "待确认",
+                        "driveTime": "待确认",
+                        "walkingDistance": "待确认",
+                        "estimatedCost": "按实际选择",
+                        "score": item.get("score", 82),
+                    },
+                    variant["overview"],
+                )
+            normalized.append(item)
+        return normalized
+
+    def _short_summary(self, value: str, limit: int = 120) -> str:
+        return self._plain_text(value, limit=limit)
+
+    def _plain_text(self, value: str, limit: int = 120) -> str:
+        text = re.sub(r"```.*?```", " ", value, flags=re.DOTALL)
+        text = re.sub(r"^#{1,6}\s*", "", text, flags=re.MULTILINE)
+        text = re.sub(r"[*_`>|]", "", text)
+        text = re.sub(r"\s+", " ", text).strip()
+        if len(text) <= limit:
+            return text
+        return text[: limit - 1].rstrip() + "…"
 
     async def _extract_constraints(self, request: PlanRunRequest, sink: EventSink) -> dict[str, Any]:
         return await self.intent_tool.extract(
