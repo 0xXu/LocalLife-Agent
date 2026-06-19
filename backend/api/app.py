@@ -13,6 +13,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from backend.api.routes.runs import router as runs_router
 from backend.api.schemas.plans import PlanDetailResponse
+from backend.application.approval_service import ApprovalService
 from backend.application.run_service import RunService
 from backend.graph.events import sse_event
 from backend.llm import LLMConfig
@@ -28,6 +29,7 @@ def create_app(workflow_service: WorkflowService | None = None, run_service: Run
     )
     api.state.workflow_service = workflow_service or WorkflowService()
     api.state.run_service = run_service or RunService()
+    api.state.approval_service = ApprovalService(api.state.run_service)
     api.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -154,11 +156,6 @@ def create_app(workflow_service: WorkflowService | None = None, run_service: Run
         workflow(request).get_plan(plan_id)
         return {"plan_id": plan_id, "versions": workflow(request).repository.list_revisions(plan_id)}
 
-    @api.post("/api/plans/{plan_id}/resume")
-    async def resume_plan(plan_id: str, request: Request) -> dict[str, Any]:
-        body = await read_json_object(request)
-        return workflow_plan_payload(workflow(request).resume(plan_id, body))
-
     @api.get("/api/plans/{plan_id}", response_model=PlanDetailResponse)
     async def get_plan(plan_id: str, request: Request) -> PlanDetailResponse:
         return PlanDetailResponse(**request.app.state.run_service.get_plan(plan_id))
@@ -183,22 +180,6 @@ async def read_json_object(request: Request) -> dict[str, Any]:
 
 def workflow(request: Request) -> WorkflowService:
     return request.app.state.workflow_service
-
-
-def workflow_plan_payload(payload: dict[str, Any]) -> dict[str, Any]:
-    revision = dict(payload["revision"])
-    plan = dict(revision.get("plan", {}))
-    plan_id = str(payload["plan_id"])
-    phase = str(revision.get("phase", plan.get("status", "")))
-    plan["id"] = plan_id
-    plan["status"] = phase
-    revision["plan"] = plan
-    return {
-        **payload,
-        "revision": revision,
-        "plan": plan,
-        "pending_actions": payload.get("actions", []),
-    }
 
 
 def _workflow_summary(summary: dict[str, Any]) -> dict[str, Any]:

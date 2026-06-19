@@ -3,7 +3,13 @@ from __future__ import annotations
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 
-from backend.api.schemas.runs import CreateRunRequest, CreateRunResponse, RunStatusResponse
+from backend.api.schemas.runs import (
+    ApproveActionsRequest,
+    CreateRunRequest,
+    CreateRunResponse,
+    RejectRunRequest,
+    RunStatusResponse,
+)
 from backend.domain.events import format_sse_event
 from backend.domain.run import PlanRunRequest
 
@@ -12,6 +18,10 @@ router = APIRouter(prefix="/api/runs", tags=["runs"])
 
 def run_service(request: Request):
     return request.app.state.run_service
+
+
+def approval_service(request: Request):
+    return request.app.state.approval_service
 
 
 @router.post("", response_model=CreateRunResponse)
@@ -28,6 +38,18 @@ async def create_run(body: CreateRunRequest, request: Request) -> CreateRunRespo
 @router.get("/{run_id}", response_model=RunStatusResponse)
 async def get_run(run_id: str, request: Request) -> RunStatusResponse:
     record = run_service(request).get_run(run_id)
+    return RunStatusResponse(**record.__dict__)
+
+
+@router.post("/{run_id}/actions/approve", response_model=RunStatusResponse)
+async def approve_actions(run_id: str, body: ApproveActionsRequest, request: Request) -> RunStatusResponse:
+    record = await approval_service(request).approve_actions(run_id, body.action_ids)
+    return RunStatusResponse(**record.__dict__)
+
+
+@router.post("/{run_id}/actions/reject", response_model=RunStatusResponse)
+async def reject_run(run_id: str, body: RejectRunRequest, request: Request) -> RunStatusResponse:
+    record = approval_service(request).reject_run(run_id, body.reason)
     return RunStatusResponse(**record.__dict__)
 
 

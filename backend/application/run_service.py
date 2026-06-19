@@ -116,6 +116,38 @@ class RunService:
             "trace": [event.to_dict() for event in self.events.replay(row["run_id"])],
         }
 
+    def update_run_status(self, run_id: str, *, status: str, current_agent: str | None) -> None:
+        self._update_run(run_id, status=status, current_agent=current_agent)
+
+    def update_plan_status(self, plan_id: str, status: str) -> None:
+        plan = self.get_plan(plan_id)
+        plan_payload = dict(plan["plan"])
+        plan_payload["status"] = status
+        self._save_plan(
+            plan_id=plan_id,
+            run_id=plan["run_id"],
+            status=status,
+            plan=plan_payload,
+            actions=plan["actions"],
+            receipts=plan["receipts"],
+        )
+
+    def add_receipts(self, plan_id: str, receipts: list[dict[str, Any]], status: str) -> None:
+        plan = self.get_plan(plan_id)
+        current_receipts = list(plan["receipts"])
+        current_receipts.extend(receipts)
+        plan_payload = dict(plan["plan"])
+        plan_payload["status"] = status
+        plan_payload["receipts"] = current_receipts
+        self._save_plan(
+            plan_id=plan_id,
+            run_id=plan["run_id"],
+            status=status,
+            plan=plan_payload,
+            actions=plan["actions"],
+            receipts=current_receipts,
+        )
+
     def _run_worker_thread(self, run_id: str) -> None:
         try:
             asyncio.run(self._run_worker(run_id))
