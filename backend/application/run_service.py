@@ -24,6 +24,7 @@ class RunService:
     ) -> None:
         self.database_path = database_path
         self.runtime = runtime or OpenAIAgentsRuntime(dry_run=True)
+        self._workers: list[threading.Thread] = []
         Path(database_path).parent.mkdir(parents=True, exist_ok=True)
         self.events = EventStore(database_path)
         self._init_db()
@@ -81,8 +82,16 @@ class RunService:
             )
         self.events.open_queue(run_id)
         self.events.append(run_id, plan_id, "run.started", {"status": RUN_STATUS_QUEUED})
-        threading.Thread(target=self._run_worker_thread, args=(run_id,), daemon=True).start()
+        worker = threading.Thread(target=self._run_worker_thread, args=(run_id,), daemon=True)
+        self._workers.append(worker)
+        worker.start()
         return self.get_run(run_id)
+
+    def wait_for_workers(self, timeout: float = 1.0) -> None:
+        for worker in list(self._workers):
+            worker.join(timeout=timeout)
+            if not worker.is_alive():
+                self._workers.remove(worker)
 
     def get_run(self, run_id: str) -> RunRecord:
         with self._connect() as conn:

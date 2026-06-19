@@ -14,6 +14,7 @@ class RunsApiTest(unittest.TestCase):
         self.client = TestClient(create_app(run_service=self.run_service))
 
     def tearDown(self):
+        self.run_service.wait_for_workers()
         self.tmp.cleanup()
 
     def test_create_run_returns_run_centered_contract(self):
