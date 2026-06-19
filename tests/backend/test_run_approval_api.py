@@ -56,6 +56,8 @@ class RunApprovalApiTest(unittest.TestCase):
         self.assertEqual(updated_plan["status"], "completed")
         self.assertEqual(updated_plan["receipts"][0]["action_id"], action_id)
         self.assertEqual(updated_plan["plan"]["receipts"][0]["action_id"], action_id)
+        approved_action = next(action for action in updated_plan["actions"] if action["action_id"] == action_id)
+        self.assertIn(approved_action.get("status"), {"completed", "confirmed"})
 
     def test_reject_approval_run_marks_run_rejected(self):
         created = self.create_approval_run()

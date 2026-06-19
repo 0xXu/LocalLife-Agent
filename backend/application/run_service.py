@@ -136,15 +136,28 @@ class RunService:
         plan = self.get_plan(plan_id)
         current_receipts = list(plan["receipts"])
         current_receipts.extend(receipts)
+        receipt_by_action_id = {
+            str(receipt["action_id"]): receipt for receipt in receipts if "action_id" in receipt
+        }
+        actions = []
+        for action in plan["actions"]:
+            action_payload = dict(action)
+            receipt = receipt_by_action_id.get(str(action_payload.get("action_id")))
+            if receipt is not None:
+                action_payload["status"] = str(receipt.get("status", "completed"))
+                if "id" in receipt:
+                    action_payload["receipt_id"] = receipt["id"]
+            actions.append(action_payload)
         plan_payload = dict(plan["plan"])
         plan_payload["status"] = status
         plan_payload["receipts"] = current_receipts
+        plan_payload["actions"] = actions
         self._save_plan(
             plan_id=plan_id,
             run_id=plan["run_id"],
             status=status,
             plan=plan_payload,
-            actions=plan["actions"],
+            actions=actions,
             receipts=current_receipts,
         )
 
