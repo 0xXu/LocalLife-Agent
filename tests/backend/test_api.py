@@ -1,12 +1,14 @@
 import time
 import unittest
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
 from backend.agents.openai_runtime import OpenAIAgentsRuntime
 from backend.api.app import create_app
 from backend.application.run_service import RunService
+from backend.llm.config import LLMConfig
 from backend.profile.store import UserProfileStore
 from backend.tools.registry import LocalToolRegistry
 
@@ -91,6 +93,24 @@ class BackendApiTest(unittest.TestCase):
             "/api/plans/{plan_id}/revise",
         ]:
             self.assertNotIn(path, paths)
+
+    def test_create_app_uses_remote_runtime_when_llm_env_is_enabled(self):
+        with patch(
+            "backend.api.app.LLMConfig.from_env_file",
+            return_value=LLMConfig(
+                base_url="https://example.com/v1",
+                api_key="secret",
+                model="demo-model",
+                remote_enabled=True,
+            ),
+        ):
+            app = create_app(
+                profile_store=UserProfileStore(f"{self._tmp.name}/remote_profiles.sqlite"),
+                tool_registry=LocalToolRegistry(),
+            )
+
+        self.assertFalse(app.state.run_service.runtime.dry_run)
+        self.assertEqual(app.state.run_service.runtime.model, "demo-model")
 
     def test_legacy_plan_run_routes_return_not_found(self):
         created = self.create_plan()

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from agents import Agent, Runner
+from agents import Agent, Runner, set_tracing_disabled
+from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
+from openai import AsyncOpenAI
 
 from backend.agents.guardrails import require_grounded_action
 from backend.agents.runtime import (
@@ -13,15 +15,30 @@ from backend.agents.runtime import (
     PlanRunResult,
     RuntimeContext,
 )
+from backend.llm.config import LLMConfig
 
 
 class OpenAIAgentsRuntime:
-    def __init__(self, dry_run: bool = False, model: str | None = None) -> None:
+    def __init__(self, dry_run: bool = False, model: str | None = None, planner_model: Any | None = None) -> None:
         self.dry_run = dry_run
         self.model = model
-        self.planner = self._build_planner(model)
+        self.planner = self._build_planner(planner_model or model)
 
-    def _build_planner(self, model: str | None) -> Agent:
+    @classmethod
+    def from_llm_config(cls, config: LLMConfig) -> "OpenAIAgentsRuntime":
+        if not config.remote_enabled or not config.is_configured:
+            return cls(dry_run=True, model=config.model)
+
+        client = AsyncOpenAI(
+            api_key=config.api_key,
+            base_url=config.base_url,
+            timeout=config.timeout_seconds,
+        )
+        set_tracing_disabled(True)
+        planner_model = OpenAIChatCompletionsModel(model=config.model, openai_client=client)
+        return cls(dry_run=False, model=config.model, planner_model=planner_model)
+
+    def _build_planner(self, model: str | Any | None) -> Agent:
         kwargs: dict[str, Any] = {
             "name": "PlannerAgent",
             "instructions": "Create grounded local-life plans. Return only validated product-safe output.",

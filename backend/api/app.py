@@ -12,6 +12,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from backend.api.routes.runs import router as runs_router
 from backend.api.schemas.plans import PlanDetailResponse, PlanListResponse
+from backend.agents.openai_runtime import OpenAIAgentsRuntime
 from backend.application.approval_service import ApprovalService
 from backend.application.run_service import RunService
 from backend.llm import LLMConfig
@@ -30,7 +31,8 @@ def create_app(
         description="FastAPI backend for the WeekendPilot local-life planning workflow.",
         version="0.1.0",
     )
-    api.state.run_service = run_service or RunService()
+    llm_config = LLMConfig.from_env_file()
+    api.state.run_service = run_service or RunService(runtime=OpenAIAgentsRuntime.from_llm_config(llm_config))
     api.state.approval_service = ApprovalService(api.state.run_service)
     api.state.profile_store = profile_store or UserProfileStore(".weekendpilot/profiles.sqlite")
     api.state.tool_registry = tool_registry or LocalToolRegistry()
@@ -78,7 +80,7 @@ def create_app(
 
     @api.get("/api/llm/status")
     async def llm_status() -> dict[str, Any]:
-        return LLMConfig.from_env_file().safe_status()
+        return llm_config.safe_status()
 
     @api.get("/api/tool-schemas")
     async def tool_schemas(request: Request) -> dict[str, Any]:

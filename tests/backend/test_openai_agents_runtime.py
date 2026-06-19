@@ -2,9 +2,35 @@ import unittest
 
 from backend.agents.openai_runtime import OpenAIAgentsRuntime
 from backend.agents.runtime import ExecuteActionsRequest, PlanRunRequest, RuntimeContext
+from backend.llm.config import LLMConfig
 
 
 class OpenAIAgentsRuntimeTest(unittest.IsolatedAsyncioTestCase):
+    def test_remote_llm_config_builds_non_dry_run_runtime(self):
+        runtime = OpenAIAgentsRuntime.from_llm_config(
+            LLMConfig(
+                base_url="https://example.com/v1",
+                api_key="secret",
+                model="demo-model",
+                remote_enabled=True,
+            )
+        )
+
+        self.assertFalse(runtime.dry_run)
+        self.assertEqual(runtime.model, "demo-model")
+
+    def test_disabled_remote_llm_config_builds_dry_run_runtime(self):
+        runtime = OpenAIAgentsRuntime.from_llm_config(
+            LLMConfig(
+                base_url="https://example.com/v1",
+                api_key="secret",
+                model="demo-model",
+                remote_enabled=False,
+            )
+        )
+
+        self.assertTrue(runtime.dry_run)
+
     async def test_local_dry_run_asks_one_clarification_before_approval(self):
         runtime = OpenAIAgentsRuntime(dry_run=True)
         events = []
