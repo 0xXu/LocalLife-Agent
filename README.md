@@ -28,7 +28,7 @@
 ![LocalLife-Agent 系统架构图](docs/assets/locallife-architecture.png)
 
 ### 💻 前端：Next.js 15 + React 19 单页工作台
-- **交互状态机**：利用定制的 `usePlanMachine` 状态钩子优雅地管理 `idle ➔ planning ➔ clarifying/results ➔ executing ➔ completed` 整个交互状态。
+- **Run 控制器**：利用 `useRunController` 与 run event reducer 管理 `idle ➔ planning ➔ approval_required ➔ executing ➔ completed` 的运行状态。
 - **实时数据渲染**：结果页同时展示多维度时间轴、路线渲染、多候选 Variants 对比、证据链（Evidence Panel）、智能体中间状态 Trace 以及最终的待批准动作台账（Action Ledger）。
 - **实时流式更新**：通过 Server-Sent Events (SSE) 技术，将后端的规划进度实时推送到前端页面，实现流畅的交互体感。
 
@@ -167,9 +167,11 @@ npm run test:all
 ```
 ├── app/                    # Next.js 15 页面布局及路由入口 (App Router)
 ├── components/             # 复用 React 组件库
-├── features/planner/       # 规划器（Planner）核心前端状态机与 API 客户端
-│   ├── usePlanMachine.ts   # 控制 idle -> planning -> clarify -> results 状态转移的核心
-│   └── apiClient.ts        # 对接 SSE 与 Resume API 动作
+├── features/runs/          # run-centered 前端控制器、事件 reducer 与 API 客户端
+│   ├── useRunController.ts # 创建 Run、订阅 run.event SSE、提交审批动作
+│   ├── reducer.ts          # 归约后端 run.event 为前端运行状态
+│   └── api.ts              # 对接 /api/runs、审批动作和 SSE 事件
+├── features/plans/         # 计划详情与列表 API 客户端
 ├── lib/                    # 前端基础库与 HTTP 工具包
 ├── backend/                # FastAPI 后端工程
 │   ├── api/                # FastAPI 路由、SSE 推送机制及 App 初始化

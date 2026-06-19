@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Calendar, MapPin, Edit3, Play, Trash2 } from 'lucide-react';
+import { Calendar, MapPin, Edit3, Trash2 } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 import type { PlanSummary } from '../../types/api';
 import styles from './PlanCard.module.css';
@@ -24,11 +24,10 @@ export interface PlanCardProps {
   selected: boolean;
   onSelect: () => void;
   onEdit: () => void;
-  onExecute: () => void;
   onDelete: () => void;
 }
 
-export function PlanCard({ plan, index, selected, onSelect, onEdit, onExecute, onDelete }: PlanCardProps) {
+export function PlanCard({ plan, index, selected, onSelect, onEdit, onDelete }: PlanCardProps) {
   const [removing, setRemoving] = useState(false);
   const status = STATUS_BADGE[plan.status];
 
@@ -66,9 +65,6 @@ export function PlanCard({ plan, index, selected, onSelect, onEdit, onExecute, o
       <div className={styles.footer}>
         <button type="button" className={styles.editBtn} data-testid={`plan-edit-${plan.id}`} onClick={(e) => { e.stopPropagation(); onEdit(); }}>
           <Edit3 size={14} /> 编辑
-        </button>
-        <button type="button" className={styles.executeBtn} data-testid={`plan-execute-${plan.id}`} onClick={(e) => { e.stopPropagation(); onExecute(); }}>
-          <Play size={14} /> 执行
         </button>
         <button type="button" className={styles.deleteBtn} onClick={(e) => { e.stopPropagation(); handleDelete(); }} data-testid={`plan-delete-${plan.id}`}>
           <Trash2 size={14} />

@@ -63,13 +63,13 @@ class BackendApiTest(unittest.TestCase):
             "/api/runs/{run_id}/events",
             "/api/runs/{run_id}/actions/approve",
             "/api/runs/{run_id}/actions/reject",
+            "/api/plans",
             "/api/plans/{plan_id}",
             "/api/tool-schemas",
             "/api/users/{user_id}/profile",
         ]:
             self.assertIn(path, paths)
         for path in [
-            "/api/plans",
             "/api/plans/runs",
             "/api/plans/runs/{run_id}/stream",
             "/api/plans/{plan_id}/resume",
@@ -93,7 +93,6 @@ class BackendApiTest(unittest.TestCase):
             ("GET", f"/api/plans/runs/{created['run_id']}/stream"),
             ("POST", f"/api/plans/{created['plan_id']}/resume"),
             ("GET", f"/api/plans/{created['plan_id']}/versions"),
-            ("GET", "/api/plans"),
         ]:
             status, data = self.request(method, path, {"decision": "approve"})
             self.assertIn(status, {404, 405})
@@ -132,6 +131,31 @@ class BackendApiTest(unittest.TestCase):
         self.assertEqual(fetched["run_id"], created["run_id"])
         self.assertEqual(fetched["plan"]["id"], created["plan_id"])
         self.assertEqual(fetched["status"], "approval_required")
+
+    def test_plan_list_uses_new_run_service(self):
+        created = self.create_plan("family afternoon with child age 5")
+
+        status, listed = self.request("GET", "/api/plans")
+
+        self.assertEqual(status, 200)
+        self.assertEqual(listed["total"], 1)
+        self.assertEqual(len(listed["plans"]), 1)
+        summary = listed["plans"][0]
+        self.assertEqual(summary["id"], created["plan_id"])
+        self.assertEqual(summary["status"], "pending_approval")
+        self.assertEqual(summary["title"], "本地生活计划")
+        self.assertEqual(summary["summary"], "family afternoon with child age 5")
+        self.assertEqual(summary["itinerary_count"], 0)
+
+    def test_plan_list_normalizes_rejected_run_status_for_frontend(self):
+        created = self.create_plan("family afternoon with child age 5")
+        response = self.client.post(f"/api/runs/{created['run_id']}/actions/reject", json={"reason": "user_rejected"})
+        self.assertEqual(response.status_code, 200)
+
+        status, listed = self.request("GET", "/api/plans")
+
+        self.assertEqual(status, 200)
+        self.assertEqual(listed["plans"][0]["status"], "cancelled")
 
     def test_removed_execute_endpoint(self):
         created = self.create_plan()

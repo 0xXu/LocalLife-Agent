@@ -57,7 +57,6 @@ test('activity view filter, search, and receipt details are interactive', async 
 test('saved plan card, edit modal, details close, and delete callbacks are interactive', async () => {
   const plan = makePlanSummary();
   let edits = 0;
-  let executions = 0;
   let deletes = 0;
   let closed = 0;
   const { container } = render(
@@ -68,7 +67,6 @@ test('saved plan card, edit modal, details close, and delete callbacks are inter
         selected={false}
         onSelect={() => {}}
         onEdit={() => { edits += 1; }}
-        onExecute={() => { executions += 1; }}
         onDelete={() => { deletes += 1; }}
       />
       <PlanDetailPanel plan={plan} onClose={() => { closed += 1; }} />
@@ -86,14 +84,11 @@ test('saved plan card, edit modal, details close, and delete callbacks are inter
   await click(byTestId(container, 'details-close'));
   assert.equal(closed, 2);
 
-  await click(byTestId(container, 'plan-execute-plan_001'));
-  assert.equal(executions, 1);
-
   await click(byTestId(container, 'plan-delete-plan_001'));
   await waitFor(() => assert.equal(deletes, 1));
 });
 
-test('saved plans view resumes pending backend actions', async () => {
+test('saved plans view loads summaries from the new plans endpoint', async () => {
   const calls: Array<{ url: string; method: string; body?: string }> = [];
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
@@ -105,40 +100,16 @@ test('saved plans view resumes pending backend actions', async () => {
         total: 1,
       });
     }
-    if (url.endsWith('/api/plans/plan_001') && method === 'GET') {
-      return jsonResponse({
-        plan_id: 'plan_001',
-        constraints: makeConstraintsFixture(),
-        plan: {
-          ...makePlanSummary(),
-          id: 'plan_001',
-          actions: [{ action_id: 'act_msg_001', tool: 'messaging', type: 'send_plan_message', label: '发送计划', status: 'pending', payload: {} }],
-        },
-        actions: [{ action_id: 'act_msg_001', tool: 'messaging', type: 'send_plan_message', label: '发送计划', status: 'pending', payload: {} }],
-        pending_actions: [],
-        receipts: [],
-      });
-    }
-    if (url.endsWith('/api/plans/plan_001/resume')) {
-      return jsonResponse({
-        constraints: makeConstraintsFixture(),
-        plan: { ...makePlanSummary(), id: 'plan_001', status: 'completed', actions: [] },
-        actions: [],
-        pending_actions: [],
-        receipts: [{ id: 'rcpt_1', action_id: 'act_msg_001', tool: 'messaging', type: 'send_plan_message', status: 'succeeded', detail: 'messaging completed', payload: {} }],
-      });
-    }
     return jsonResponse({});
   }) as typeof fetch;
 
   const { container } = render(<SavedPlansView />);
 
-  await waitFor(() => byTestId(container, 'plan-execute-plan_001'));
-  await click(byTestId(container, 'plan-execute-plan_001'));
   await waitFor(() => {
-    assert.ok(calls.some((call) => call.url.endsWith('/api/plans/plan_001') && call.method === 'GET'));
-    assert.ok(calls.some((call) => call.url.endsWith('/api/plans/plan_001/resume') && call.method === 'POST'));
-    assert.ok(calls.some((call) => call.body?.includes('"selected_action_ids":["act_msg_001"]')));
+    assert.ok(byTestId(container, 'plan-card-plan_001').textContent?.includes('Family science half day'));
+    assert.deepEqual(calls.map((call) => [call.url, call.method]), [
+      ['http://127.0.0.1:8787/api/plans', 'GET'],
+    ]);
   });
 });
 
@@ -278,17 +249,5 @@ function makePlanSummary() {
     location: 'city center',
     estimated_cost: '320',
     itinerary_count: 4,
-  };
-}
-
-function makeConstraintsFixture() {
-  return {
-    scenario: 'family',
-    origin: { type: 'current_location', label: 'home', lat: 38.26, lng: 140.88 },
-    time_window: { date: '2026-05-14', start: '14:00', duration_hours: 4, flexible: true },
-    people: { adults: 2, children: [], relationship: 'family' },
-    preferences: { distance: 'nearby', diet: [], activity: [], budget_level: 'medium' },
-    constraints: { radius_km: 5, max_wait_minutes: 15, avoid: [] },
-    required_actions: ['send_plan_message'],
   };
 }

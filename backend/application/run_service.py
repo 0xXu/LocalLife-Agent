@@ -116,6 +116,12 @@ class RunService:
             "trace": [event.to_dict() for event in self.events.replay(row["run_id"])],
         }
 
+    def list_plans(self) -> dict[str, Any]:
+        with self._connect() as conn:
+            rows = conn.execute("select * from plans order by updated_at desc").fetchall()
+        plans = [self._plan_summary(row) for row in rows]
+        return {"plans": plans, "total": len(plans)}
+
     def update_run_status(self, run_id: str, *, status: str, current_agent: str | None) -> None:
         self._update_run(run_id, status=status, current_agent=current_agent)
 
@@ -268,6 +274,43 @@ class RunService:
                     now,
                 ),
             )
+
+    def _plan_summary(self, row: sqlite3.Row) -> dict[str, Any]:
+        plan = json.loads(row["plan_json"])
+        itinerary = plan.get("itinerary")
+        if not isinstance(itinerary, list):
+            itinerary = []
+        tags = plan.get("tags")
+        if not isinstance(tags, list):
+            tags = ["本地生活"]
+        status = self._summary_status(str(plan.get("status") or row["status"]))
+        return {
+            "id": row["plan_id"],
+            "title": str(plan.get("title") or "未命名计划"),
+            "status": status,
+            "summary": str(plan.get("summary") or plan.get("goal") or ""),
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+            "tags": [str(tag) for tag in tags],
+            "location": plan.get("location") if isinstance(plan.get("location"), str) else None,
+            "estimated_cost": self._estimated_cost(plan),
+            "itinerary_count": len(itinerary),
+        }
+
+    def _estimated_cost(self, plan: dict[str, Any]) -> str | None:
+        overview = plan.get("overview")
+        if isinstance(overview, dict) and overview.get("estimatedCost") is not None:
+            return str(overview["estimatedCost"])
+        if plan.get("estimated_cost") is not None:
+            return str(plan["estimated_cost"])
+        return None
+
+    def _summary_status(self, status: str) -> str:
+        return {
+            "approval_required": "pending_approval",
+            "rejected": "cancelled",
+            "failed": "validation_failed",
+        }.get(status, status)
 
     def _json(self, value: Any) -> str:
         return json.dumps(value, ensure_ascii=False, separators=(",", ":"))

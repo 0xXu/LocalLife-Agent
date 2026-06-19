@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from backend.api.routes.runs import router as runs_router
-from backend.api.schemas.plans import PlanDetailResponse
+from backend.api.schemas.plans import PlanDetailResponse, PlanListResponse
 from backend.application.approval_service import ApprovalService
 from backend.application.run_service import RunService
 from backend.llm import LLMConfig
@@ -99,6 +99,10 @@ def create_app(
         )
         request.app.state.profile_store.save(profile)
         return profile.as_dict()
+
+    @api.get("/api/plans", response_model=PlanListResponse)
+    async def list_plans(request: Request) -> PlanListResponse:
+        return PlanListResponse(**request.app.state.run_service.list_plans())
 
     @api.get("/api/plans/{plan_id}", response_model=PlanDetailResponse)
     async def get_plan(plan_id: str, request: Request) -> PlanDetailResponse:

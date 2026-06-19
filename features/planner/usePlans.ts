@@ -3,8 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { PlanSummary } from '../../types/api';
-import type { PlanResponse } from '../../types/weekendpilot';
-import { getPlan, listPlans, resumePlan } from './apiClient';
+import { listPlans } from '../plans/api';
 
 export function usePlans() {
   const [plans, setPlans] = useState<PlanSummary[]>([]);
@@ -43,47 +42,5 @@ export function usePlans() {
     setPlans((prev) => prev.filter((p) => p.id !== planId));
   }, []);
 
-  const execute = useCallback(async (planId: string) => {
-    setPlans((prev) => prev.map((p) => (p.id === planId ? { ...p, status: 'executing' } : p)));
-    const loaded = await getPlan(planId);
-    const pending = ((loaded.actions?.length ? loaded.actions : loaded.plan.actions) ?? [])
-      .filter((action: any) => String(action.status ?? 'pending') === 'pending')
-      .map((action: any) => String(action.action_id ?? action.id ?? ''))
-      .filter(Boolean);
-
-    if (!pending.length) {
-      const summary = summaryFromPlanResponse(loaded);
-      setPlans((prev) => prev.map((p) => (p.id === planId ? summary : p)));
-      return summary;
-    }
-
-    const result = await resumePlan(planId, pending);
-    const summary = summaryFromPlanResponse(result);
-    setPlans((prev) => prev.map((p) => (p.id === planId ? summary : p)));
-    return summary;
-  }, []);
-
-  return { plans, loading, error, refetch: load, update, remove, execute };
-}
-
-function summaryFromPlanResponse(result: PlanResponse): PlanSummary {
-  const plan = result.plan as any;
-  return {
-    id: plan.id,
-    title: plan.title,
-    status: plan.status ?? 'saved',
-    summary: plan.summary,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    tags: [
-      result.constraints?.scenario === 'family' ? '家庭' :
-        result.constraints?.scenario === 'friends' ? '朋友' :
-          result.constraints?.scenario === 'date' ? '约会' :
-            result.constraints?.scenario === 'rainy_indoor' ? '雨天' : '本地生活',
-      ...((result.constraints?.preferences?.activity ?? []) as string[]).slice(0, 2),
-    ],
-    location: result.constraints?.constraints?.radius_km ? `${result.constraints.constraints.radius_km} 公里内` : undefined,
-    estimated_cost: plan.overview?.estimatedCost,
-    itinerary_count: plan.itinerary?.length ?? 0,
-  };
+  return { plans, loading, error, refetch: load, update, remove };
 }
