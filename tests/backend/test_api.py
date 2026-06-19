@@ -47,6 +47,12 @@ class BackendApiTest(unittest.TestCase):
         response = self.client.post("/api/runs", json={"goal": goal, "user_id": "user_1"})
         self.assertEqual(response.status_code, 200)
         created = response.json()
+        self.wait_for_status(created["run_id"], "needs_clarification")
+        response = self.client.post(
+            f"/api/runs/{created['run_id']}/clarifications",
+            json={"question_id": "time_window", "answer": "today afternoon 2pm"},
+        )
+        self.assertEqual(response.status_code, 200)
         self.wait_for_status(created["run_id"], "approval_required")
         return created
 
@@ -61,6 +67,7 @@ class BackendApiTest(unittest.TestCase):
             "/api/runs",
             "/api/runs/{run_id}",
             "/api/runs/{run_id}/events",
+            "/api/runs/{run_id}/clarifications",
             "/api/runs/{run_id}/actions/approve",
             "/api/runs/{run_id}/actions/reject",
             "/api/plans",

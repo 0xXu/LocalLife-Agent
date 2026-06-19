@@ -36,7 +36,7 @@ class RunsApiTest(unittest.TestCase):
         data = response.json()
         self.assertEqual(data["run_id"], created["run_id"])
         self.assertEqual(data["plan_id"], created["plan_id"])
-        self.assertIn(data["status"], {"queued", "running", "approval_required", "completed"})
+        self.assertIn(data["status"], {"queued", "running", "needs_clarification", "approval_required", "completed"})
 
     def test_invalid_goal_returns_400(self):
         response = self.client.post("/api/runs", json={"goal": ""})
@@ -67,3 +67,42 @@ class RunsApiTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(event_ids[0], f"{created['run_id']}_evt_000001")
         self.assertEqual(event_ids, list(dict.fromkeys(event_ids)))
+
+    def test_submit_clarification_requires_current_question(self):
+        created = self.client.post("/api/runs", json={"goal": "family afternoon"}).json()
+        self.run_service.wait_for_workers(timeout=2.0)
+        self.run_service.submit_clarification(created["run_id"], "time_window", "今天下午 2 点")
+        self.run_service.wait_for_workers(timeout=2.0)
+
+        response = self.client.post(
+            f"/api/runs/{created['run_id']}/clarifications",
+            json={"question_id": "time_window", "answer": "今天下午 2 点"},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"]["code"], "clarification_not_required")
+
+    def test_submit_clarification_validates_question_id(self):
+        created = self.client.post("/api/runs", json={"goal": "下午帮我安排个地方玩一下"}).json()
+        self.run_service.wait_for_workers(timeout=2.0)
+
+        response = self.client.post(
+            f"/api/runs/{created['run_id']}/clarifications",
+            json={"question_id": "party_size", "answer": 3},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"]["code"], "clarification_question_mismatch")
+
+    def test_submit_clarification_resumes_same_run(self):
+        created = self.client.post("/api/runs", json={"goal": "下午帮我安排个地方玩一下"}).json()
+        self.run_service.wait_for_workers(timeout=2.0)
+
+        response = self.client.post(
+            f"/api/runs/{created['run_id']}/clarifications",
+            json={"question_id": "time_window", "answer": "今天下午 2 点"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["run_id"], created["run_id"])
+        self.assertEqual(response.json()["accepted_question_id"], "time_window")

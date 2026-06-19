@@ -42,6 +42,7 @@ class ApprovalService:
         self.run_service.add_receipts(record.plan_id, result.receipts, status=RUN_STATUS_COMPLETED)
         self.run_service.update_run_status(run_id, status=RUN_STATUS_COMPLETED, current_agent=None)
         self.run_service.events.append(run_id, record.plan_id, "run.completed", {"status": RUN_STATUS_COMPLETED})
+        self.run_service.events.close_queue(run_id)
         return self.run_service.get_run(run_id)
 
     def reject_run(self, run_id: str, reason: str) -> RunRecord:
@@ -54,4 +55,5 @@ class ApprovalService:
             "run.rejected",
             {"status": RUN_STATUS_REJECTED, "reason": reason},
         )
+        self.run_service.events.close_queue(run_id)
         return self.run_service.get_run(run_id)

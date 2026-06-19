@@ -39,6 +39,31 @@ class OpenAIAgentsRuntime:
         await sink("agent.started", {"agent": "planner"})
 
         if self.dry_run:
+            if "time_window" not in request.answers:
+                clarification = {
+                    "question": {
+                        "id": "time_window",
+                        "label": "今天下午大概几点开始？",
+                        "description": "时间范围会影响营业状态、路线顺序和预约动作。",
+                        "kind": "time",
+                        "required": True,
+                        "options": [
+                            {"label": "今天下午 2 点", "value": "今天下午 2 点"},
+                            {"label": "今天下午 4 点", "value": "今天下午 4 点"},
+                            {"label": "今晚 7 点", "value": "今晚 7 点"},
+                        ],
+                        "allow_custom": True,
+                    },
+                    "partial_constraints": request.constraints,
+                    "missing_fields": ["time_window"],
+                }
+                await sink("clarification.required", clarification)
+                return PlanRunResult(
+                    status="needs_clarification",
+                    clarification=clarification,
+                    validation={"valid": False, "missing_fields": ["time_window"]},
+                )
+
             pending_action = {
                 "action_id": "act_demo_reservation",
                 "tool": "create_reservation",

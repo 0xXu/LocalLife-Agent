@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { ChatView } from '@/components/chat/ChatView';
 import { PlanningProgress } from '@/components/planning/PlanningProgress';
-import { ClarificationView } from '@/components/clarification/ClarificationView';
+import { ClarificationCard } from '@/components/clarification/ClarificationCard';
 import { PlanResultsView } from '@/components/plan/PlanResultsView';
 import { ReceiptsView } from '@/components/receipts/ReceiptsView';
 import { SavedPlansView } from '@/components/saved/SavedPlansView';
@@ -13,7 +13,7 @@ import { SettingsView } from '@/components/settings/SettingsView';
 import { getPlan } from '@/features/plans/api';
 import { useRunController } from '@/features/runs/useRunController';
 import type { ActiveTab } from '@/types/views';
-import type { ClarificationResponse, PlanResponse } from '@/types/weekendpilot';
+import type { PlanResponse } from '@/types/weekendpilot';
 
 export default function WeekendPilotApp() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
@@ -23,6 +23,7 @@ export default function WeekendPilotApp() {
   const [result, setResult] = useState<PlanResponse | null>(null);
   const [selectedActions, setSelectedActions] = useState<Set<string>>(new Set());
   const [planError, setPlanError] = useState<string | null>(null);
+  const [clarificationSubmitting, setClarificationSubmitting] = useState(false);
 
   useEffect(() => {
     if (!state.planId || !shouldLoadPlan(state.status)) {
@@ -77,6 +78,7 @@ export default function WeekendPilotApp() {
     setResult(null);
     setSelectedActions(new Set());
     setPlanError(null);
+    setClarificationSubmitting(false);
     setActiveTab('home');
   }
 
@@ -85,7 +87,20 @@ export default function WeekendPilotApp() {
     setResult(null);
     setSelectedActions(new Set());
     setPlanError(null);
+    setClarificationSubmitting(false);
     void runController.start(goal);
+  }
+
+  async function handleAnswerClarification(questionId: string, answer: unknown) {
+    setPlanError(null);
+    setClarificationSubmitting(true);
+    try {
+      await runController.answerClarification(questionId, answer);
+    } catch (err) {
+      setPlanError(err instanceof Error ? err.message : '补充信息提交失败');
+    } finally {
+      setClarificationSubmitting(false);
+    }
   }
 
   function handleExecute() {
@@ -149,12 +164,22 @@ export default function WeekendPilotApp() {
         );
 
       case 'clarifying':
-        if (!resultWithRunTrace) return null;
+        if (!state.currentQuestion) {
+          return (
+            <PlanningProgress
+              goal={goal}
+              progress={progressForRunEvents(state.events)}
+              currentStep={Math.min(Math.max(state.events.length, 0), 6)}
+              streamingText="正在确认还缺少哪一项信息..."
+            />
+          );
+        }
         return (
-          <ClarificationView
-            goal={goal}
-            clarification={clarificationFromPlanResponse(resultWithRunTrace)}
-            onSubmitGoal={handleSubmitGoal}
+          <ClarificationCard
+            question={state.currentQuestion}
+            submitting={clarificationSubmitting}
+            error={error}
+            onSubmit={handleAnswerClarification}
           />
         );
 
@@ -219,7 +244,7 @@ export default function WeekendPilotApp() {
 }
 
 function shouldLoadPlan(status: string) {
-  return ['approval_required', 'executing', 'completed', 'rejected', 'failed', 'validation_failed', 'needs_clarification'].includes(status);
+  return ['approval_required', 'executing', 'completed', 'rejected', 'failed', 'validation_failed'].includes(status);
 }
 
 function phaseForRunState(status: string, result: PlanResponse | null) {
@@ -256,6 +281,7 @@ function streamingTextForRunEvents(events: Array<{ type: string; payload: Record
 function runEventLabel(type: string) {
   const labels: Record<string, string> = {
     'run.started': 'Run started',
+    'run.running': 'Run running',
     'agent.started': 'Agent started',
     'agent.completed': 'Agent completed',
     'agent.handoff': 'Agent handoff',
@@ -265,7 +291,9 @@ function runEventLabel(type: string) {
     'guardrail.triggered': 'Guardrail triggered',
     'plan.draft.created': 'Plan draft created',
     'plan.validation.completed': 'Plan validation completed',
+    'clarification.required': 'Clarification required',
     'approval.required': 'Approval required',
+    'run.executing': 'Run executing',
     'actions.execution.started': 'Action execution started',
     'actions.execution.completed': 'Action execution completed',
     'run.completed': 'Run completed',
@@ -280,18 +308,6 @@ function runEventStatus(type: string) {
   if (type === 'run.completed' || type === 'actions.execution.completed') return 'succeeded';
   if (type === 'run.rejected') return 'skipped';
   return 'running';
-}
-
-function clarificationFromPlanResponse(result: PlanResponse): ClarificationResponse {
-  const plan = result.plan as Record<string, any>;
-  return {
-    status: 'needs_clarification',
-    plan_id: result.plan_id ?? result.plan.id,
-    missing_fields: Array.isArray(plan.missing_fields) ? plan.missing_fields : [],
-    clarifying_questions: Array.isArray(plan.clarifying_questions) ? plan.clarifying_questions : [],
-    trace: result.trace ?? [],
-    tool_calls: result.tool_calls ?? [],
-  };
 }
 
 function errorMessage(error: unknown) {

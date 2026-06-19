@@ -1,4 +1,4 @@
-import type { RunEventEnvelope, RunStatus } from './schemas';
+import { ClarificationRequiredPayloadSchema, type ClarificationQuestion, type RunEventEnvelope, type RunStatus } from './schemas';
 
 export type RunState = {
   runId: string | null;
@@ -6,6 +6,7 @@ export type RunState = {
   status: RunStatus | 'idle';
   events: RunEventEnvelope[];
   pendingActions: Array<Record<string, unknown>>;
+  currentQuestion: ClarificationQuestion | null;
   error: unknown | null;
 };
 
@@ -15,6 +16,7 @@ export const initialRunState: RunState = {
   status: 'idle',
   events: [],
   pendingActions: [],
+  currentQuestion: null,
   error: null,
 };
 
@@ -28,21 +30,43 @@ export function runReducer(state: RunState, event: RunEventEnvelope): RunState {
 
   switch (event.type) {
     case 'run.started':
-      return { ...nextState, status: readStatus(event.payload.status, 'running'), error: null };
+      return { ...nextState, status: readStatus(event.payload.status, 'running'), currentQuestion: null, error: null };
+    case 'run.running':
+      return { ...nextState, status: 'running', currentQuestion: null, error: null };
+    case 'agent.started':
+      return { ...nextState, currentQuestion: null };
+    case 'clarification.required':
+      return {
+        ...nextState,
+        status: 'needs_clarification',
+        currentQuestion: ClarificationRequiredPayloadSchema.parse(event.payload).question,
+      };
     case 'approval.required':
-      return { ...nextState, status: 'approval_required', pendingActions: readActions(event.payload.actions) };
+      return {
+        ...nextState,
+        status: 'approval_required',
+        pendingActions: readActions(event.payload.actions),
+        currentQuestion: null,
+      };
+    case 'run.executing':
     case 'actions.execution.started':
       return { ...nextState, status: 'executing', pendingActions: [] };
     case 'actions.execution.completed':
       return { ...nextState, status: 'running' };
     case 'run.completed':
-      return { ...nextState, status: 'completed', pendingActions: [] };
+      return { ...nextState, status: readStatus(event.payload.status, 'completed'), pendingActions: [], currentQuestion: null };
     case 'run.failed':
-      return { ...nextState, status: 'failed', pendingActions: [], error: event.payload.error ?? event.payload };
+      return {
+        ...nextState,
+        status: 'failed',
+        pendingActions: [],
+        currentQuestion: null,
+        error: event.payload.error ?? event.payload,
+      };
     case 'run.rejected':
-      return { ...nextState, status: 'rejected', pendingActions: [] };
+      return { ...nextState, status: 'rejected', pendingActions: [], currentQuestion: null };
     case 'guardrail.triggered':
-      return { ...nextState, status: 'validation_failed', pendingActions: [], error: event.payload };
+      return { ...nextState, status: 'validation_failed', pendingActions: [], currentQuestion: null, error: event.payload };
     default:
       return nextState;
   }

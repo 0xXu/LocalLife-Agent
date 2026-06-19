@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useReducer, useRef } from 'react';
 
-import { approveRunActions, createRun, rejectRun, streamRunEvents } from './api';
+import { approveRunActions, createRun, rejectRun, streamRunEvents, submitClarification } from './api';
 import { initialRunState, runReducer, type RunState } from './reducer';
 import type { RunEventEnvelope, RunStatus } from './schemas';
 
@@ -22,6 +22,7 @@ export type RunController = {
   start: (goal: string) => Promise<void>;
   approve: (actionIds: string[]) => Promise<void>;
   reject: (reason?: string) => Promise<void>;
+  answerClarification: (questionId: string, answer: unknown) => Promise<void>;
   reset: () => void;
 };
 
@@ -86,13 +87,18 @@ export function useRunController(): RunController {
     await rejectRun(state.runId, reason);
   }, [state.runId]);
 
+  const answerClarification = useCallback(async (questionId: string, answer: unknown) => {
+    if (!state.runId) return;
+    await submitClarification(state.runId, { question_id: questionId, answer });
+  }, [state.runId]);
+
   const reset = useCallback(() => {
     stopStreamRef.current?.();
     stopStreamRef.current = null;
     dispatch({ type: 'RESET' });
   }, []);
 
-  return { state, start, approve, reject, reset };
+  return { state, start, approve, reject, answerClarification, reset };
 }
 
 function controllerReducer(state: ControllerState, action: ControllerAction): ControllerState {

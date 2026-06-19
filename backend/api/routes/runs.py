@@ -9,6 +9,8 @@ from backend.api.schemas.runs import (
     CreateRunResponse,
     RejectRunRequest,
     RunStatusResponse,
+    SubmitClarificationRequest,
+    SubmitClarificationResponse,
 )
 from backend.domain.events import format_sse_event
 from backend.domain.run import PlanRunRequest
@@ -51,6 +53,20 @@ async def approve_actions(run_id: str, body: ApproveActionsRequest, request: Req
 async def reject_run(run_id: str, body: RejectRunRequest, request: Request) -> RunStatusResponse:
     record = approval_service(request).reject_run(run_id, body.reason)
     return RunStatusResponse(**record.__dict__)
+
+
+@router.post("/{run_id}/clarifications", response_model=SubmitClarificationResponse)
+async def submit_clarification(
+    run_id: str,
+    body: SubmitClarificationRequest,
+    request: Request,
+) -> SubmitClarificationResponse:
+    record = run_service(request).submit_clarification(run_id, body.question_id, body.answer)
+    return SubmitClarificationResponse(
+        run_id=record.run_id,
+        status=record.status,
+        accepted_question_id=body.question_id,
+    )
 
 
 @router.get("/{run_id}/events")

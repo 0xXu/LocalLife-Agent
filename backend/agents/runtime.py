@@ -11,6 +11,8 @@ EventSink = Callable[[str, dict[str, Any]], Awaitable[None]]
 class PlanRunRequest:
     goal: str
     user_id: str = "local_demo_user"
+    answers: dict[str, Any] = field(default_factory=dict)
+    constraints: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -28,9 +30,10 @@ class RuntimeContext:
 @dataclass(frozen=True)
 class PlanRunResult:
     status: str
-    plan: dict[str, Any]
+    plan: dict[str, Any] = field(default_factory=dict)
     validation: dict[str, Any] = field(default_factory=dict)
     pending_actions: list[dict[str, Any]] = field(default_factory=list)
+    clarification: dict[str, Any] | None = None
     raw_output: Any | None = None
 
 

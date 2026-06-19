@@ -34,3 +34,14 @@ class ApproveActionsRequest(BaseModel):
 
 class RejectRunRequest(BaseModel):
     reason: str = "user_rejected"
+
+
+class SubmitClarificationRequest(BaseModel):
+    question_id: str = Field(min_length=1)
+    answer: Any
+
+
+class SubmitClarificationResponse(BaseModel):
+    run_id: str
+    status: str
+    accepted_question_id: str

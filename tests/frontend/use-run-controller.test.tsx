@@ -104,6 +104,48 @@ test('useRunController approves and rejects by run id', async () => {
   assert.equal(calls[2].init?.body, JSON.stringify({ reason: 'user_rejected' }));
 });
 
+test('useRunController answers clarification for the current run', async () => {
+  delete process.env.NEXT_PUBLIC_API_URL;
+  FakeEventSource.instances = [];
+  globalThis.EventSource = FakeEventSource as unknown as typeof EventSource;
+  const calls = installFetch({
+    run_id: 'run_1',
+    plan_id: 'plan_1',
+    status: 'queued',
+    events_url: '/api/runs/run_1/events',
+  });
+  const { readController } = renderHook();
+
+  await act(async () => {
+    await readController().start('下午帮我安排个地方玩一下');
+  });
+  await act(async () => {
+    FakeEventSource.instances[0].emit('run.event', {
+      type: 'clarification.required',
+      run_id: 'run_1',
+      plan_id: 'plan_1',
+      seq: 1,
+      timestamp: '2026-06-19T00:00:00Z',
+      payload: {
+        question: {
+          id: 'time_window',
+          label: '今天下午大概几点开始？',
+          kind: 'time',
+          required: true,
+        },
+      },
+    });
+  });
+  await act(async () => {
+    await readController().answerClarification('time_window', '今天下午 2 点');
+  });
+
+  assert.equal(readController().state.currentQuestion?.id, 'time_window');
+  assert.equal(calls[1].url, 'http://127.0.0.1:8787/api/runs/run_1/clarifications');
+  assert.equal(calls[1].init?.method, 'POST');
+  assert.equal(calls[1].init?.body, JSON.stringify({ question_id: 'time_window', answer: '今天下午 2 点' }));
+});
+
 function renderHook() {
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
     url: 'http://127.0.0.1:4174/',

@@ -2877,6 +2877,126 @@ dd,
   line-height: 1.4;
 }
 
+.clarification-card {
+  width: min(720px, calc(100% - 32px));
+  margin: 44px auto 120px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: var(--shadow-md);
+}
+
+.clarification-card-head {
+  display: grid;
+  grid-template-columns: 50px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.clarification-card-icon {
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+
+.clarification-card-head span {
+  display: inline-flex;
+  margin-bottom: 5px;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 820;
+}
+
+.clarification-card-head h1 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.clarification-card-head p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.clarification-card-form {
+  margin-top: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.clarification-card-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.clarification-card-options button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  background: var(--surface);
+  font-weight: 760;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease, transform 0.16s ease;
+}
+
+.clarification-card-options button:hover,
+.clarification-card-options button.active {
+  border-color: rgba(11, 119, 255, 0.34);
+  color: var(--blue);
+  background: var(--blue-soft);
+  transform: translateY(-1px);
+}
+
+.clarification-custom-field {
+  display: grid;
+  gap: 7px;
+}
+
+.clarification-custom-field span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.clarification-custom-field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--surface);
+  outline: none;
+}
+
+.clarification-custom-field input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(11, 119, 255, 0.1);
+}
+
+.clarification-card-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 720;
+}
+
+.clarification-card-submit {
+  justify-self: end;
+}
+
 @media (min-width: 820px) {
   .plan-results { padding: 28px 24px 40px; max-width: 780px; }
 }

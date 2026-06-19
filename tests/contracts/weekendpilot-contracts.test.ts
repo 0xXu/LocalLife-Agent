@@ -11,6 +11,7 @@ import {
 } from '../../lib/contracts/schemas';
 import {
   ApproveActionsRequestSchema,
+  ClarificationRequiredPayloadSchema,
   CreateRunRequestSchema,
   CreateRunResponseSchema,
   RejectRunRequestSchema,
@@ -369,6 +370,7 @@ test('Run schemas accept create-run response and normalized SSE event payloads',
 
 test('Run REST contract uses product statuses and run-id action endpoints', () => {
   assert.equal(RunEventTypeSchema.parse('run.completed'), 'run.completed');
+  assert.equal(RunEventTypeSchema.parse('clarification.required'), 'clarification.required');
   assert.equal(RunStatusSchema.parse('approval_required'), 'approval_required');
   assert.throws(() => RunStatusSchema.parse('pending_approval'));
 
@@ -388,6 +390,24 @@ test('Run REST contract uses product statuses and run-id action endpoints', () =
   assert.equal(status.current_agent, 'OpenAIAgentsRuntime');
   assert.deepEqual(approve.action_ids, ['act_msg_001', 'act_calendar_001']);
   assert.equal(reject.reason, 'user_rejected');
+});
+
+test('Run REST contract parses one-question clarification payloads', () => {
+  const payload = ClarificationRequiredPayloadSchema.parse({
+    question: {
+      id: 'time_window',
+      label: '今天下午大概几点开始？',
+      kind: 'time',
+      required: true,
+      options: [{ label: '今天下午 2 点', value: '今天下午 2 点' }],
+      allow_custom: true,
+    },
+    missing_fields: ['time_window'],
+  });
+
+  assert.equal(payload.question.id, 'time_window');
+  assert.deepEqual(payload.partial_constraints, {});
+  assert.throws(() => ClarificationRequiredPayloadSchema.parse({ question: [payload.question] }));
 });
 
 test('Receipt and RecoveryDiff match execution and recovery contract', () => {

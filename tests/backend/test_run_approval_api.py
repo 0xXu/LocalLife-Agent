@@ -35,6 +35,12 @@ class RunApprovalApiTest(unittest.TestCase):
         response = self.client.post("/api/runs", json={"goal": "family afternoon"})
         response.raise_for_status()
         created = response.json()
+        self.wait_for_status(created["run_id"], "needs_clarification")
+        response = self.client.post(
+            f"/api/runs/{created['run_id']}/clarifications",
+            json={"question_id": "time_window", "answer": "today afternoon 2pm"},
+        )
+        response.raise_for_status()
         self.wait_for_status(created["run_id"], "approval_required")
         return created
 

@@ -5,6 +5,23 @@ from backend.agents.runtime import ExecuteActionsRequest, PlanRunRequest, Runtim
 
 
 class OpenAIAgentsRuntimeTest(unittest.IsolatedAsyncioTestCase):
+    async def test_local_dry_run_asks_one_clarification_before_approval(self):
+        runtime = OpenAIAgentsRuntime(dry_run=True)
+        events = []
+
+        async def sink(event_type, payload):
+            events.append((event_type, payload))
+
+        result = await runtime.start_plan(
+            PlanRunRequest(goal="下午帮我安排个地方玩一下", user_id="user_1"),
+            RuntimeContext(run_id="run_1", plan_id="plan_1", user_id="user_1"),
+            sink,
+        )
+
+        self.assertEqual(result.status, "needs_clarification")
+        self.assertEqual(result.clarification["question"]["id"], "time_window")
+        self.assertEqual([event[0] for event in events], ["agent.started", "clarification.required"])
+
     async def test_local_dry_run_returns_grounded_plan_result(self):
         runtime = OpenAIAgentsRuntime(dry_run=True)
         events = []
@@ -13,7 +30,11 @@ class OpenAIAgentsRuntimeTest(unittest.IsolatedAsyncioTestCase):
             events.append((event_type, payload))
 
         result = await runtime.start_plan(
-            PlanRunRequest(goal="family afternoon", user_id="user_1"),
+            PlanRunRequest(
+                goal="family afternoon",
+                user_id="user_1",
+                answers={"time_window": "today afternoon 2pm"},
+            ),
             RuntimeContext(run_id="run_1", plan_id="plan_1", user_id="user_1"),
             sink,
         )

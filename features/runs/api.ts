@@ -2,8 +2,10 @@ import { apiRequest, resolveApiUrl } from '../../lib/api/client';
 import {
   CreateRunResponseSchema,
   RunEventEnvelopeSchema,
+  SubmitClarificationRequestSchema,
   type CreateRunResponse,
   type RunEventEnvelope,
+  type SubmitClarificationRequest,
 } from './schemas';
 
 export type CreateRunInput = {
@@ -40,13 +42,21 @@ export async function rejectRun(runId: string, reason = 'user_rejected') {
   });
 }
 
+export async function submitClarification(runId: string, input: SubmitClarificationRequest) {
+  const body = SubmitClarificationRequestSchema.parse(input);
+  return apiRequest<unknown>(`/api/runs/${runId}/clarifications`, {
+    method: 'POST',
+    body,
+  });
+}
+
 export function streamRunEvents(runId: string, callbacks: RunEventCallbacks = {}) {
   const es = new EventSource(resolveApiUrl(`/api/runs/${runId}/events`));
 
   es.addEventListener('run.event', (message) => {
     const event = RunEventEnvelopeSchema.parse(JSON.parse(message.data));
     void callbacks.onEvent?.(event);
-    if (isTerminalRunEvent(event.type)) {
+    if (isTerminalRunEvent(event)) {
       es.close();
     }
   });
@@ -62,6 +72,9 @@ export function streamRunEvents(runId: string, callbacks: RunEventCallbacks = {}
   };
 }
 
-function isTerminalRunEvent(type: RunEventEnvelope['type']) {
-  return type === 'run.completed' || type === 'run.failed' || type === 'run.rejected';
+function isTerminalRunEvent(event: RunEventEnvelope) {
+  if (event.type === 'run.failed' || event.type === 'run.rejected') {
+    return true;
+  }
+  return event.type === 'run.completed' && event.payload.status === 'completed';
 }

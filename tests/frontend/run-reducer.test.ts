@@ -3,6 +3,15 @@ import assert from 'node:assert/strict';
 
 import { initialRunState, runReducer } from '../../features/runs/reducer';
 
+const clarificationQuestion = {
+  id: 'time_window',
+  label: '今天下午大概几点开始？',
+  kind: 'time',
+  required: true,
+  options: [{ label: '今天下午 2 点', value: '今天下午 2 点' }],
+  allow_custom: true,
+};
+
 test('run reducer moves through planning to approval required', () => {
   const started = runReducer(initialRunState, {
     type: 'run.started',
@@ -26,6 +35,44 @@ test('run reducer moves through planning to approval required', () => {
   assert.equal(approval.status, 'approval_required');
   assert.equal(approval.pendingActions.length, 1);
 });
+
+test('run reducer stores the current clarification question', () => {
+  const clarified = runReducer(initialRunState, {
+    type: 'clarification.required',
+    run_id: 'run_1',
+    plan_id: 'plan_1',
+    seq: 1,
+    timestamp: '2026-06-19T00:00:00Z',
+    payload: { question: clarificationQuestion },
+  });
+
+  assert.equal(clarified.status, 'needs_clarification');
+  assert.deepEqual(clarified.currentQuestion, clarificationQuestion);
+});
+
+for (const eventType of ['run.started', 'agent.started', 'run.completed', 'run.failed', 'run.rejected'] as const) {
+  test(`run reducer clears current clarification question on ${eventType}`, () => {
+    const clarification = runReducer(initialRunState, {
+      type: 'clarification.required',
+      run_id: 'run_1',
+      plan_id: 'plan_1',
+      seq: 1,
+      timestamp: '2026-06-19T00:00:00Z',
+      payload: { question: clarificationQuestion },
+    });
+
+    const next = runReducer(clarification, {
+      type: eventType,
+      run_id: 'run_1',
+      plan_id: 'plan_1',
+      seq: 2,
+      timestamp: '2026-06-19T00:00:01Z',
+      payload: {},
+    });
+
+    assert.equal(next.currentQuestion, null);
+  });
+}
 
 test('run reducer clears pending actions on terminal failure states', () => {
   const approval = runReducer(initialRunState, {

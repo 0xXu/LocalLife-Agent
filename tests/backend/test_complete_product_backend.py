@@ -89,6 +89,14 @@ class CompleteApiTest(unittest.TestCase):
 
         status, built = self.request("POST", "/api/runs", {"goal": "friends afternoon, four adults, activity before dinner", "user_id": "user_1"})
         self.assertEqual(status, 200)
+        self.wait_for_status(built["run_id"], "needs_clarification")
+        status, clarification = self.request(
+            "POST",
+            f"/api/runs/{built['run_id']}/clarifications",
+            {"question_id": "time_window", "answer": "today afternoon 2pm"},
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(clarification["accepted_question_id"], "time_window")
         self.wait_for_status(built["run_id"], "approval_required")
         plan_id = built["plan_id"]
 

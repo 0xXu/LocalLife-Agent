@@ -11,7 +11,12 @@ from uuid import uuid4
 
 from backend.agents.openai_runtime import OpenAIAgentsRuntime
 from backend.agents.runtime import AgentRuntime, PlanRunRequest as RuntimePlanRunRequest, RuntimeContext
-from backend.domain.events import RUN_STATUS_FAILED, RUN_STATUS_QUEUED, RUN_STATUS_RUNNING
+from backend.domain.events import (
+    RUN_STATUS_FAILED,
+    RUN_STATUS_NEEDS_CLARIFICATION,
+    RUN_STATUS_QUEUED,
+    RUN_STATUS_RUNNING,
+)
 from backend.domain.run import PlanRunRequest as DomainPlanRunRequest, RunRecord
 from backend.infrastructure.event_store import EventStore
 
@@ -25,6 +30,7 @@ class RunService:
         self.database_path = database_path
         self.runtime = runtime or OpenAIAgentsRuntime(dry_run=True)
         self._workers: list[threading.Thread] = []
+        self._transition_lock = threading.RLock()
         Path(database_path).parent.mkdir(parents=True, exist_ok=True)
         self.events = EventStore(database_path)
         self._init_db()
@@ -46,11 +52,15 @@ class RunService:
                     status text not null,
                     current_agent text,
                     error_json text,
+                    answers_json text,
+                    constraints_json text,
+                    current_question_json text,
                     created_at text not null,
                     updated_at text not null
                 )
                 """
             )
+            self._ensure_run_context_columns(conn)
             conn.execute(
                 """
                 create table if not exists plans (
@@ -66,6 +76,12 @@ class RunService:
                 """
             )
 
+    def _ensure_run_context_columns(self, conn: sqlite3.Connection) -> None:
+        columns = {row["name"] for row in conn.execute("pragma table_info(runs)").fetchall()}
+        for column in ("answers_json", "constraints_json", "current_question_json"):
+            if column not in columns:
+                conn.execute(f"alter table runs add column {column} text")
+
     def create_run(self, request: DomainPlanRunRequest) -> RunRecord:
         if not request.goal.strip():
             raise ValueError("validation_error")
@@ -75,10 +91,26 @@ class RunService:
         with self._connect() as conn:
             conn.execute(
                 """
-                insert into runs(run_id, plan_id, user_id, goal, status, current_agent, error_json, created_at, updated_at)
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                insert into runs(
+                    run_id, plan_id, user_id, goal, status, current_agent, error_json,
+                    answers_json, constraints_json, current_question_json, created_at, updated_at
+                )
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (run_id, plan_id, request.user_id, request.goal, RUN_STATUS_QUEUED, None, None, now, now),
+                (
+                    run_id,
+                    plan_id,
+                    request.user_id,
+                    request.goal,
+                    RUN_STATUS_QUEUED,
+                    None,
+                    None,
+                    self._json({}),
+                    self._json({}),
+                    None,
+                    now,
+                    now,
+                ),
             )
         self.events.open_queue(run_id)
         self.events.append(run_id, plan_id, "run.started", {"status": RUN_STATUS_QUEUED})
@@ -176,6 +208,30 @@ class RunService:
             receipts=current_receipts,
         )
 
+    def submit_clarification(self, run_id: str, question_id: str, answer: Any) -> RunRecord:
+        with self._transition_lock:
+            record = self.get_run(run_id)
+            answers, _constraints, current_question = self._run_context(run_id)
+            if record.status != RUN_STATUS_NEEDS_CLARIFICATION or current_question is None:
+                raise ValueError("clarification_not_required")
+            if current_question.get("id") != question_id:
+                raise ValueError("clarification_question_mismatch")
+
+            answers[question_id] = answer
+            self._save_run_context(run_id, answers=answers, current_question=None)
+            self._update_run(run_id, status=RUN_STATUS_RUNNING, current_agent="planner")
+        self.events.open_queue(run_id)
+        self.events.append(
+            run_id,
+            record.plan_id,
+            "run.running",
+            {"status": RUN_STATUS_RUNNING, "current_agent": "planner"},
+        )
+        worker = threading.Thread(target=self._run_worker_thread, args=(run_id,), daemon=True)
+        self._workers.append(worker)
+        worker.start()
+        return self.get_run(run_id)
+
     def _run_worker_thread(self, run_id: str) -> None:
         try:
             asyncio.run(self._run_worker(run_id))
@@ -184,27 +240,43 @@ class RunService:
 
     async def _run_worker(self, run_id: str) -> None:
         record = self.get_run(run_id)
+        answers, constraints, _current_question = self._run_context(run_id)
         approval_required_emitted = False
+        paused_for_user = False
 
         async def sink(event_type: str, payload: dict[str, Any]) -> None:
             nonlocal approval_required_emitted
             if event_type == "approval.required":
                 approval_required_emitted = True
+            if event_type == "clarification.required":
+                self._persist_clarification_pause(run_id, payload)
             self.events.append(run_id, record.plan_id, event_type, payload)
 
         try:
-            self._update_run(run_id, status=RUN_STATUS_RUNNING, current_agent="planner")
-            self.events.append(
-                run_id,
-                record.plan_id,
-                "run.running",
-                {"status": RUN_STATUS_RUNNING, "current_agent": "planner"},
-            )
+            if record.status != RUN_STATUS_RUNNING:
+                self._update_run(run_id, status=RUN_STATUS_RUNNING, current_agent="planner")
+                self.events.append(
+                    run_id,
+                    record.plan_id,
+                    "run.running",
+                    {"status": RUN_STATUS_RUNNING, "current_agent": "planner"},
+                )
             result = await self.runtime.start_plan(
-                RuntimePlanRunRequest(goal=record.goal, user_id=record.user_id),
+                RuntimePlanRunRequest(
+                    goal=record.goal,
+                    user_id=record.user_id,
+                    answers=answers,
+                    constraints=constraints,
+                ),
                 RuntimeContext(run_id=run_id, plan_id=record.plan_id, user_id=record.user_id),
                 sink,
             )
+            if result.status == RUN_STATUS_NEEDS_CLARIFICATION:
+                if result.clarification is None:
+                    raise RuntimeError("runtime_missing_clarification_question")
+                self._persist_clarification_pause(run_id, result.clarification)
+                paused_for_user = True
+                return
             receipts = list(result.plan.get("receipts", [])) if isinstance(result.plan, dict) else []
             self._save_plan(
                 plan_id=record.plan_id,
@@ -223,12 +295,29 @@ class RunService:
                 )
             self._update_run(run_id, status=result.status, current_agent=None)
             self.events.append(run_id, record.plan_id, "run.completed", {"status": result.status})
+            if result.status == "approval_required":
+                paused_for_user = True
         except Exception as exc:
             error = {"code": "runtime_failed", "message": str(exc) or exc.__class__.__name__}
             self._update_run(run_id, status=RUN_STATUS_FAILED, current_agent=None, error=error)
             self.events.append(run_id, record.plan_id, "run.failed", {"status": RUN_STATUS_FAILED, "error": error})
         finally:
-            self.events.close_queue(run_id)
+            if not paused_for_user:
+                self.events.close_queue(run_id)
+
+    def _persist_clarification_pause(self, run_id: str, clarification: dict[str, Any]) -> None:
+        question = clarification.get("question")
+        if not isinstance(question, dict):
+            raise RuntimeError("runtime_missing_clarification_question")
+        question_id = question.get("id")
+        with self._transition_lock:
+            answers, _constraints, current_question = self._run_context(run_id)
+            if question_id is not None and question_id in answers:
+                return
+            if current_question == question and self.get_run(run_id).status == RUN_STATUS_NEEDS_CLARIFICATION:
+                return
+            self._save_run_context(run_id, current_question=question)
+            self._update_run(run_id, status=RUN_STATUS_NEEDS_CLARIFICATION, current_agent=None)
 
     def _update_run(
         self,
@@ -247,6 +336,56 @@ class RunService:
                 where run_id = ?
                 """,
                 (status, current_agent, self._json(error) if error is not None else None, now, run_id),
+            )
+
+    def _run_context(
+        self,
+        run_id: str,
+    ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any] | None]:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                select answers_json, constraints_json, current_question_json
+                from runs
+                where run_id = ?
+                """,
+                (run_id,),
+            ).fetchone()
+        if row is None:
+            raise KeyError("run_not_found")
+        answers = json.loads(row["answers_json"]) if row["answers_json"] else {}
+        constraints = json.loads(row["constraints_json"]) if row["constraints_json"] else {}
+        current_question = json.loads(row["current_question_json"]) if row["current_question_json"] else None
+        return answers, constraints, current_question
+
+    def _save_run_context(
+        self,
+        run_id: str,
+        *,
+        answers: dict[str, Any] | None = None,
+        constraints: dict[str, Any] | None = None,
+        current_question: dict[str, Any] | None = None,
+    ) -> None:
+        now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+        assignments = ["updated_at = ?"]
+        values: list[Any] = [now]
+        if answers is not None:
+            assignments.append("answers_json = ?")
+            values.append(self._json(answers))
+        if constraints is not None:
+            assignments.append("constraints_json = ?")
+            values.append(self._json(constraints))
+        assignments.append("current_question_json = ?")
+        values.append(self._json(current_question) if current_question is not None else None)
+        values.append(run_id)
+        with self._connect() as conn:
+            conn.execute(
+                f"""
+                update runs
+                set {", ".join(assignments)}
+                where run_id = ?
+                """,
+                values,
             )
 
     def _save_plan(
