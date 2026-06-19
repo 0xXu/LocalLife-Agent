@@ -2,7 +2,8 @@
 
 This Python backend is the single backend service for the separated WeekendPilot app. The Next.js app is frontend-only and calls these `/api/*` endpoints through `NEXT_PUBLIC_API_URL`.
 
-This backend is the production API path for the current demo.
+This backend is the production API path for the current demo. It no longer uses
+LangGraph or legacy plan-run endpoints.
 
 ## Architecture
 
@@ -18,7 +19,25 @@ data/             deterministic local catalog generator
 llm/              OpenAI-compatible config/client for remote model access
 ```
 
-The backend is intentionally local-first for competition stability. The OpenAI Agents SDK runtime owns model/tool execution, while application services persist run state, plan snapshots, action approvals, receipts, and normalized SSE events in SQLite. Meituan, map, booking, ordering, messaging, and calendar actions are represented by replaceable local adapters that return realistic IDs and receipts.
+The backend is intentionally local-first for competition stability. The OpenAI
+Agents SDK runtime owns model/tool execution, while application services persist
+run state, plan snapshots, clarification answers, action approvals, receipts,
+and normalized SSE events in SQLite. Messaging, map, catalog, booking, ordering,
+and calendar actions are represented by replaceable local adapters that return
+realistic IDs and receipts.
+
+The current runtime is strict:
+
+- `IntentExtractionTool` runs once at the start of a run and returns known
+  constraints plus an ordered missing-field queue.
+- Clarification asks one question at a time and resumes the same run through
+  `POST /api/runs/{run_id}/clarifications`.
+- `FinalValidationTool` runs once after the clarification queue is complete.
+- `PlannerAgent` must return structured JSON with renderable `itinerary` and
+  `variants`.
+- Invalid JSON, Markdown, missing itinerary, or empty variants raise
+  `planner_contract_invalid`; the run fails instead of silently generating a
+  synthetic plan.
 
 ## LLM Configuration
 
@@ -49,12 +68,19 @@ GET   /api/tool-schemas
 POST  /api/runs
 GET   /api/runs/{run_id}
 GET   /api/runs/{run_id}/events
+POST  /api/runs/{run_id}/clarifications
 POST  /api/runs/{run_id}/actions/approve
 POST  /api/runs/{run_id}/actions/reject
+GET   /api/plans
 GET   /api/plans/{plan_id}
 ```
 
-`GET /api/runs/{run_id}/events` streams named `run.event` SSE frames. Event payloads use stable types such as `run.started`, `agent.started`, `tool.called`, `plan.draft.created`, `approval.required`, `actions.execution.completed`, `run.completed`, `run.failed`, and `run.rejected`.
+`GET /api/runs/{run_id}/events` streams named `run.event` SSE frames. Event
+payloads use stable types such as `run.started`, `run.running`,
+`agent.started`, `agent.completed`, `clarification.required`,
+`approval.required`, `actions.execution.started`,
+`actions.execution.completed`, `run.completed`, `run.failed`, and
+`run.rejected`.
 
 Sensitive tools always require confirmation. The planning run emits `approval.required` with pending action ids, and execution only starts after `POST /api/runs/{run_id}/actions/approve`.
 
