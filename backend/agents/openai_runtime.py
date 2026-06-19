@@ -1,13 +1,20 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from agents import Agent, Runner, set_tracing_disabled
 from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
 from openai import AsyncOpenAI
 
 from backend.agents.guardrails import require_grounded_action
+from backend.agents.intent_extraction_tool import (
+    CLARIFICATION_QUEUE_KEY,
+    LLM_MISSING_FIELDS_KEY,
+    REQUIRED_FIELD_PRIORITY,
+    ConstraintExtractor,
+    IntentExtractionTool,
+)
 from backend.agents.runtime import (
     EventSink,
     ExecuteActionsRequest,
@@ -18,10 +25,6 @@ from backend.agents.runtime import (
 )
 from backend.llm.config import LLMConfig
 
-ConstraintExtractor = Callable[[PlanRunRequest], dict[str, Any] | Awaitable[dict[str, Any]]]
-CLARIFICATION_QUEUE_KEY = "__clarification_queue"
-LLM_MISSING_FIELDS_KEY = "__llm_missing_fields"
-
 
 class OpenAIAgentsRuntime:
     def __init__(
@@ -30,12 +33,16 @@ class OpenAIAgentsRuntime:
         model: str | None = None,
         planner_model: Any | None = None,
         constraint_extractor: ConstraintExtractor | None = None,
+        intent_tool: IntentExtractionTool | None = None,
     ) -> None:
         self.dry_run = dry_run
         self.model = model
-        self.constraint_extractor = constraint_extractor
         self.planner = self._build_planner(planner_model or model)
-        self.intent_extractor = self._build_intent_extractor(planner_model or model)
+        self.intent_tool = intent_tool or IntentExtractionTool(
+            dry_run=dry_run,
+            model=planner_model or model,
+            constraint_extractor=constraint_extractor,
+        )
 
     @classmethod
     def from_llm_config(cls, config: LLMConfig) -> "OpenAIAgentsRuntime":
@@ -55,20 +62,6 @@ class OpenAIAgentsRuntime:
         kwargs: dict[str, Any] = {
             "name": "PlannerAgent",
             "instructions": "Create grounded local-life plans. Return only validated product-safe output.",
-        }
-        if model is not None:
-            kwargs["model"] = model
-        return Agent(**kwargs)
-
-    def _build_intent_extractor(self, model: str | Any | None) -> Agent:
-        kwargs: dict[str, Any] = {
-            "name": "IntentExtractorAgent",
-            "instructions": (
-                "Extract structured local-life planning constraints from the user goal. "
-                "Return only compact JSON with keys: time_window, start_location, party_size, "
-                "scenario, budget, diet_preferences, accessibility, transport_preference, "
-                "activity_preference. Omit unknown values."
-            ),
         }
         if model is not None:
             kwargs["model"] = model
@@ -192,64 +185,11 @@ class OpenAIAgentsRuntime:
         )
 
     async def _extract_constraints(self, request: PlanRunRequest, sink: EventSink) -> dict[str, Any]:
-        constraints = self._merge_known_constraints(request)
-        if self.constraint_extractor is not None:
-            extracted_or_awaitable = self.constraint_extractor(request)
-            extracted = (
-                await extracted_or_awaitable
-                if hasattr(extracted_or_awaitable, "__await__")
-                else extracted_or_awaitable
-            )
-            constraints.update({key: value for key, value in extracted.items() if value not in (None, "", [], {})})
-            return constraints
-        if self.dry_run:
-            return constraints
-
-        await sink("agent.started", {"agent": "intent_extractor"})
-        prompt = (
-            "User goal:\n"
-            f"{request.goal}\n\n"
-            "Existing answers JSON:\n"
-            f"{json.dumps(request.answers, ensure_ascii=False)}\n\n"
-            "Return only JSON object with keys: constraints and missing_fields. "
-            "constraints is an object containing known values only. missing_fields is an ordered array "
-            "from these possible fields when missing: time_window, start_location, party_size, activity_preference."
+        return await self.intent_tool.extract(
+            request,
+            base_constraints=self._merge_known_constraints(request),
+            sink=sink,
         )
-        run_result = await Runner.run(self.intent_extractor, prompt)
-        final_output = getattr(run_result, "final_output", run_result)
-        extracted = self._parse_extracted_constraints(final_output)
-        constraints.update(extracted)
-        await sink("agent.completed", {"agent": "intent_extractor", "constraints": constraints})
-        return constraints
-
-    def _parse_extracted_constraints(self, value: Any) -> dict[str, Any]:
-        parsed: Any
-        if isinstance(value, dict):
-            parsed = value
-        else:
-            if not isinstance(value, str):
-                return {}
-            try:
-                parsed = json.loads(value)
-            except json.JSONDecodeError:
-                return {}
-        if not isinstance(parsed, dict):
-            return {}
-
-        raw_constraints = parsed.get("constraints") if isinstance(parsed.get("constraints"), dict) else parsed
-        constraints = {
-            str(key): item
-            for key, item in raw_constraints.items()
-            if key not in {"constraints", "missing_fields", "question_plan"} and item not in (None, "", [], {})
-        }
-        missing_fields = parsed.get("missing_fields")
-        if isinstance(missing_fields, list):
-            constraints[LLM_MISSING_FIELDS_KEY] = [
-                str(field)
-                for field in missing_fields
-                if str(field) in self._required_field_priority()
-            ]
-        return constraints
 
     def _missing_required_fields(self, constraints: dict[str, Any]) -> list[str]:
         llm_missing = constraints.get(LLM_MISSING_FIELDS_KEY)
@@ -260,7 +200,7 @@ class OpenAIAgentsRuntime:
         return [field for field in priority if not constraints.get(field)]
 
     def _required_field_priority(self) -> list[str]:
-        return ["time_window", "start_location", "party_size", "activity_preference"]
+        return REQUIRED_FIELD_PRIORITY
 
     def _merge_known_constraints(self, request: PlanRunRequest) -> dict[str, Any]:
         constraints = dict(request.constraints)

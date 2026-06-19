@@ -2,6 +2,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from backend.agents.intent_extraction_tool import LLM_MISSING_FIELDS_KEY
 from backend.agents.openai_runtime import OpenAIAgentsRuntime
 from backend.agents.runtime import ExecuteActionsRequest, PlanRunRequest, RuntimeContext
 from backend.llm.config import LLMConfig
@@ -114,6 +115,38 @@ class OpenAIAgentsRuntimeTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(first.clarification["question"]["id"], "start_location")
         self.assertEqual(second.clarification["question"]["id"], "party_size")
         self.assertEqual(third.clarification["question"]["id"], "activity_preference")
+
+    async def test_runtime_uses_injected_intent_tool_boundary(self):
+        class FakeIntentTool:
+            def __init__(self):
+                self.calls = 0
+
+            async def extract(self, _request, *, base_constraints, sink):
+                self.calls += 1
+                await sink("agent.completed", {"agent": "intent_tool"})
+                return {
+                    **base_constraints,
+                    "time_window": "今天下午 2 点",
+                    LLM_MISSING_FIELDS_KEY: ["start_location"],
+                }
+
+        tool = FakeIntentTool()
+        runtime = OpenAIAgentsRuntime(dry_run=True, intent_tool=tool)
+        events = []
+
+        async def sink(event_type, payload):
+            events.append((event_type, payload))
+
+        result = await runtime.start_plan(
+            PlanRunRequest(goal="我想出去玩", user_id="user_1"),
+            RuntimeContext(run_id="run_1", plan_id="plan_1", user_id="user_1"),
+            sink,
+        )
+
+        self.assertEqual(tool.calls, 1)
+        self.assertEqual(result.status, "needs_clarification")
+        self.assertEqual(result.clarification["question"]["id"], "start_location")
+        self.assertIn(("agent.completed", {"agent": "intent_tool"}), events)
 
     async def test_local_dry_run_returns_grounded_plan_result(self):
         runtime = OpenAIAgentsRuntime(dry_run=True)
