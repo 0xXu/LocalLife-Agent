@@ -2878,25 +2878,25 @@ dd,
 }
 
 .clarification-card {
-  width: min(720px, calc(100% - 32px));
-  margin: 44px auto 120px;
-  padding: 20px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--panel);
-  box-shadow: var(--shadow-md);
+  width: min(520px, 100%);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .clarification-card-head {
   display: grid;
-  grid-template-columns: 50px 1fr;
-  gap: 14px;
+  grid-template-columns: 36px 1fr;
+  gap: 10px;
   align-items: start;
 }
 
 .clarification-card-icon {
-  width: 50px;
-  height: 50px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
   border-radius: 12px;
@@ -2914,8 +2914,8 @@ dd,
 
 .clarification-card-head h1 {
   margin: 0;
-  font-size: 24px;
-  line-height: 1.2;
+  font-size: 16px;
+  line-height: 1.35;
   letter-spacing: 0;
 }
 
@@ -2926,9 +2926,9 @@ dd,
 }
 
 .clarification-card-form {
-  margin-top: 18px;
+  margin-top: 12px;
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .clarification-card-options {

@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { ChatView } from '@/components/chat/ChatView';
 import { PlanningProgress } from '@/components/planning/PlanningProgress';
-import { ClarificationCard } from '@/components/clarification/ClarificationCard';
 import { PlanResultsView } from '@/components/plan/PlanResultsView';
 import { ReceiptsView } from '@/components/receipts/ReceiptsView';
 import { SavedPlansView } from '@/components/saved/SavedPlansView';
@@ -150,6 +149,7 @@ export default function WeekendPilotApp() {
             onSubmitGoal={handleSubmitGoal}
             isPlanning={false}
             error={error}
+            goal={goal}
           />
         );
 
@@ -165,21 +165,17 @@ export default function WeekendPilotApp() {
 
       case 'clarifying':
         if (!state.currentQuestion) {
-          return (
-            <PlanningProgress
-              goal={goal}
-              progress={progressForRunEvents(state.events)}
-              currentStep={Math.min(Math.max(state.events.length, 0), 6)}
-              streamingText="正在确认还缺少哪一项信息..."
-            />
-          );
+          return <ChatView onSubmitGoal={handleSubmitGoal} isPlanning={true} error={error} goal={goal} />;
         }
         return (
-          <ClarificationCard
-            question={state.currentQuestion}
-            submitting={clarificationSubmitting}
+          <ChatView
+            onSubmitGoal={handleSubmitGoal}
+            isPlanning={false}
             error={error}
-            onSubmit={handleAnswerClarification}
+            goal={goal}
+            clarificationQuestion={state.currentQuestion}
+            clarificationSubmitting={clarificationSubmitting}
+            onAnswerClarification={handleAnswerClarification}
           />
         );
 

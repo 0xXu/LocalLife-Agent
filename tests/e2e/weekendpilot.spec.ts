@@ -22,7 +22,7 @@ test('desktop demo completes run approval and execution', async ({ page }) => {
 });
 
 async function answerTimeClarification(page: import('@playwright/test').Page) {
-  await expect(page.getByText('需要补充一个信息')).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText('我还需要确认一下')).toBeVisible({ timeout: 30_000 });
   await page.getByRole('button', { name: /今天下午 2 点/ }).click();
   await page.getByRole('button', { name: /继续生成/ }).click();
 }

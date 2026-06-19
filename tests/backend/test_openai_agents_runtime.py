@@ -48,6 +48,26 @@ class OpenAIAgentsRuntimeTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.clarification["question"]["id"], "time_window")
         self.assertEqual([event[0] for event in events], ["agent.started", "clarification.required"])
 
+    async def test_extracted_time_window_prevents_redundant_clarification(self):
+        def fake_llm_extractor(request):
+            self.assertEqual(request.goal, "今天下午两点我想去玩")
+            return {"time_window": "今天下午两点"}
+
+        runtime = OpenAIAgentsRuntime(dry_run=True, constraint_extractor=fake_llm_extractor)
+        events = []
+
+        async def sink(event_type, payload):
+            events.append((event_type, payload))
+
+        result = await runtime.start_plan(
+            PlanRunRequest(goal="今天下午两点我想去玩", user_id="user_1"),
+            RuntimeContext(run_id="run_1", plan_id="plan_1", user_id="user_1"),
+            sink,
+        )
+
+        self.assertEqual(result.status, "approval_required")
+        self.assertNotIn("clarification.required", [event[0] for event in events])
+
     async def test_local_dry_run_returns_grounded_plan_result(self):
         runtime = OpenAIAgentsRuntime(dry_run=True)
         events = []

@@ -5,14 +5,28 @@ import { Brain, ListChecks, ShieldCheck } from 'lucide-react';
 import { ChatBubble } from './ChatBubble';
 import { QuickActions } from './QuickActions';
 import { GoalInput } from './GoalInput';
+import { ClarificationCard } from '../clarification/ClarificationCard';
+import type { ClarificationQuestion } from '../../features/runs/schemas';
 
 type ChatViewProps = {
   onSubmitGoal: (goal: string) => void;
   isPlanning: boolean;
   error: string | null;
+  goal?: string;
+  clarificationQuestion?: ClarificationQuestion | null;
+  clarificationSubmitting?: boolean;
+  onAnswerClarification?: (questionId: string, answer: unknown) => void | Promise<void>;
 };
 
-export function ChatView({ onSubmitGoal, isPlanning, error }: ChatViewProps) {
+export function ChatView({
+  onSubmitGoal,
+  isPlanning,
+  error,
+  goal,
+  clarificationQuestion,
+  clarificationSubmitting,
+  onAnswerClarification,
+}: ChatViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const qualitySignals = [
     { label: '开放域规划', detail: '不用枚举场景，直接描述需求', icon: Brain },
@@ -24,7 +38,7 @@ export function ChatView({ onSubmitGoal, isPlanning, error }: ChatViewProps) {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [isPlanning, error]);
+  }, [isPlanning, error, clarificationQuestion]);
 
   return (
     <section className="chat-view">
@@ -57,9 +71,25 @@ export function ChatView({ onSubmitGoal, isPlanning, error }: ChatViewProps) {
           </ul>
         </ChatBubble>
 
+        {goal && (
+          <ChatBubble role="user">
+            <p>{goal}</p>
+          </ChatBubble>
+        )}
+
         {error && (
           <ChatBubble role="ai">
             <p className="chat-error">{error}</p>
+          </ChatBubble>
+        )}
+
+        {clarificationQuestion && onAnswerClarification && (
+          <ChatBubble role="ai" animate>
+            <ClarificationCard
+              question={clarificationQuestion}
+              submitting={clarificationSubmitting}
+              onSubmit={onAnswerClarification}
+            />
           </ChatBubble>
         )}
 

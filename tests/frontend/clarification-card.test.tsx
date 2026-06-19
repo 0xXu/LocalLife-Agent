@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { JSDOM } from 'jsdom';
 
 import { ClarificationCard } from '../../components/clarification/ClarificationCard';
+import { ChatView } from '../../components/chat/ChatView';
 
 type Submission = { questionId: string; answer: unknown };
 
@@ -51,6 +52,35 @@ test('clarification card submits a custom numeric answer', async () => {
   await click(byTestId(container, 'clarification-submit'));
 
   assert.deepEqual(submissions, [{ questionId: 'party_size', answer: 5 }]);
+});
+
+test('chat view renders clarification as an assistant conversation turn', () => {
+  const { container } = render(
+    <ChatView
+      goal="今天下午想出去玩"
+      onSubmitGoal={() => {}}
+      isPlanning={false}
+      error={null}
+      clarificationQuestion={partySizeQuestion}
+      onAnswerClarification={() => {}}
+    />,
+  );
+
+  assert.match(container.textContent ?? '', /今天下午想出去玩/);
+  assert.match(container.textContent ?? '', /这次一共有几位/);
+  assert.equal(container.querySelectorAll('.chat-bubble--ai .clarification-card').length, 1);
+});
+
+test('clarification card uses compact in-chat copy', () => {
+  const { container } = render(
+    <ClarificationCard
+      question={partySizeQuestion}
+      onSubmit={() => {}}
+    />,
+  );
+
+  assert.doesNotMatch(container.textContent ?? '', /需要补充一个信息/);
+  assert.match(container.textContent ?? '', /我还需要确认一下/);
 });
 
 function render(element: React.ReactElement) {

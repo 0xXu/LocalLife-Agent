@@ -56,7 +56,7 @@ export function ClarificationCard({ question, submitting = false, error, onSubmi
           <MessageCircleQuestion size={24} />
         </div>
         <div>
-          <span>需要补充一个信息</span>
+          <span>我还需要确认一下</span>
           <h1>{question.label}</h1>
           {question.description && <p>{question.description}</p>}
         </div>
