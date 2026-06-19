@@ -3,7 +3,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { ChatView } from '@/components/chat/ChatView';
-import { PlanningProgress } from '@/components/planning/PlanningProgress';
 import { PlanResultsView } from '@/components/plan/PlanResultsView';
 import { ReceiptsView } from '@/components/receipts/ReceiptsView';
 import { SavedPlansView } from '@/components/saved/SavedPlansView';
@@ -155,17 +154,28 @@ export default function WeekendPilotApp() {
 
       case 'planning':
         return (
-          <PlanningProgress
+          <ChatView
+            onSubmitGoal={handleSubmitGoal}
+            isPlanning={true}
+            error={error}
             goal={goal}
-            progress={progressForRunEvents(state.events)}
-            currentStep={Math.min(Math.max(state.events.length, 0), 6)}
-            streamingText={streamingTextForRunEvents(state.events)}
+            planningMessage={planningMessageForRunEvents(state.events)}
+            planningEvents={state.events}
           />
         );
 
       case 'clarifying':
         if (!state.currentQuestion) {
-          return <ChatView onSubmitGoal={handleSubmitGoal} isPlanning={true} error={error} goal={goal} />;
+          return (
+            <ChatView
+              onSubmitGoal={handleSubmitGoal}
+              isPlanning={true}
+              error={error}
+              goal={goal}
+              planningMessage="我已经理解了主要意图，还差一个关键信息，正在整理成一个问题。"
+              planningEvents={state.events}
+            />
+          );
         }
         return (
           <ChatView
@@ -262,16 +272,22 @@ function getActionKey(action: Record<string, unknown>) {
   return String(action.action_id ?? action.id ?? `${action.tool ?? action.type}_${action.target ?? action.label ?? action.place_id ?? 'default'}`);
 }
 
-function progressForRunEvents(events: Array<{ type: string }>) {
-  if (!events.length) return ['Run queued'];
-  return events.map((event) => runEventLabel(event.type));
-}
-
-function streamingTextForRunEvents(events: Array<{ type: string; payload: Record<string, unknown> }>) {
+function planningMessageForRunEvents(events: Array<{ type: string; payload: Record<string, unknown> }>) {
   const latest = events.at(-1);
-  if (!latest) return '正在启动新的运行...';
-  const detail = latest.payload.message ?? latest.payload.summary ?? latest.payload.agent ?? latest.type;
-  return String(detail);
+  if (!latest) return '我正在理解你的需求，先检查时间、人数和出发点。';
+  const copy: Record<string, string> = {
+    'run.started': '我正在理解你的需求，先检查时间、人数和出发点。',
+    'run.running': '我正在把你的描述拆成可检索的条件。',
+    'agent.started': '我正在提取已给出的时间、地点、人数和偏好。',
+    'agent.completed': '我已经整理出关键约束，继续检查是否还缺信息。',
+    'tool.called': '我正在查找符合条件的本地候选。',
+    'tool.completed': '候选已经回来，我正在比较距离、时间和匹配度。',
+    'plan.draft.created': '初版方案已经生成，我正在整理路线和备选项。',
+    'plan.validation.completed': '我正在校验营业时间、路线和约束。',
+    'clarification.required': '我已经理解了主要意图，还差一个关键信息。',
+    'approval.required': '方案已经准备好，马上给你确认。',
+  };
+  return copy[latest.type] ?? '我正在把需求转成可执行的本地生活方案。';
 }
 
 function runEventLabel(type: string) {

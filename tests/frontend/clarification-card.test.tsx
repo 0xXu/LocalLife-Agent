@@ -83,6 +83,38 @@ test('clarification card uses compact in-chat copy', () => {
   assert.match(container.textContent ?? '', /我还需要确认一下/);
 });
 
+test('chat planning state hides internal agent names until details are opened', async () => {
+  const { container } = render(
+    <ChatView
+      goal="今天下午两点我想去玩"
+      onSubmitGoal={() => {}}
+      isPlanning={true}
+      error={null}
+      planningEvents={[
+        {
+          type: 'agent.started',
+          run_id: 'run_1',
+          plan_id: 'plan_1',
+          seq: 1,
+          timestamp: '2026-06-19T06:00:00.000Z',
+          payload: { agent: 'intent_extractor' },
+        },
+      ]}
+    />,
+  );
+
+  assert.match(container.textContent ?? '', /今天下午两点我想去玩/);
+  assert.match(container.textContent ?? '', /正在提取已给出的时间、地点、人数和偏好/);
+  assert.match(container.textContent ?? '', /运行细节/);
+  assert.doesNotMatch(container.textContent ?? '', /intent_extractor/);
+  assert.doesNotMatch(container.textContent ?? '', /Agent started|Run running/);
+
+  await click(byTestId(container, 'chat-run-details-toggle'));
+
+  assert.match(container.textContent ?? '', /agent\.started/);
+  assert.match(container.textContent ?? '', /intent_extractor/);
+});
+
 function render(element: React.ReactElement) {
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
     url: 'http://127.0.0.1:4174/',
