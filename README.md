@@ -3,7 +3,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![Next.js 15](https://img.shields.io/badge/Next.js%2015-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
 [![React 19](https://img.shields.io/badge/React%2019-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
-[![LangGraph](https://img.shields.io/badge/LangGraph-🟠-black?style=for-the-badge)](https://github.com/langchain-ai/langgraph)
+[![OpenAI Agents SDK](https://img.shields.io/badge/OpenAI%20Agents%20SDK-111827?style=for-the-badge)](https://openai.github.io/openai-agents-python/)
 [![SQLite](https://img.shields.io/badge/SQLite-074D5B?style=for-the-badge&logo=sqlite&logoColor=white)](https://sqlite.org/)
 
 > **LocalLife-Agent（又名 WeekendPilot）** 是一个面向本地生活场景的“规划到执行”闭环智能体 Demo。它将用户一句模糊的自然语言目标（如“雨天亲子半日游”、“朋友运动后聚餐”），转化为可解释的行程、可比较的候选方案、可审计的工具调用轨迹，以及**必须经用户确认后才幂等执行**的预约、领券、点单等具体动作。
@@ -32,15 +32,15 @@
 - **实时数据渲染**：结果页同时展示多维度时间轴、路线渲染、多候选 Variants 对比、证据链（Evidence Panel）、智能体中间状态 Trace 以及最终的待批准动作台账（Action Ledger）。
 - **实时流式更新**：通过 Server-Sent Events (SSE) 技术，将后端的规划进度实时推送到前端页面，实现流畅的交互体感。
 
-### ⚙️ 后端：FastAPI + LangGraph + SQLite 引擎
-- **生命周期管理**：通过核心 `WorkflowService` 统一组织 Graph Run、Thread、Plan、Revision 的生命周期和持久化。
-- **数据库设计**：利用 SQLite 存储所有的工作流运行历史（`workflow.sqlite`）和用户显隐式画像（`profiles.sqlite`）。
+### ⚙️ 后端：FastAPI + OpenAI Agents SDK + SQLite 引擎
+- **运行时管理**：FastAPI 暴露 run-centered REST API，应用服务创建 Run、持久化 Plan 与 Action Ledger，并由 OpenAI Agents SDK runtime 负责模型推理、工具调用、guardrail 与 handoff。
+- **数据库设计**：利用 SQLite 存储所有 run 状态、SSE 事件、计划快照、执行回执和用户显隐式画像。
 
 ---
 
 ## 🤖 智能规划执行工作流
 
-整个规划流水线的顶层控制核心位于 `backend/orchestrator/pipeline.py`，其状态图转移流如下所示：
+整个规划流水线围绕一次 `/api/runs` 创建的 Run 展开。后端应用层把自然语言目标、用户画像、本地供给、工具 schema 和审批策略组装为 OpenAI Agents SDK runtime 的上下文，并将每个关键步骤写成可回放的 `run.event` SSE 事件。
 
 ![LocalLife-Agent 规划执行流程图](docs/assets/locallife-planning-flow.png)
 
@@ -69,7 +69,7 @@
 > 为了防范 AI 智能体的“越权执行”与“重复操作”，本项目在执行侧实施了极其严苛的金融级安全隔离与幂等设计。
 
 - **副作用动作隔离**：`reserve_activity`、`create_reservation`、`claim_coupon`、`create_order`、`send_plan_message`、`create_calendar_event` 等动作均被标记为 `side_effect=true` 和 `requires_confirmation=true`。
-- **显式用户授权**：规划出的动作仅仅作为 Pending Actions 记录在 Ledger 中。只有当用户在前端工作台逐一手动勾选确认后，调用 `/api/plans/{plan_id}/resume` 接口，系统才会以原子化的方式执行。
+- **显式用户授权**：规划出的动作仅仅作为 Pending Actions 记录在 Ledger 中。只有当用户在前端工作台逐一手动勾选确认后，调用 `/api/runs/{run_id}/actions/approve` 接口，系统才会以原子化的方式执行。
 - **并发与幂等控制**：后端执行利用 SQLite 的 `BEGIN IMMEDIATE` 排他锁锁库，结合唯一的 `Idempotency Key`、Action Attempts 和 Receipts 回执，杜绝用户在前端多次点击导致的多重领券或重复点单。
 
 ---
@@ -147,7 +147,7 @@ npm run test:all
   ```bash
   npm run test:frontend
   ```
-* **后端单元测试**：使用 `pytest` 覆盖核心 API、SSE 推送、LangGraph 状态迁移、Agent 决策算法与 Action 幂等性。
+* **后端单元测试**：使用 `pytest` 覆盖核心 API、SSE 推送、OpenAI Agents SDK runtime 集成、Agent 决策算法与 Action 幂等性。
   ```bash
   npm run test:backend
   ```
@@ -173,9 +173,8 @@ npm run test:all
 ├── lib/                    # 前端基础库与 HTTP 工具包
 ├── backend/                # FastAPI 后端工程
 │   ├── api/                # FastAPI 路由、SSE 推送机制及 App 初始化
-│   ├── services/           # 业务逻辑服务层 (Workflow, User Profile 核心服务)
-│   ├── orchestrator/       # 基于 LangGraph 的规划 pipeline (pipeline.py)
-│   ├── agents/             # 多智能体协同实现 (Ranker, Validator, Recovery)
+│   ├── application/        # Run、Approval、Plan 生命周期应用服务
+│   ├── agents/             # OpenAI Agents SDK runtime 与多智能体协同实现
 │   ├── llm/                # LLM 多适配器客户端封装
 │   └── tools/              # 只读规划工具及有副作用 Action 工具注册表
 ├── tests/                  # 高度覆盖的测试层
@@ -194,10 +193,12 @@ npm run test:all
 
 | 请求方法 | 路由地址 | 功能描述 | 核心有效负载（Payload） / 返回信息 |
 | :--- | :--- | :--- | :--- |
-| **POST** | `/api/plans/runs` | 发起一个新的规划任务 | 入参为用户 Prompt，返回唯一工作流运行 ID `run_id` |
-| **GET** | `/api/plans/runs/{run_id}/stream` | **SSE 流式数据传输** | 实时推送智能体所处的节点信息、约束条件解析及生成进度 |
-| **GET** | `/api/plans/{plan_id}` | 获取最终规划快照与路线详情 | 返回完整的时序 Itinerary、推荐证据 Evidence、中间 Trace 等 |
-| **POST** | `/api/plans/{plan_id}/resume` | 提交并执行选中的 Actions | 用于原子化确认执行 Pending Actions，返回执行回执（Receipts） |
+| **POST** | `/api/runs` | 发起一个新的规划 Run | 入参为用户 Prompt，返回 `run_id`、`plan_id`、`status` 与 `events_url` |
+| **GET** | `/api/runs/{run_id}/events` | **SSE 流式数据传输** | 以 `run.event` 推送 `run.started`、`agent.*`、`tool.*`、`approval.required`、`run.completed` 等事件 |
+| **GET** | `/api/runs/{run_id}` | 获取 Run 状态 | 返回当前 `status`、`plan_id`、当前 Agent、创建和更新时间 |
+| **GET** | `/api/plans/{plan_id}` | 获取最终规划快照与路线详情 | 返回完整的时序 Itinerary、推荐证据 Evidence、中间 Trace、Action Ledger 等 |
+| **POST** | `/api/runs/{run_id}/actions/approve` | 批准并执行选中的 Actions | 用于原子化确认执行 Pending Actions，返回执行回执（Receipts） |
+| **POST** | `/api/runs/{run_id}/actions/reject` | 拒绝当前 Run | 记录拒绝原因并终止等待审批的 Run |
 | **GET** | `/api/llm/status` | LLM 连接与心跳健康检查 | 用于演示前的网关稳定性检查 |
 
 ---

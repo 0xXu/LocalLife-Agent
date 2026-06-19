@@ -5,8 +5,8 @@ test('first complete plan appears within 10 seconds', async ({ page }) => {
   await page.goto('/');
   const start = Date.now();
 
-  await page.getByRole('button', { name: '家庭半日' }).click();
-  await expect(page.getByRole('heading', { level: 2, name: '主方案' })).toBeVisible({ timeout: 10_000 });
+  await page.getByRole('button', { name: '带娃出行' }).click();
+  await expect(page.getByText('Action Ledger').or(page.getByText('执行完成'))).toBeVisible({ timeout: 10_000 });
 
   assert.ok(Date.now() - start < 10_000);
 });

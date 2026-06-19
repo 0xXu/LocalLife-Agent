@@ -2,8 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   ClarificationResponseSchema,
-  GraphRunEventSchema,
-  GraphRunStartResponseSchema,
   ParsedConstraintsSchema,
   PoiSchema,
   PlanResponseSchema,
@@ -11,6 +9,16 @@ import {
   ReceiptSchema,
   RecoveryDiffSchema,
 } from '../../lib/contracts/schemas';
+import {
+  ApproveActionsRequestSchema,
+  CreateRunRequestSchema,
+  CreateRunResponseSchema,
+  RejectRunRequestSchema,
+  RunEventEnvelopeSchema,
+  RunEventTypeSchema,
+  RunStatusResponseSchema,
+  RunStatusSchema,
+} from '../../features/runs/schemas';
 
 test('ParsedConstraints accepts the detailed design family example', () => {
   const parsed = ParsedConstraintsSchema.parse({
@@ -269,7 +277,7 @@ test('PlanResponse exposes candidate sets with score breakdowns', () => {
   assert.equal(response.user_profile?.explicit_preferences[0].key, 'pace');
 });
 
-test('PlanResponse accepts persisted graph-run workflow payloads with durable action ids', () => {
+test('PlanResponse accepts persisted run workflow payloads with durable action ids', () => {
   const constraints = {
     scenario: 'family',
     origin: { type: 'district', label: 'home', lat: 31.2, lng: 121.5 },
@@ -330,38 +338,56 @@ test('PlanResponse accepts persisted graph-run workflow payloads with durable ac
   assert.equal(response.pending_actions[0].status, 'pending');
 });
 
-test('Graph run schemas accept start response and stream event payloads', () => {
-  const started = GraphRunStartResponseSchema.parse({
-    run_id: 'run_test_001',
-    thread_id: 'thread_test_001',
-    plan_id: 'plan_test_001',
+test('Run schemas accept create-run response and normalized SSE event payloads', () => {
+  const request = CreateRunRequestSchema.parse({
+    goal: 'Plan a family afternoon',
   });
-  const event = GraphRunEventSchema.parse({
+  const started = CreateRunResponseSchema.parse({
     run_id: 'run_test_001',
-    thread_id: 'thread_test_001',
     plan_id: 'plan_test_001',
-    revision_id: 'rev_test_001',
-    phase: 'pending_approval',
-    revision: {
-      revision_id: 'rev_test_001',
-      phase: 'pending_approval',
-      plan: {
-        id: 'plan_test_001',
-        status: 'pending_approval',
-        title: '计划',
-        summary: '摘要',
-        constraint_fit: { distance: 1, time: 1, budget: 1 },
-        itinerary: [],
-        overview: { theme: '下午', totalDuration: '2 小时', driveTime: '约 10 分钟', walkingDistance: '0 公里', estimatedCost: '¥100', score: 80 },
-        actions: [],
-        receipts: [],
-        badges: [],
-      },
+    status: 'queued',
+    events_url: '/api/runs/run_test_001/events',
+  });
+  const event = RunEventEnvelopeSchema.parse({
+    type: 'approval.required',
+    run_id: 'run_test_001',
+    plan_id: 'plan_test_001',
+    seq: 4,
+    timestamp: '2026-06-19T00:00:00Z',
+    payload: {
+      status: 'approval_required',
+      actions: [{ action_id: 'act_msg_001', status: 'pending' }],
     },
   });
 
+  assert.equal(request.user_id, 'local_demo_user');
   assert.equal(started.run_id, 'run_test_001');
-  assert.equal(event.revision.revision_id, 'rev_test_001');
+  assert.equal(started.events_url, '/api/runs/run_test_001/events');
+  assert.equal(event.type, 'approval.required');
+  assert.equal((event.payload.actions as Array<Record<string, unknown>>)[0].action_id, 'act_msg_001');
+});
+
+test('Run REST contract uses product statuses and run-id action endpoints', () => {
+  assert.equal(RunEventTypeSchema.parse('run.completed'), 'run.completed');
+  assert.equal(RunStatusSchema.parse('approval_required'), 'approval_required');
+  assert.throws(() => RunStatusSchema.parse('pending_approval'));
+
+  const status = RunStatusResponseSchema.parse({
+    run_id: 'run_test_001',
+    plan_id: 'plan_test_001',
+    status: 'running',
+    current_agent: 'OpenAIAgentsRuntime',
+    created_at: '2026-06-19T00:00:00Z',
+    updated_at: '2026-06-19T00:00:01Z',
+  });
+  const approve = ApproveActionsRequestSchema.parse({
+    action_ids: ['act_msg_001', 'act_calendar_001'],
+  });
+  const reject = RejectRunRequestSchema.parse({});
+
+  assert.equal(status.current_agent, 'OpenAIAgentsRuntime');
+  assert.deepEqual(approve.action_ids, ['act_msg_001', 'act_calendar_001']);
+  assert.equal(reject.reason, 'user_rejected');
 });
 
 test('Receipt and RecoveryDiff match execution and recovery contract', () => {
