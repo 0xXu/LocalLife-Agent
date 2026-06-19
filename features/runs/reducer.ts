@@ -21,6 +21,10 @@ export const initialRunState: RunState = {
 };
 
 export function runReducer(state: RunState, event: RunEventEnvelope): RunState {
+  if (state.events.some((existing) => isSameEvent(existing, event))) {
+    return state;
+  }
+
   const nextState = {
     ...state,
     runId: event.run_id,
@@ -82,4 +86,8 @@ function readActions(value: unknown): Array<Record<string, unknown>> {
   }
 
   return value.filter((action): action is Record<string, unknown> => typeof action === 'object' && action !== null);
+}
+
+function isSameEvent(left: RunEventEnvelope, right: RunEventEnvelope) {
+  return left.run_id === right.run_id && left.seq === right.seq && left.type === right.type;
 }

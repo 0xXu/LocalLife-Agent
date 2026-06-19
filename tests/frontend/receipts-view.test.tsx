@@ -19,3 +19,16 @@ test('receipts view counts backend succeeded receipts and renders stable ids', (
   assert.match(html, /成功 2 \/ 2 项操作/);
   assert.match(html, /rcpt_001/);
 });
+
+test('receipts view counts confirmed runtime receipts as successful', () => {
+  const html = renderToStaticMarkup(
+    <ReceiptsView
+      receipts={[
+        { id: 'receipt_1', action_id: 'act_send_plan_summary', type: 'send_plan_message', tool: 'messaging', status: 'confirmed', detail: 'message confirmed', payload: {} },
+      ] as any}
+      onNewPlan={() => {}}
+    />,
+  );
+
+  assert.match(html, /成功 1 \/ 1 项操作/);
+});

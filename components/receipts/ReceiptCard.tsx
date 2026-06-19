@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { CalendarPlus, Check, MessageSquareShare, ReceiptText, ShoppingBag, Ticket, Utensils, X } from 'lucide-react';
+import { isSuccessfulReceiptStatus } from './status';
 
 type ReceiptCardProps = {
   receipt: {
@@ -38,7 +39,7 @@ const toolLabels: Record<string, string> = {
 export function ReceiptCard({ receipt, index }: ReceiptCardProps) {
   const Icon = toolIcons[receipt.tool] ?? Ticket;
   const label = toolLabels[receipt.tool] ?? receipt.tool;
-  const isSuccess = ['success', 'ok', 'succeeded'].includes(receipt.status);
+  const isSuccess = isSuccessfulReceiptStatus(receipt.status);
   const receiptId = receipt.receipt_id ?? receipt.id ?? receipt.action_id ?? '';
 
   return (

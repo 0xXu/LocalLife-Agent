@@ -24,6 +24,7 @@ export function ClarificationCard({ question, submitting = false, error, onSubmi
     return selected;
   }, [customValue, question, selected]);
   const validationError = validateAnswer(question, answer);
+  const hasAnswerInput = selected !== null || customValue.trim().length > 0;
   const canSubmit = !submitting && !validationError;
 
   function chooseOption(value: OptionValue) {
@@ -101,7 +102,7 @@ export function ClarificationCard({ question, submitting = false, error, onSubmi
           </label>
         )}
 
-        {(validationError || error) && (
+        {((validationError && hasAnswerInput) || error) && (
           <p className="clarification-card-error" role="alert">
             {error ?? validationError}
           </p>

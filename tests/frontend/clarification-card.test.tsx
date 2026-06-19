@@ -83,6 +83,17 @@ test('clarification card uses compact in-chat copy', () => {
   assert.match(container.textContent ?? '', /我还需要确认一下/);
 });
 
+test('clarification card does not show required error before interaction', () => {
+  const { container } = render(
+    <ClarificationCard
+      question={partySizeQuestion}
+      onSubmit={() => {}}
+    />,
+  );
+
+  assert.doesNotMatch(container.textContent ?? '', /请先补充这个信息/);
+});
+
 test('chat planning state hides internal agent names until details are opened', async () => {
   const { container } = render(
     <ChatView

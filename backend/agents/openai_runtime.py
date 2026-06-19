@@ -19,6 +19,8 @@ from backend.agents.runtime import (
 from backend.llm.config import LLMConfig
 
 ConstraintExtractor = Callable[[PlanRunRequest], dict[str, Any] | Awaitable[dict[str, Any]]]
+CLARIFICATION_QUEUE_KEY = "__clarification_queue"
+LLM_MISSING_FIELDS_KEY = "__llm_missing_fields"
 
 
 class OpenAIAgentsRuntime:
@@ -79,8 +81,10 @@ class OpenAIAgentsRuntime:
         sink: EventSink,
     ) -> PlanRunResult:
         await sink("agent.started", {"agent": "planner"})
-        constraints = await self._extract_constraints(request, sink)
-        missing_fields = self._missing_required_fields(constraints)
+        constraints = self._merge_known_constraints(request)
+        if not self._has_clarification_queue(constraints):
+            constraints = await self._extract_constraints(request, sink)
+        missing_fields = self._pending_clarification_fields(constraints)
         if missing_fields:
             clarification = self._clarification_for(missing_fields[0], constraints)
             await sink("clarification.required", clarification)
@@ -91,43 +95,104 @@ class OpenAIAgentsRuntime:
             )
 
         if self.dry_run:
-            pending_action = {
-                "action_id": "act_demo_reservation",
-                "tool": "create_reservation",
-                "target": "demo_restaurant",
-                "label": "预约餐厅",
-                "payload": {"place_id": "demo_restaurant", "people": 3},
-            }
-            require_grounded_action(pending_action)
-            await sink("approval.required", {"plan_id": context.plan_id, "actions": [pending_action]})
-            return PlanRunResult(
-                status="approval_required",
-                plan={
-                    "id": context.plan_id,
-                    "status": "approval_required",
-                    "title": "本地生活计划",
-                    "summary": request.goal,
-                    "itinerary": [],
-                    "actions": [pending_action],
-                    "receipts": [],
-                },
-                validation={"valid": True},
-                pending_actions=[pending_action],
+            return await self._approval_plan_result(
+                request=request,
+                context=context,
+                sink=sink,
+                summary=request.goal,
+                constraints=constraints,
             )
 
-        run_result = await Runner.run(self.planner, request.goal)
+        run_result = await Runner.run(self.planner, self._planner_prompt(request, constraints))
         final_output = getattr(run_result, "final_output", run_result)
+        return await self._approval_plan_result(
+            request=request,
+            context=context,
+            sink=sink,
+            summary=self._summarize_planner_output(final_output),
+            constraints=constraints,
+            raw_output=run_result,
+        )
+
+    async def _approval_plan_result(
+        self,
+        *,
+        request: PlanRunRequest,
+        context: RuntimeContext,
+        sink: EventSink,
+        summary: str,
+        constraints: dict[str, Any],
+        raw_output: Any | None = None,
+    ) -> PlanRunResult:
+        pending_action = {
+            "action_id": "act_send_plan_summary",
+            "id": "act_send_plan_summary",
+            "type": "send_plan_message",
+            "tool": "messaging",
+            "target": context.user_id,
+            "label": "发送计划摘要",
+            "detail": "把确认后的出行方案发送给用户",
+            "status": "pending",
+            "payload": {"plan_id": context.plan_id},
+        }
+        require_grounded_action(pending_action)
         plan = {
             "id": context.plan_id,
-            "goal": request.goal,
-            "user_id": request.user_id,
-            "output": final_output,
+            "status": "approval_required",
+            "title": "本地生活计划",
+            "summary": summary or request.goal,
+            "constraint_fit": {
+                "overall": 0.82,
+                "matches": self._constraint_match_labels(constraints),
+                "risks": ["预算未明确，方案会保留弹性"],
+                "tradeoffs": ["先给轻量候选，确认后再执行发送动作"],
+            },
+            "overview": {
+                "theme": "轻量出行",
+                "totalDuration": "约 2-3 小时",
+                "driveTime": "待确认",
+                "walkingDistance": "待确认",
+                "estimatedCost": "按实际选择",
+                "score": 82,
+            },
+            "itinerary": [],
+            "actions": [pending_action],
+            "receipts": [],
+            "badges": ["待确认", "可调整"],
         }
-        return PlanRunResult(status="completed", plan=plan, raw_output=run_result)
+        await sink("approval.required", {"plan_id": context.plan_id, "actions": [pending_action]})
+        return PlanRunResult(
+            status="approval_required",
+            plan=plan,
+            validation={"valid": True},
+            pending_actions=[pending_action],
+            raw_output=raw_output,
+        )
+
+    def _summarize_planner_output(self, output: Any) -> str:
+        if isinstance(output, str):
+            return output.strip()
+        try:
+            return json.dumps(output, ensure_ascii=False)
+        except TypeError:
+            return str(output)
+
+    def _planner_prompt(self, request: PlanRunRequest, constraints: dict[str, Any]) -> str:
+        visible_constraints = self._visible_constraints(constraints)
+        return (
+            "Create a concise, concrete local-life plan from the confirmed user constraints.\n"
+            "Do not ask for information that is already present in the constraints.\n\n"
+            f"Original goal:\n{request.goal}\n\n"
+            "Confirmed constraints JSON:\n"
+            f"{json.dumps(visible_constraints, ensure_ascii=False)}\n\n"
+            "User clarification answers JSON:\n"
+            f"{json.dumps(request.answers, ensure_ascii=False)}\n\n"
+            "Return a user-facing Chinese plan summary with specific assumptions, candidate style, "
+            "and next action to confirm."
+        )
 
     async def _extract_constraints(self, request: PlanRunRequest, sink: EventSink) -> dict[str, Any]:
-        constraints = dict(request.constraints)
-        constraints.update({key: value for key, value in request.answers.items() if value not in (None, "")})
+        constraints = self._merge_known_constraints(request)
         if self.constraint_extractor is not None:
             extracted_or_awaitable = self.constraint_extractor(request)
             extracted = (
@@ -146,7 +211,9 @@ class OpenAIAgentsRuntime:
             f"{request.goal}\n\n"
             "Existing answers JSON:\n"
             f"{json.dumps(request.answers, ensure_ascii=False)}\n\n"
-            "Return only JSON object of extracted constraints."
+            "Return only JSON object with keys: constraints and missing_fields. "
+            "constraints is an object containing known values only. missing_fields is an ordered array "
+            "from these possible fields when missing: time_window, start_location, party_size, activity_preference."
         )
         run_result = await Runner.run(self.intent_extractor, prompt)
         final_output = getattr(run_result, "final_output", run_result)
@@ -156,21 +223,69 @@ class OpenAIAgentsRuntime:
         return constraints
 
     def _parse_extracted_constraints(self, value: Any) -> dict[str, Any]:
+        parsed: Any
         if isinstance(value, dict):
-            return {str(key): item for key, item in value.items() if item not in (None, "", [], {})}
-        if not isinstance(value, str):
-            return {}
-        try:
-            parsed = json.loads(value)
-        except json.JSONDecodeError:
-            return {}
+            parsed = value
+        else:
+            if not isinstance(value, str):
+                return {}
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                return {}
         if not isinstance(parsed, dict):
             return {}
-        return {str(key): item for key, item in parsed.items() if item not in (None, "", [], {})}
+
+        raw_constraints = parsed.get("constraints") if isinstance(parsed.get("constraints"), dict) else parsed
+        constraints = {
+            str(key): item
+            for key, item in raw_constraints.items()
+            if key not in {"constraints", "missing_fields", "question_plan"} and item not in (None, "", [], {})
+        }
+        missing_fields = parsed.get("missing_fields")
+        if isinstance(missing_fields, list):
+            constraints[LLM_MISSING_FIELDS_KEY] = [
+                str(field)
+                for field in missing_fields
+                if str(field) in self._required_field_priority()
+            ]
+        return constraints
 
     def _missing_required_fields(self, constraints: dict[str, Any]) -> list[str]:
-        priority = ["time_window"]
+        llm_missing = constraints.get(LLM_MISSING_FIELDS_KEY)
+        if isinstance(llm_missing, list) and llm_missing:
+            priority = [str(field) for field in llm_missing if str(field) in self._required_field_priority()]
+        else:
+            priority = self._required_field_priority()
         return [field for field in priority if not constraints.get(field)]
+
+    def _required_field_priority(self) -> list[str]:
+        return ["time_window", "start_location", "party_size", "activity_preference"]
+
+    def _merge_known_constraints(self, request: PlanRunRequest) -> dict[str, Any]:
+        constraints = dict(request.constraints)
+        constraints.update({key: value for key, value in request.answers.items() if value not in (None, "")})
+        return constraints
+
+    def _has_clarification_queue(self, constraints: dict[str, Any]) -> bool:
+        queue = constraints.get(CLARIFICATION_QUEUE_KEY)
+        return isinstance(queue, list)
+
+    def _pending_clarification_fields(self, constraints: dict[str, Any]) -> list[str]:
+        queue = constraints.get(CLARIFICATION_QUEUE_KEY)
+        if isinstance(queue, list):
+            pending = [
+                str(field)
+                for field in queue
+                if str(field) in self._required_field_priority() and not constraints.get(str(field))
+            ]
+        else:
+            pending = self._missing_required_fields(constraints)
+        if pending:
+            constraints[CLARIFICATION_QUEUE_KEY] = pending
+        else:
+            constraints.pop(CLARIFICATION_QUEUE_KEY, None)
+        return pending
 
     def _clarification_for(self, field: str, constraints: dict[str, Any]) -> dict[str, Any]:
         if field == "time_window":
@@ -188,10 +303,87 @@ class OpenAIAgentsRuntime:
                     ],
                     "allow_custom": True,
                 },
-                "partial_constraints": constraints,
+                "partial_constraints": self._partial_constraints(constraints),
+                "missing_fields": [field],
+            }
+        if field == "start_location":
+            return {
+                "question": {
+                    "id": "start_location",
+                    "label": "你想从哪里出发？",
+                    "description": "出发点会影响距离、路线顺序和可选区域。",
+                    "kind": "location",
+                    "required": True,
+                    "options": [
+                        {"label": "家附近", "value": "家附近"},
+                        {"label": "公司附近", "value": "公司附近"},
+                        {"label": "当前定位附近", "value": "当前定位附近"},
+                    ],
+                    "allow_custom": True,
+                },
+                "partial_constraints": self._partial_constraints(constraints),
+                "missing_fields": [field],
+            }
+        if field == "party_size":
+            return {
+                "question": {
+                    "id": "party_size",
+                    "label": "这次一共有几位？",
+                    "description": "人数会影响餐厅容量、活动空间和预算估算。",
+                    "kind": "number",
+                    "required": True,
+                    "options": [
+                        {"label": "1 位", "value": 1},
+                        {"label": "2 位", "value": 2},
+                        {"label": "3-4 位", "value": 4},
+                    ],
+                    "allow_custom": True,
+                    "validation": {"min": 1, "max": 20},
+                },
+                "partial_constraints": self._partial_constraints(constraints),
+                "missing_fields": [field],
+            }
+        if field == "activity_preference":
+            return {
+                "question": {
+                    "id": "activity_preference",
+                    "label": "你更想要哪种体验？",
+                    "description": "体验偏好会决定候选类型，而不是只给泛泛的地点。",
+                    "kind": "single_select",
+                    "required": True,
+                    "options": [
+                        {"label": "散步逛逛", "value": "散步逛逛"},
+                        {"label": "吃饭喝咖啡", "value": "吃饭喝咖啡"},
+                        {"label": "室内放松", "value": "室内放松"},
+                        {"label": "拍照打卡", "value": "拍照打卡"},
+                    ],
+                    "allow_custom": True,
+                },
+                "partial_constraints": self._partial_constraints(constraints),
                 "missing_fields": [field],
             }
         raise RuntimeError(f"unsupported_clarification_field:{field}")
+
+    def _partial_constraints(self, constraints: dict[str, Any]) -> dict[str, Any]:
+        partial = dict(constraints)
+        partial.pop(LLM_MISSING_FIELDS_KEY, None)
+        return partial
+
+    def _visible_constraints(self, constraints: dict[str, Any]) -> dict[str, Any]:
+        return {
+            key: value
+            for key, value in constraints.items()
+            if not key.startswith("__")
+        }
+
+    def _constraint_match_labels(self, constraints: dict[str, Any]) -> list[str]:
+        labels = {
+            "time_window": "已确认出发时间",
+            "start_location": "已确认出发位置",
+            "party_size": "已确认同行人数",
+            "activity_preference": "已确认体验偏好",
+        }
+        return [label for field, label in labels.items() if constraints.get(field)]
 
     async def execute_actions(
         self,

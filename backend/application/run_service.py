@@ -316,7 +316,12 @@ class RunService:
                 return
             if current_question == question and self.get_run(run_id).status == RUN_STATUS_NEEDS_CLARIFICATION:
                 return
-            self._save_run_context(run_id, current_question=question)
+            partial_constraints = clarification.get("partial_constraints")
+            self._save_run_context(
+                run_id,
+                constraints=partial_constraints if isinstance(partial_constraints, dict) else None,
+                current_question=question,
+            )
             self._update_run(run_id, status=RUN_STATUS_NEEDS_CLARIFICATION, current_agent=None)
 
     def _update_run(

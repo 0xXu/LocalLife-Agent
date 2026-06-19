@@ -38,11 +38,33 @@ class RunsRuntimeIntegrationTest(unittest.TestCase):
             time.sleep(0.05)
         self.fail(f"run {run_id} did not emit {event_type}")
 
+    def answer_required_questions(self, run_id):
+        answers = {
+            "time_window": "today afternoon 2pm",
+            "start_location": "home",
+            "party_size": 3,
+            "activity_preference": "park and cafe",
+        }
+        for _ in range(8):
+            data = self.client.get(f"/api/runs/{run_id}").json()
+            if data["status"] == "approval_required":
+                return data
+            if data["status"] != "needs_clarification":
+                time.sleep(0.05)
+                continue
+            _answers, _constraints, current_question = self.service._run_context(run_id)
+            question_id = current_question["id"]
+            response = self.client.post(
+                f"/api/runs/{run_id}/clarifications",
+                json={"question_id": question_id, "answer": answers[question_id]},
+            )
+            self.assertEqual(response.status_code, 200)
+            self.service.wait_for_workers(timeout=2.0)
+        self.fail(f"run {run_id} did not reach approval_required")
+
     def test_run_completes_to_approval_required_and_plan_is_fetchable(self):
         created = self.client.post("/api/runs", json={"goal": "family afternoon"}).json()
-        self.wait_for_status(created["run_id"], "needs_clarification")
-        self.service.submit_clarification(created["run_id"], "time_window", "today afternoon 2pm")
-        status = self.wait_for_status(created["run_id"], "approval_required")
+        status = self.answer_required_questions(created["run_id"])
 
         self.assertEqual(status["plan_id"], created["plan_id"])
         plan = self.client.get(f"/api/plans/{created['plan_id']}").json()
@@ -61,8 +83,10 @@ class RunsRuntimeIntegrationTest(unittest.TestCase):
         )
 
         self.assertEqual(record.run_id, created["run_id"])
-        status = self.wait_for_status(created["run_id"], "approval_required")
+        status = self.wait_for_status(created["run_id"], "needs_clarification")
         self.assertEqual(status["plan_id"], created["plan_id"])
+        _answers, _constraints, current_question = self.service._run_context(created["run_id"])
+        self.assertEqual(current_question["id"], "start_location")
 
     def test_clarification_can_be_submitted_immediately_after_event_is_visible(self):
         created = self.client.post("/api/runs", json={"goal": "下午帮我安排个地方玩一下"}).json()
@@ -74,7 +98,9 @@ class RunsRuntimeIntegrationTest(unittest.TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.wait_for_status(created["run_id"], "approval_required")
+        self.wait_for_status(created["run_id"], "needs_clarification")
+        _answers, _constraints, current_question = self.service._run_context(created["run_id"])
+        self.assertEqual(current_question["id"], "start_location")
 
     def test_duplicate_clarification_answer_does_not_start_second_resume(self):
         created = self.client.post("/api/runs", json={"goal": "下午帮我安排个地方玩一下"}).json()
@@ -91,4 +117,7 @@ class RunsRuntimeIntegrationTest(unittest.TestCase):
 
         self.assertEqual(first.status_code, 200)
         self.assertEqual(second.status_code, 400)
-        self.assertEqual(second.json()["error"]["code"], "clarification_not_required")
+        self.assertIn(
+            second.json()["error"]["code"],
+            {"clarification_not_required", "clarification_question_mismatch"},
+        )

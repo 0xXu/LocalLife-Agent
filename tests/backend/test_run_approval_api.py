@@ -35,14 +35,32 @@ class RunApprovalApiTest(unittest.TestCase):
         response = self.client.post("/api/runs", json={"goal": "family afternoon"})
         response.raise_for_status()
         created = response.json()
-        self.wait_for_status(created["run_id"], "needs_clarification")
-        response = self.client.post(
-            f"/api/runs/{created['run_id']}/clarifications",
-            json={"question_id": "time_window", "answer": "today afternoon 2pm"},
-        )
-        response.raise_for_status()
-        self.wait_for_status(created["run_id"], "approval_required")
+        self.answer_required_questions(created["run_id"])
         return created
+
+    def answer_required_questions(self, run_id):
+        answers = {
+            "time_window": "today afternoon 2pm",
+            "start_location": "home",
+            "party_size": 3,
+            "activity_preference": "park and cafe",
+        }
+        for _ in range(8):
+            data = self.client.get(f"/api/runs/{run_id}").json()
+            if data["status"] == "approval_required":
+                return data
+            if data["status"] != "needs_clarification":
+                time.sleep(0.05)
+                continue
+            _answers, _constraints, current_question = self.service._run_context(run_id)
+            question_id = current_question["id"]
+            response = self.client.post(
+                f"/api/runs/{run_id}/clarifications",
+                json={"question_id": question_id, "answer": answers[question_id]},
+            )
+            response.raise_for_status()
+            self.service.wait_for_workers(timeout=2.0)
+        self.fail(f"run {run_id} did not reach approval_required")
 
     def test_approve_actions_executes_runtime_and_persists_receipts(self):
         created = self.create_approval_run()

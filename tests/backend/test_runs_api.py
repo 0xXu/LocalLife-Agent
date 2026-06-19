@@ -68,7 +68,7 @@ class RunsApiTest(unittest.TestCase):
         self.assertEqual(event_ids[0], f"{created['run_id']}_evt_000001")
         self.assertEqual(event_ids, list(dict.fromkeys(event_ids)))
 
-    def test_submit_clarification_requires_current_question(self):
+    def test_submit_clarification_rejects_stale_question_after_resume(self):
         created = self.client.post("/api/runs", json={"goal": "family afternoon"}).json()
         self.run_service.wait_for_workers(timeout=2.0)
         self.run_service.submit_clarification(created["run_id"], "time_window", "今天下午 2 点")
@@ -80,7 +80,7 @@ class RunsApiTest(unittest.TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json()["error"]["code"], "clarification_not_required")
+        self.assertEqual(response.json()["error"]["code"], "clarification_question_mismatch")
 
     def test_submit_clarification_validates_question_id(self):
         created = self.client.post("/api/runs", json={"goal": "下午帮我安排个地方玩一下"}).json()

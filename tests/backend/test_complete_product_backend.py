@@ -82,6 +82,32 @@ class CompleteApiTest(unittest.TestCase):
             time.sleep(0.05)
         self.fail(f"run {run_id} did not reach {expected}")
 
+    def answer_required_questions(self, run_id):
+        answers = {
+            "time_window": "today afternoon 2pm",
+            "start_location": "home",
+            "party_size": 4,
+            "activity_preference": "activity before dinner",
+        }
+        for _ in range(8):
+            data = self.client.get(f"/api/runs/{run_id}").json()
+            if data["status"] == "approval_required":
+                return data
+            if data["status"] != "needs_clarification":
+                time.sleep(0.05)
+                continue
+            _answers, _constraints, current_question = self.run_service._run_context(run_id)
+            question_id = current_question["id"]
+            status, clarification = self.request(
+                "POST",
+                f"/api/runs/{run_id}/clarifications",
+                {"question_id": question_id, "answer": answers[question_id]},
+            )
+            self.assertEqual(status, 200)
+            self.assertEqual(clarification["accepted_question_id"], question_id)
+            self.run_service.wait_for_workers(timeout=2.0)
+        self.fail(f"run {run_id} did not reach approval_required")
+
     def test_expanded_api_flow(self):
         status, schemas = self.request("GET", "/api/tool-schemas")
         self.assertEqual(status, 200)
@@ -90,14 +116,7 @@ class CompleteApiTest(unittest.TestCase):
         status, built = self.request("POST", "/api/runs", {"goal": "friends afternoon, four adults, activity before dinner", "user_id": "user_1"})
         self.assertEqual(status, 200)
         self.wait_for_status(built["run_id"], "needs_clarification")
-        status, clarification = self.request(
-            "POST",
-            f"/api/runs/{built['run_id']}/clarifications",
-            {"question_id": "time_window", "answer": "today afternoon 2pm"},
-        )
-        self.assertEqual(status, 200)
-        self.assertEqual(clarification["accepted_question_id"], "time_window")
-        self.wait_for_status(built["run_id"], "approval_required")
+        self.answer_required_questions(built["run_id"])
         plan_id = built["plan_id"]
 
         status, fetched = self.request("GET", f"/api/plans/{plan_id}")

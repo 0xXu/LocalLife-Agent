@@ -106,3 +106,20 @@ test('run reducer clears pending actions on terminal failure states', () => {
   assert.equal(invalid.status, 'validation_failed');
   assert.equal(invalid.pendingActions.length, 0);
 });
+
+test('run reducer ignores duplicate replayed SSE events', () => {
+  const event = {
+    type: 'run.started' as const,
+    run_id: 'run_1',
+    plan_id: 'plan_1',
+    seq: 1,
+    timestamp: '2026-06-19T00:00:00Z',
+    payload: { status: 'running' },
+  };
+
+  const started = runReducer(initialRunState, event);
+  const replayed = runReducer(started, event);
+
+  assert.equal(replayed.events.length, 1);
+  assert.equal(replayed.status, 'running');
+});
