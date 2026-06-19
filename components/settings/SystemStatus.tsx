@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Activity, Cpu, Layers, Settings2, Wrench } from 'lucide-react';
-import { getLlmStatus, getToolSchemas, type LlmStatus } from '../../features/planner/apiClient';
+import { getLlmStatus, getToolSchemas, type LlmStatus } from '../../features/system/api';
 import styles from './SettingsView.module.css';
 
 export function SystemStatus() {

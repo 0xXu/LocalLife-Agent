@@ -1,16 +1,24 @@
 import { expect, test } from '@playwright/test';
+import { answerClarificationsUntilPlan } from './helpers';
 
 test.use({ viewport: { width: 390, height: 844 } });
 
-test('mobile layout uses three-stage planner and collapsed map summary', async ({ page }) => {
+test('mobile layout completes the run flow from quick action', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: '家庭半日' }).click();
+  await page.getByRole('button', { name: '带娃出行' }).click();
+  await answerClarificationsUntilPlan(page);
 
-  await expect(page.getByText('已理解你的需求')).toBeVisible();
-  await expect(page.getByTestId('planner-timeline')).toBeVisible();
-  await expect(page.getByTestId('mobile-route-summary')).toBeVisible();
-  await expect(page.getByTestId('bottom-execution-bar')).toBeVisible();
-  await expect(page.getByTestId('desktop-map-panel')).toBeHidden();
+  const approvalLedger = page.getByText('Action Ledger');
+  const completedState = page.getByText('执行完成');
+  await expect(approvalLedger.or(completedState)).toBeVisible({ timeout: 30_000 });
 
-  await expect(page.getByTestId('planner-timeline')).toHaveCSS('overflow-x', 'auto');
+  if (await approvalLedger.isVisible()) {
+    await expect(page.getByText('执行账本')).toBeVisible();
+    await expect(page.getByRole('button', { name: /批准执行/ })).toBeVisible();
+  } else {
+    await expect(page.getByText(/成功 \d+ \/ \d+ 项操作/)).toBeVisible();
+  }
+
+  await expect(page.getByRole('navigation', { name: '主导航' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'AI助手' })).toBeVisible();
 });

@@ -8,7 +8,7 @@ import {
   saveUserProfile,
   type BackendUserPreference,
   type BackendUserProfile,
-} from './apiClient';
+} from '../preferences/api';
 
 const DEFAULT_PREFERENCES: UserPreferences = {
   profile: { display_name: '用户', email: 'user@example.com' },

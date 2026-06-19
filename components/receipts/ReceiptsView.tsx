@@ -3,6 +3,7 @@
 import React from 'react';
 import { PartyPopper } from 'lucide-react';
 import { ReceiptCard } from './ReceiptCard';
+import { isSuccessfulReceiptStatus } from './status';
 
 type ReceiptsViewProps = {
   receipts: Array<{
@@ -19,7 +20,7 @@ type ReceiptsViewProps = {
 };
 
 export function ReceiptsView({ receipts, onNewPlan }: ReceiptsViewProps) {
-  const successCount = receipts.filter((r) => ['success', 'ok', 'succeeded'].includes(r.status)).length;
+  const successCount = receipts.filter((r) => isSuccessfulReceiptStatus(r.status)).length;
 
   return (
     <section className="receipts-view">

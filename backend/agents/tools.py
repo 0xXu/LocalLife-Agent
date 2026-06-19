@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from agents import function_tool
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
@@ -69,6 +70,17 @@ class EstimateCostInput(BaseModel):
 
 
 # --- Tool factories ---
+
+def build_openai_weather_tool(registry: LocalToolRegistry):
+    """Build an OpenAI Agents SDK wrapper around the local weather tool."""
+
+    @function_tool
+    def get_weather(rainy: bool = False) -> dict:
+        result = registry.get_weather(rainy=rainy)
+        return result.output
+
+    return get_weather
+
 
 def build_ranker_tools(registry: LocalToolRegistry, context: AgentContext) -> list:
     """Build read-only tools for RankerAgent."""

@@ -1,70 +1,106 @@
+import time
 import unittest
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
+from backend.agents.openai_runtime import OpenAIAgentsRuntime
 from backend.api.app import create_app
+from backend.application.run_service import RunService
 from backend.llm.config import LLMConfig
-from backend.services.workflow_service import WorkflowService
-from tests.backend.helpers import RuleBasedChatModel, FailingChatModel
+from backend.profile.store import UserProfileStore
+from backend.tools.registry import LocalToolRegistry
 
 
 class BackendApiTest(unittest.TestCase):
     def setUp(self):
         self._tmp = TemporaryDirectory()
-        self.workflow = self._make_workflow()
-        self.client = TestClient(create_app(self.workflow))
+        self.run_service = RunService(
+            database_path=f"{self._tmp.name}/workflow.sqlite",
+            runtime=OpenAIAgentsRuntime(dry_run=True),
+        )
+        self.client = TestClient(
+            create_app(
+                run_service=self.run_service,
+                profile_store=UserProfileStore(f"{self._tmp.name}/profiles.sqlite"),
+                tool_registry=LocalToolRegistry(),
+            )
+        )
 
     def tearDown(self):
         self._tmp.cleanup()
-
-    def _make_workflow(self):
-        workflow = WorkflowService(
-            repository_path=f"{self._tmp.name}/workflow.sqlite",
-            llm_config=LLMConfig(
-                base_url="https://example.test/v1",
-                api_key="secret",
-                model="test-model",
-                remote_enabled=True,
-            ),
-        )
-        workflow.pipeline.chat_model = RuleBasedChatModel()
-        return workflow
 
     def request(self, method, path, body=None):
         response = self.client.request(method, path, json=body)
         return response.status_code, response.json()
 
-    def raw_request(self, method, path, payload):
-        response = self.client.request(
-            method,
-            path,
-            content=payload,
-            headers={"Content-Type": "application/json"},
-        )
-        return response.status_code, response.json()
+    def wait_for_status(self, run_id, expected):
+        for _ in range(20):
+            response = self.client.get(f"/api/runs/{run_id}")
+            response.raise_for_status()
+            data = response.json()
+            if data["status"] == expected:
+                return data
+            time.sleep(0.05)
+        self.fail(f"run {run_id} did not reach {expected}")
 
-    def start_run(self, goal="family afternoon with child age 5"):
-        status, started = self.request("POST", "/api/plans/runs", {"goal": goal, "user_id": "user_1", "sync": True})
-        self.assertEqual(status, 200)
-        return started
+    def create_plan(self, goal="family afternoon with child age 5"):
+        response = self.client.post("/api/runs", json={"goal": goal, "user_id": "user_1"})
+        self.assertEqual(response.status_code, 200)
+        created = response.json()
+        self.answer_required_questions(created["run_id"])
+        return created
 
-    def test_openapi_documents_graph_run_paths_and_removes_legacy_paths(self):
+    def answer_required_questions(self, run_id):
+        answers = {
+            "time_window": "today afternoon 2pm",
+            "start_location": "home",
+            "party_size": 3,
+            "activity_preference": "park and cafe",
+        }
+        for _ in range(8):
+            data = self.client.get(f"/api/runs/{run_id}").json()
+            if data["status"] == "approval_required":
+                return data
+            if data["status"] != "needs_clarification":
+                time.sleep(0.05)
+                continue
+            _answers, _constraints, current_question = self.run_service._run_context(run_id)
+            question_id = current_question["id"]
+            response = self.client.post(
+                f"/api/runs/{run_id}/clarifications",
+                json={"question_id": question_id, "answer": answers[question_id]},
+            )
+            self.assertEqual(response.status_code, 200)
+            self.run_service.wait_for_workers(timeout=2.0)
+        self.fail(f"run {run_id} did not reach approval_required")
+
+    def test_openapi_documents_new_run_paths_and_removes_legacy_paths(self):
         response = self.client.get("/openapi.json")
 
         self.assertEqual(response.status_code, 200)
         paths = response.json()["paths"]
         for path in [
             "/api/health",
-            "/api/plans/runs",
-            "/api/plans/runs/{run_id}/stream",
+            "/api/llm/status",
+            "/api/runs",
+            "/api/runs/{run_id}",
+            "/api/runs/{run_id}/events",
+            "/api/runs/{run_id}/clarifications",
+            "/api/runs/{run_id}/actions/approve",
+            "/api/runs/{run_id}/actions/reject",
+            "/api/plans",
             "/api/plans/{plan_id}",
-            "/api/plans/{plan_id}/resume",
-            "/api/plans/{plan_id}/versions",
             "/api/tool-schemas",
+            "/api/users/{user_id}/profile",
         ]:
             self.assertIn(path, paths)
         for path in [
+            "/api/plans/runs",
+            "/api/plans/runs/{run_id}/stream",
+            "/api/plans/{plan_id}/resume",
+            "/api/plans/{plan_id}/versions",
             "/api/plans/build",
             "/api/plans/build/stream",
             "/api/plans/{plan_id}/confirm",
@@ -76,9 +112,41 @@ class BackendApiTest(unittest.TestCase):
         ]:
             self.assertNotIn(path, paths)
 
+    def test_create_app_uses_remote_runtime_when_llm_env_is_enabled(self):
+        with patch(
+            "backend.api.app.LLMConfig.from_env_file",
+            return_value=LLMConfig(
+                base_url="https://example.com/v1",
+                api_key="secret",
+                model="demo-model",
+                remote_enabled=True,
+            ),
+        ):
+            app = create_app(
+                profile_store=UserProfileStore(f"{self._tmp.name}/remote_profiles.sqlite"),
+                tool_registry=LocalToolRegistry(),
+            )
+
+        self.assertFalse(app.state.run_service.runtime.dry_run)
+        self.assertEqual(app.state.run_service.runtime.model, "demo-model")
+
+    def test_legacy_plan_run_routes_return_not_found(self):
+        created = self.create_plan()
+
+        for method, path in [
+            ("POST", "/api/plans/runs"),
+            ("GET", f"/api/plans/runs/{created['run_id']}/stream"),
+            ("POST", f"/api/plans/{created['plan_id']}/resume"),
+            ("GET", f"/api/plans/{created['plan_id']}/versions"),
+        ]:
+            status, data = self.request(method, path, {"decision": "approve"})
+            self.assertIn(status, {404, 405})
+            if status == 404:
+                self.assertEqual(data["error"]["code"], "not_found")
+
     def test_cors_preflight_allows_frontend_origin(self):
         response = self.client.options(
-            "/api/plans/runs",
+            "/api/runs",
             headers={
                 "Origin": "http://127.0.0.1:4173",
                 "Access-Control-Request-Method": "POST",
@@ -98,80 +166,61 @@ class BackendApiTest(unittest.TestCase):
         self.assertEqual(data["mode"], "fastapi-python-service")
         self.assertGreaterEqual(data["agents"], 7)
 
-    def test_run_api_and_removed_execute_endpoint(self):
-        started = self.start_run()
-        plan_id = started["plan_id"]
+    def test_plan_detail_uses_new_run_service(self):
+        created = self.create_plan("friends afternoon, four adults, activity before dinner")
 
-        status, executed = self.request(
-            "POST",
-            f"/api/plans/{plan_id}/execute",
-            {"confirmed": True},
-        )
-        self.assertEqual(status, 404)
-        self.assertEqual(executed["error"]["code"], "not_found")
+        status, fetched = self.request("GET", f"/api/plans/{created['plan_id']}")
 
-        status, fetched = self.request("GET", f"/api/plans/{plan_id}")
         self.assertEqual(status, 200)
-        self.assertEqual(fetched["plan_id"], plan_id)
-        self.assertEqual(fetched["plan"]["id"], plan_id)
+        self.assertEqual(fetched["plan_id"], created["plan_id"])
+        self.assertEqual(fetched["run_id"], created["run_id"])
+        self.assertEqual(fetched["plan"]["id"], created["plan_id"])
+        self.assertEqual(fetched["status"], "approval_required")
 
-    def test_plan_list_endpoint_uses_workflow_backend_plans(self):
-        started = self.start_run("friends afternoon, four adults, activity before dinner")
-        plan_id = started["plan_id"]
+    def test_plan_list_uses_new_run_service(self):
+        created = self.create_plan("family afternoon with child age 5")
 
         status, listed = self.request("GET", "/api/plans")
 
         self.assertEqual(status, 200)
         self.assertEqual(listed["total"], 1)
-        self.assertEqual(listed["plans"][0]["id"], plan_id)
-        self.assertEqual(listed["plans"][0]["status"], listed["plans"][0]["phase"])
-        self.assertIn("created_at", listed["plans"][0])
-        self.assertIn("updated_at", listed["plans"][0])
-        self.assertIn("tags", listed["plans"][0])
-        self.assertIn(listed["plans"][0]["phase"], {"pending_approval", "partially_completed"})
+        self.assertEqual(len(listed["plans"]), 1)
+        summary = listed["plans"][0]
+        self.assertEqual(summary["id"], created["plan_id"])
+        self.assertEqual(summary["status"], "pending_approval")
+        self.assertEqual(summary["title"], "本地生活计划")
+        self.assertEqual(summary["summary"], "family afternoon with child age 5")
+        self.assertEqual(summary["itinerary_count"], 0)
 
-    def test_execute_legacy_endpoint_is_removed_with_selected_action_ids(self):
-        started = self.start_run("write code for one hour")
-        plan_id = started["plan_id"]
-        status, plan = self.request("GET", f"/api/plans/{plan_id}")
+    def test_plan_list_normalizes_rejected_run_status_for_frontend(self):
+        created = self.create_plan("family afternoon with child age 5")
+        response = self.client.post(f"/api/runs/{created['run_id']}/actions/reject", json={"reason": "user_rejected"})
+        self.assertEqual(response.status_code, 200)
+
+        status, listed = self.request("GET", "/api/plans")
+
         self.assertEqual(status, 200)
-        action_id = plan["actions"][0]["action_id"]
+        self.assertEqual(listed["plans"][0]["status"], "cancelled")
+
+    def test_removed_execute_endpoint(self):
+        created = self.create_plan()
 
         status, executed = self.request(
             "POST",
-            f"/api/plans/{plan_id}/execute",
-            {"confirmed": True, "selected_action_ids": [action_id], "idempotency_key": "test-idem-1"},
+            f"/api/plans/{created['plan_id']}/execute",
+            {"confirmed": True},
         )
 
         self.assertEqual(status, 404)
         self.assertEqual(executed["error"]["code"], "not_found")
 
     def test_invalid_json_returns_400_response(self):
-        status, data = self.raw_request("POST", "/api/plans/runs", "{bad json")
+        response = self.client.post("/api/runs", content="{bad json", headers={"Content-Type": "application/json"})
 
-        self.assertEqual(status, 400)
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
         self.assertEqual(data["error"]["code"], "invalid_json")
         self.assertEqual(data["error"]["message"], "invalid_json")
-
-    def test_remote_llm_failure_returns_500_without_template_plan(self):
-        workflow = WorkflowService(
-            repository_path=f"{self._tmp.name}/failing.sqlite",
-            llm_config=LLMConfig(
-                base_url="https://token-plan-sgp.xiaomimimo.com/v1",
-                api_key="secret-key-value",
-                model="MiMo-V2.5-Pro",
-                remote_enabled=True,
-            ),
-        )
-        workflow.pipeline.chat_model = FailingChatModel()
-        client = TestClient(create_app(workflow), raise_server_exceptions=False)
-
-        response = client.post("/api/plans/runs", json={"goal": "friends dinner this afternoon", "sync": True})
-
-        self.assertEqual(response.status_code, 500)
-        data = response.json()
-        self.assertEqual(data["error"]["code"], "tool_failed")
-        self.assertIn("LLM intent parsing failed", data["error"]["message"])
 
     def test_tool_schemas_endpoint(self):
         status, data = self.request("GET", "/api/tool-schemas")
@@ -182,6 +231,7 @@ class BackendApiTest(unittest.TestCase):
     def test_user_profile_endpoints(self):
         status, data = self.request("GET", "/api/users/test_user/profile")
         self.assertEqual(status, 200)
+        self.assertEqual(data["user_id"], "test_user")
 
         status, data = self.request("POST", "/api/users/test_user/profile", {
             "explicit_preferences": [{
@@ -195,6 +245,7 @@ class BackendApiTest(unittest.TestCase):
         })
         self.assertEqual(status, 200)
         self.assertEqual(data["user_id"], "test_user")
+        self.assertEqual(data["explicit_preferences"][0]["key"], "diet")
 
 
 if __name__ == "__main__":

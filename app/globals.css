@@ -2432,9 +2432,163 @@ dd,
 .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
 .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
 
+.chat-typing--blue span {
+  background: var(--blue);
+  box-shadow: 0 0 0 3px rgba(11, 119, 255, 0.08);
+}
+
 @keyframes typing-bounce {
   0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
   30% { transform: translateY(-6px); opacity: 1; }
+}
+
+.chat-agent-status {
+  width: min(520px, 72vw);
+  display: grid;
+  gap: 12px;
+}
+
+.chat-agent-status-head {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.chat-agent-status-head p {
+  margin: 0;
+  color: var(--text);
+  font-weight: 650;
+  line-height: 1.55;
+}
+
+.chat-agent-stages {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.chat-agent-stage {
+  position: relative;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 760;
+  white-space: nowrap;
+  transition: border-color 0.22s ease, color 0.22s ease, background 0.22s ease, transform 0.22s ease;
+}
+
+.chat-agent-stage--done {
+  color: var(--green);
+  border-color: rgba(20, 164, 112, 0.2);
+  background: var(--green-soft);
+}
+
+.chat-agent-stage--active {
+  color: var(--blue);
+  border-color: rgba(11, 119, 255, 0.28);
+  background: var(--blue-soft);
+  transform: translateY(-1px);
+}
+
+.chat-agent-stage--active::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.66) 50%, transparent 80%);
+  transform: translateX(-110%);
+  animation: stage-sheen 1.8s ease-in-out infinite;
+}
+
+@keyframes stage-sheen {
+  0% { transform: translateX(-110%); }
+  55%, 100% { transform: translateX(110%); }
+}
+
+.chat-run-details {
+  display: grid;
+  gap: 8px;
+}
+
+.chat-run-details-toggle {
+  width: fit-content;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 760;
+  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.chat-run-details-toggle:hover {
+  color: var(--blue);
+  border-color: rgba(11, 119, 255, 0.26);
+  background: var(--blue-soft);
+}
+
+.chat-run-details-toggle:active {
+  transform: scale(0.97);
+}
+
+.chat-run-details-toggle svg:last-child {
+  transition: transform 0.2s ease;
+}
+
+.chat-run-details.open .chat-run-details-toggle svg:last-child {
+  transform: rotate(180deg);
+}
+
+.chat-run-details-list {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+  animation: details-unfold 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.chat-run-detail-row {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 7px 8px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.chat-run-detail-row span {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.chat-run-detail-row code {
+  overflow: hidden;
+  color: var(--muted);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes details-unfold {
+  from { opacity: 0; transform: translateY(-4px) scaleY(0.98); }
+  to { opacity: 1; transform: translateY(0) scaleY(1); }
 }
 
 .chat-bottom {
@@ -2875,6 +3029,126 @@ dd,
   margin: 4px 0 0;
   color: var(--text);
   line-height: 1.4;
+}
+
+.clarification-card {
+  width: min(520px, 100%);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.clarification-card-head {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.clarification-card-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+
+.clarification-card-head span {
+  display: inline-flex;
+  margin-bottom: 5px;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 820;
+}
+
+.clarification-card-head h1 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+
+.clarification-card-head p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.clarification-card-form {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.clarification-card-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.clarification-card-options button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  background: var(--surface);
+  font-weight: 760;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease, transform 0.16s ease;
+}
+
+.clarification-card-options button:hover,
+.clarification-card-options button.active {
+  border-color: rgba(11, 119, 255, 0.34);
+  color: var(--blue);
+  background: var(--blue-soft);
+  transform: translateY(-1px);
+}
+
+.clarification-custom-field {
+  display: grid;
+  gap: 7px;
+}
+
+.clarification-custom-field span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.clarification-custom-field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--surface);
+  outline: none;
+}
+
+.clarification-custom-field input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(11, 119, 255, 0.1);
+}
+
+.clarification-card-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 720;
+}
+
+.clarification-card-submit {
+  justify-self: end;
 }
 
 @media (min-width: 820px) {

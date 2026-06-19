@@ -1,22 +1,43 @@
-# WeekendPilot Complete Local Backend
+# WeekendPilot OpenAI Agents SDK Backend
 
 This Python backend is the single backend service for the separated WeekendPilot app. The Next.js app is frontend-only and calls these `/api/*` endpoints through `NEXT_PUBLIC_API_URL`.
 
-This backend is the production API path for the current demo.
+This backend is the production API path for the current demo. It no longer uses
+LangGraph or legacy plan-run endpoints.
 
 ## Architecture
 
 ```text
-api/              FastAPI JSON API with OpenAPI docs
-services/         plan lifecycle facade
-orchestrator/     central state-machine planner
+api/              FastAPI JSON/SSE API with OpenAPI docs
+application/      run, approval, and plan lifecycle services
+agents/           OpenAI Agents SDK runtime, guardrails, memory, and local tool bridge
+domain/           run and event domain models
+infrastructure/   SQLite-backed run event store
 models/           dataclass domain models and API DTO helpers
-tools/            MCP-ready local tool adapters
+tools/            local tool adapters with side-effect metadata
 data/             deterministic local catalog generator
-llm/              OpenAI-compatible config/client for required remote intent parsing
+llm/              OpenAI-compatible config/client for remote model access
 ```
 
-The backend is intentionally local-first for competition stability. Meituan, map, booking, ordering, messaging, and calendar actions are represented by replaceable local adapters that return realistic IDs and receipts.
+The backend is intentionally local-first for competition stability. The OpenAI
+Agents SDK runtime owns model/tool execution, while application services persist
+run state, plan snapshots, clarification answers, action approvals, receipts,
+and normalized SSE events in SQLite. Messaging, map, catalog, booking, ordering,
+and calendar actions are represented by replaceable local adapters that return
+realistic IDs and receipts.
+
+The current runtime is strict:
+
+- `IntentExtractionTool` runs once at the start of a run and returns known
+  constraints plus an ordered missing-field queue.
+- Clarification asks one question at a time and resumes the same run through
+  `POST /api/runs/{run_id}/clarifications`.
+- `FinalValidationTool` runs once after the clarification queue is complete.
+- `PlannerAgent` must return structured JSON with renderable `itinerary` and
+  `variants`.
+- Invalid JSON, Markdown, missing itinerary, or empty variants raise
+  `planner_contract_invalid`; the run fails instead of silently generating a
+  synthetic plan.
 
 ## LLM Configuration
 
@@ -44,17 +65,24 @@ By default, LLM requests ignore system `http_proxy`/`https_proxy` variables beca
 GET   /api/health
 GET   /api/llm/status
 GET   /api/tool-schemas
-POST  /api/plans/build
+POST  /api/runs
+GET   /api/runs/{run_id}
+GET   /api/runs/{run_id}/events
+POST  /api/runs/{run_id}/clarifications
+POST  /api/runs/{run_id}/actions/approve
+POST  /api/runs/{run_id}/actions/reject
+GET   /api/plans
 GET   /api/plans/{plan_id}
-PATCH /api/plans/{plan_id}/constraints
-POST  /api/plans/{plan_id}/alternatives
-POST  /api/plans/{plan_id}/confirm
-POST  /api/plans/{plan_id}/execute
-POST  /api/plans/{plan_id}/recover
-GET   /api/traces/{plan_id}
 ```
 
-Sensitive tools always require confirmation. `execute` with `confirmed=false` returns `confirmation_required`.
+`GET /api/runs/{run_id}/events` streams named `run.event` SSE frames. Event
+payloads use stable types such as `run.started`, `run.running`,
+`agent.started`, `agent.completed`, `clarification.required`,
+`approval.required`, `actions.execution.started`,
+`actions.execution.completed`, `run.completed`, `run.failed`, and
+`run.rejected`.
+
+Sensitive tools always require confirmation. The planning run emits `approval.required` with pending action ids, and execution only starts after `POST /api/runs/{run_id}/actions/approve`.
 
 ## Run
 
@@ -82,23 +110,24 @@ $body = @{
   goal = "今天下午想和老婆孩子出去玩几个小时，孩子5岁，老婆减脂，别太远"
 } | ConvertTo-Json -Depth 10
 
-$plan = Invoke-RestMethod `
+$run = Invoke-RestMethod `
   -Method Post `
-  -Uri http://127.0.0.1:8787/api/plans/build `
+  -Uri http://127.0.0.1:8787/api/runs `
   -ContentType 'application/json' `
   -Body $body
 
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://127.0.0.1:8787/api/plans/$($plan.plan.id)/confirm" `
-  -ContentType 'application/json' `
-  -Body '{"confirmed":true}'
+$events = Invoke-WebRequest `
+  -Uri "http://127.0.0.1:8787/api/runs/$($run.run_id)/events"
+
+$plan = Invoke-RestMethod `
+  -Method Get `
+  -Uri "http://127.0.0.1:8787/api/plans/$($run.plan_id)"
 
 Invoke-RestMethod `
   -Method Post `
-  -Uri "http://127.0.0.1:8787/api/plans/$($plan.plan.id)/execute" `
+  -Uri "http://127.0.0.1:8787/api/runs/$($run.run_id)/actions/approve" `
   -ContentType 'application/json' `
-  -Body '{"confirmed":true}'
+  -Body (@{ action_ids = $plan.actions.action_id } | ConvertTo-Json -Depth 10)
 ```
 
 ## Test

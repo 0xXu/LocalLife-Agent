@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { X, MapPin, Calendar, DollarSign, ListChecks, GitBranch } from 'lucide-react';
+import React from 'react';
+import { X, MapPin, Calendar, DollarSign, ListChecks } from 'lucide-react';
 import { Badge } from '../ui/Badge';
-import { getPlanVersions } from '../../features/planner/apiClient';
 import type { PlanSummary } from '../../types/api';
 import styles from './PlanDetailPanel.module.css';
 
@@ -29,14 +28,6 @@ export function PlanDetailPanel({ plan, onClose }: PlanDetailPanelProps) {
   const created = new Date(plan.created_at).toLocaleDateString('zh-CN', {
     year: 'numeric', month: 'long', day: 'numeric',
   });
-  const [versions, setVersions] = useState<Array<Record<string, unknown>>>([]);
-
-  useEffect(() => {
-    getPlanVersions(plan.id)
-      .then((res) => setVersions(res.versions ?? []))
-      .catch(() => {});
-  }, [plan.id]);
-
   return (
     <>
       <div className={styles.overlay} onClick={onClose} />
@@ -79,27 +70,6 @@ export function PlanDetailPanel({ plan, onClose }: PlanDetailPanelProps) {
             {plan.tags.map((tag) => (<span key={tag} className={styles.tag}>{tag}</span>))}
           </div>
         </div>
-        {versions.length > 0 && (
-          <div className={styles.section}>
-            <div className={styles.sectionLabel}><GitBranch size={12} /> 版本历史</div>
-            <ul style={{ margin: '8px 0 0', padding: 0, listStyle: 'none', display: 'grid', gap: 6 }}>
-              {versions.map((v, i) => (
-                <li key={i} style={{
-                  padding: '8px 12px', border: '1px solid var(--line)', borderRadius: 10,
-                  background: 'rgba(255,255,255,0.7)', fontSize: 13, display: 'flex',
-                  justifyContent: 'space-between', alignItems: 'center',
-                }}>
-                  <span style={{ fontWeight: 700, color: 'var(--text)' }}>
-                    {String(v.revision_id ?? `v${i + 1}`)}
-                  </span>
-                  <span style={{ color: 'var(--muted)', fontSize: 12 }}>
-                    {String(v.phase ?? '')}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
       </aside>
     </>
   );
