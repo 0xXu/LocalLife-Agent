@@ -11,7 +11,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   webServer: {
-    command: 'npm run dev:full',
+    command: 'LLM_REMOTE_ENABLED=false npm run dev:full',
     url: 'http://127.0.0.1:4174',
     reuseExistingServer: true,
     timeout: 120_000,
