@@ -35,7 +35,7 @@ class RunsApiTest(unittest.TestCase):
         data = response.json()
         self.assertEqual(data["run_id"], created["run_id"])
         self.assertEqual(data["plan_id"], created["plan_id"])
-        self.assertIn(data["status"], {"queued", "running", "completed"})
+        self.assertIn(data["status"], {"queued", "running", "approval_required", "completed"})
 
     def test_invalid_goal_returns_400(self):
         response = self.client.post("/api/runs", json={"goal": ""})
