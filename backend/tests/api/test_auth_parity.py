@@ -18,7 +18,7 @@ def test_me_returns_authenticated_user_shape() -> None:
     )
 
     assert response.status_code == 200
-    assert response.json()["success"] is True
+    assert response.json()["success"] == "true"
     assert response.json()["userId"] == registration.json()["userId"]
 
 
@@ -26,4 +26,4 @@ def test_models_exposes_openai_only_provider() -> None:
     response = TestClient(create_app()).get("/api/auth/models")
 
     assert response.status_code == 200
-    assert response.json() == [{"id": "openai", "name": "OpenAI", "region": "global"}]
+    assert response.json() == [{"id": "openai", "name": "OpenAI", "region": "global", "apiKeyUrl": "https://platform.openai.com/api-keys"}]

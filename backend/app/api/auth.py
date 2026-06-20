@@ -1,11 +1,12 @@
 """Authentication compatibility endpoints."""
 
 from pydantic import BaseModel, ConfigDict
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 
-from app.api.deps import ServiceContainer, get_current_user_id, get_services
+from app.api.deps import ServiceContainer, get_services
 from app.application.auth import DuplicateUserError, InvalidCredentialsError
+from app.security.jwt import AuthenticationError, decode_access_token
 
 
 router = APIRouter()
@@ -41,7 +42,7 @@ async def register(
     request: RegisterRequest, services: ServiceContainer = Depends(get_services)
 ) -> object:
     try:
-        return _auth_payload(await services.auth.register(request.name, request.password))
+        return _auth_payload(await services.auth.register(request.name, request.password, request.city))
     except DuplicateUserError as error:
         return JSONResponse(status_code=409, content={"success": False, "error": str(error)})
 
@@ -58,12 +59,18 @@ async def login(
 
 @router.get("/me")
 async def me(
-    user_id: str = Depends(get_current_user_id),
+    request: Request,
     services: ServiceContainer = Depends(get_services),
-) -> dict[str, object]:
-    return await services.auth.user_info(user_id)
+) -> object:
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        return {"success": False, "error": "未登录"}
+    try:
+        return await services.auth.user_info(decode_access_token(auth[7:], services.auth._jwt_secret))
+    except AuthenticationError:
+        return {"success": False, "error": "Token 无效或已过期"}
 
 
 @router.get("/models")
 async def models() -> list[dict[str, str]]:
-    return [{"id": "openai", "name": "OpenAI", "region": "global"}]
+    return [{"id": "openai", "name": "OpenAI", "region": "global", "apiKeyUrl": "https://platform.openai.com/api-keys"}]

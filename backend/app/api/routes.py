@@ -75,7 +75,11 @@ async def smart_plan(
     user_id: str = Depends(get_current_user_id),
     services: ServiceContainer = Depends(get_services),
 ) -> dict[str, Any]:
-    result = _analysis_payload(request)
+    result = (_analysis_payload(request) if services.intent_analyzer is None else
+              await services.intent_analyzer.analyze(query=request.query, city=request.city, session_id=request.sessionId))
+    if result.get("stage") in {"followup", "conflict"}:
+        result["routes"] = None
+        return result
     response = await services.planning.plan(
         request.query, request.city, user_id, request.sessionId, _intent(request.query, request.city)
     )

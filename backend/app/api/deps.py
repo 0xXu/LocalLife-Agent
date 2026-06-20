@@ -43,6 +43,7 @@ class ServiceContainer:
     favorite_store: FavoriteLister
     profiles: list[dict[str, Any]]
     agent_runner: Any | None = None
+    intent_analyzer: Any | None = None
 
     async def list_favorites(self, user_id: str) -> Sequence[Favorite]:
         return await self.favorite_store.list(user_id)

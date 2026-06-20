@@ -38,7 +38,7 @@ class AuthService:
         self._users = users
         self._jwt_secret = jwt_secret
 
-    async def register(self, name: str, password: str) -> AuthResult:
+    async def register(self, name: str, password: str, city: str | None = None) -> AuthResult:
         if await self._users.get_by_name(name) is not None:
             raise DuplicateUserError("name is already registered")
 
@@ -46,6 +46,8 @@ class AuthService:
             user_id=str(uuid4()),
             name=name,
             password_hash=hash_password(password),
+            profile_name=f"{city or '北京'}探索者",
+            preferred_city=city or "北京",
             created_at=datetime.now(timezone.utc),
         )
         saved = await self._users.create(user)
@@ -61,7 +63,9 @@ class AuthService:
         user = await self._users.get_by_user_id(user_id)
         if user is None:
             raise InvalidCredentialsError("user no longer exists")
-        return {"success": True, "userId": user.user_id, "name": user.name}
+        return {"success": "true", "userId": user.user_id, "name": user.name,
+                "profileName": user.profile_name or "", "preferredCity": user.preferred_city or "北京",
+                "hasApiKey": "false"}
 
     def _result(self, user: UserProfileEntity) -> AuthResult:
         return AuthResult(
