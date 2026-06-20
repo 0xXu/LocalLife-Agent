@@ -1,0 +1,27 @@
+[project]
+name = "liquidroute-backend"
+version = "0.1.0"
+description = "LiquidRoute Python backend"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "alembic>=1.14",
+    "asyncpg>=0.30",
+    "fastapi>=0.115",
+    "httpx>=0.27",
+    "openai-agents",
+    "pwdlib[argon2]>=0.2",
+    "psycopg[binary]>=3.2",
+    "pydantic-settings>=2.6",
+    "PyJWT>=2.10",
+    "sqlalchemy[asyncio]>=2.0",
+    "uvicorn[standard]>=0.30",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

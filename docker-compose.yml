@@ -1,0 +1,41 @@
+services:
+  route-planner:
+    build: .
+    container_name: ai-route-planner
+    ports:
+      - "8081:8081"
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-local}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      JWT_SECRET: ${JWT_SECRET:-local-development-secret-not-for-production}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-liquidroute}:${POSTGRES_PASSWORD:-liquidroute}@postgres:5432/${POSTGRES_DB:-liquidroute}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8081/api/route/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  postgres:
+    image: postgres:16
+    container_name: liquidroute-postgres
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-liquidroute}
+      POSTGRES_USER: ${POSTGRES_USER:-liquidroute}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-liquidroute}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-liquidroute} -d ${POSTGRES_DB:-liquidroute}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  postgres_data:

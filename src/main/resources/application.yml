@@ -1,0 +1,116 @@
+spring:
+  application:
+    name: ai-route-planner
+
+  profiles:
+    active: mock
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    date-format: yyyy-MM-dd HH:mm:ss
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/liquidroute}
+    username: ${SPRING_DATASOURCE_USERNAME:liquidroute}
+    password: ${SPRING_DATASOURCE_PASSWORD:liquidroute}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+server:
+  port: 8081
+
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:meituan-route-planner-dev-only-key-do-not-use-in-prod!!}
+  expiration: 86400000
+
+
+# ──────────────────────────────────────────────
+# DeepSeek LLM 配置 (OpenAI 兼容接口)
+# ──────────────────────────────────────────────
+langchain4j:
+  open-ai:
+    chat-model:
+      api-key: ${DEEPSEEK_API_KEY:}
+      model-name: ${LLM_MODEL:deepseek-chat}
+      base-url: ${LLM_BASE_URL:https://api.deepseek.com/v1}
+      temperature: 0.1
+      timeout: 20000
+      max-retries: 2
+      log-requests: false
+      log-responses: false
+    streaming-chat-model:
+      api-key: ${DEEPSEEK_API_KEY:}
+      model-name: ${LLM_MODEL:deepseek-chat}
+      base-url: ${LLM_BASE_URL:https://api.deepseek.com/v1}
+      temperature: 0.1
+
+# ──────────────────────────────────────────────
+# 美团开放平台配置 (用于实时商户/街道数据)
+# ──────────────────────────────────────────────
+meituan:
+  api:
+    token: ${MEITUAN_API_TOKEN}
+    base-url: https://api-open.meituan.com
+    dianping-base-url: https://api.dianping.com/v1
+
+# ──────────────────────────────────────────────
+# 高德地图 Web 服务 API (地理编码/逆地理编码)
+# ──────────────────────────────────────────────
+gaode:
+  api:
+    key: ${GAODE_API_KEY:}
+    security-key: ${GAODE_SECURITY_KEY:}
+    base-url: https://restapi.amap.com
+
+# Actuator + Prometheus
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ai-route-planner
+
+---
+# Mock profile (default) — 使用本地 JSON 数据
+spring:
+  config:
+    activate:
+      on-profile: mock
+
+meituan:
+  enabled: false
+
+---
+# 美团 API profile — 使用实时数据
+spring:
+  config:
+    activate:
+      on-profile: dianping
+
+meituan:
+  enabled: true

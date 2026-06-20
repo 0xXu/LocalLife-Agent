@@ -1,0 +1,58 @@
+# Compiled class file
+*.class
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code
+.vscode/
+.settings/
+
+# Environment files (contains API keys)
+.env
+.env.local
+.env.production.local
+
+# Local code intelligence and Python runtime artifacts
+.codegraph/
+backend/.venv/
+backend/.pytest_cache/
+**/__pycache__/
+*.py[cod]
+
+# Log files
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build output
+out/
+
+# React Native / Frontend
+LiquidRoute/node_modules/
+LiquidRoute/android/app/build/
+LiquidRoute/ios/Pods/
+LiquidRoute/ios/build/
+LiquidRoute/*.tsbuildinfo
+
+# Claude Code internal
+.claude/
+routeplan/.claude/
+
+# Screen recording source files (large, not needed for the app)
+image/
+${project.build.directory}/

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>路线助手 · 本地生活路线规划</title>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script>
+  window._AMapSecurityConfig = {
+    securityJsCode: '6ebf21a762f658568ac1b437e389bbf9',
+  };
+</script>
+<script src="https://webapi.amap.com/maps?v=2.0&key=13e06deaf493d74f7b15f04af72e33f5&plugin=AMap.Driving,AMap.Walking,AMap.Geocoder"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  html, body {
+    margin: 0; padding: 0;
+    font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    background: #e9e7e2;
+    -webkit-font-smoothing: antialiased;
+    color: #1a1a1a;
+  }
+  .num { font-family: 'DM Sans', -apple-system, system-ui, sans-serif; font-feature-settings: 'tnum'; }
+  /* iOS scroll inside frame */
+  .frame-scroll { -webkit-overflow-scrolling: touch; }
+  .frame-scroll::-webkit-scrollbar { display: none; }
+
+  /* shimmer / dots */
+  @keyframes dotPulse {
+    0%, 80%, 100% { opacity: 0.25; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1); }
+  }
+  .dot { animation: dotPulse 1.4s infinite both; display: inline-block; }
+  .dot:nth-child(2) { animation-delay: 0.15s; }
+  .dot:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-up { animation: fadeUp 0.32s ease-out both; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(16px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .slide-in { animation: slideIn 0.28s ease-out both; }
+
+  @keyframes pulseRing {
+    0% { transform: scale(0.6); opacity: 0.6; }
+    100% { transform: scale(2.4); opacity: 0; }
+  }
+  .pulse-ring { animation: pulseRing 1.8s ease-out infinite; }
+
+  /* page transition */
+  .page-enter { animation: pageEnter 0.32s cubic-bezier(0.32, 0.72, 0.2, 1) both; }
+  @keyframes pageEnter {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+
+  /* toast */
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(8px) translateX(-50%); }
+    to { opacity: 1; transform: translateY(0) translateX(-50%); }
+  }
+  .toast { animation: toastIn 0.2s ease-out both; }
+
+  /* scale wrapper to fit viewport */
+  .stage { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; box-sizing: border-box; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="api.js"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="components.jsx"></script>
+
+
+<script type="text/babel" src="mock-data/index.jsx?v=3"></script>
+<script type="text/babel" src="mock-data/route-builder.jsx?v=3"></script>
+<script type="text/babel" src="login-modal.jsx?v=1"></script>
+<script type="text/babel" src="need-completion.jsx?v=2"></script>
+<script type="text/babel" src="nl-flow.jsx"></script>
+<script type="text/babel" src="favorites-panel.jsx?v=2"></script>
+<script type="text/babel" src="share-panel.jsx"></script>
+<script type="text/babel" src="history-panel.jsx?v=2"></script>
+<script type="text/babel" src="chat-screen.jsx?v=2"></script>
+<script type="text/babel" src="route-detail.jsx"></script>
+<script type="text/babel" src="route-compare.jsx"></script>
+<script type="text/babel" src="app.jsx?v=2"></script>
+</body>
+</html>
