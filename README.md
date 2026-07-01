@@ -6,56 +6,56 @@
 [![OpenAI Agents SDK](https://img.shields.io/badge/OpenAI%20Agents%20SDK-111827?style=for-the-badge)](https://openai.github.io/openai-agents-python/)
 [![SQLite](https://img.shields.io/badge/SQLite-074D5B?style=for-the-badge&logo=sqlite&logoColor=white)](https://sqlite.org/)
 
-LocalLife-Agent, also called WeekendPilot, is a local-life planning assistant built around a run-centered REST + SSE contract. A user can enter an underspecified goal such as "我想出去玩", the agent asks one key clarification question at a time, validates the completed context once, generates a structured plan, then waits for explicit approval before executing any side-effect action.
+LocalLife-Agent，也叫 WeekendPilot，是一个围绕 run-centered REST + SSE 契约构建的本地生活规划助手。用户可以输入类似“我想出去玩”这样信息不完整的目标，Agent 会一次只追问一个关键澄清问题，在上下文补全后执行一次最终校验，生成结构化计划，并在执行任何有副作用的动作前等待用户明确批准。
 
-The current implementation has fully removed the old LangGraph-centered runtime. The backend uses FastAPI, SQLite, and the OpenAI Agents SDK. The frontend is a Next.js workbench that renders chat clarification, live run events, structured plans, variants, evidence, traces, and an approval ledger.
+当前实现已经完全移除了旧的 LangGraph 中心化运行时。后端使用 FastAPI、SQLite 和 OpenAI Agents SDK；前端是一个 Next.js 工作台，用于展示聊天式澄清、实时 run 事件、结构化计划、备选方案、证据、追踪信息和审批台账。
 
-## Current Principles
+## 当前原则
 
-- **No synthetic plan**: remote planning must return a valid structured JSON plan. Markdown, plain text, missing itinerary, or empty variants fail with `planner_contract_invalid` instead of producing an empty approval page.
-- **One question at a time**: intent extraction identifies missing fields once, stores them in a queue, and the UI asks only the highest-priority question for each round.
-- **Final validation is separate**: `FinalValidationTool` runs once after the clarification queue is complete. It is not the intent extractor reused in a loop.
-- **Approval before side effects**: planning only creates pending actions. Execution starts only after the user approves selected action ids.
-- **Run-centered contract**: all live state flows through `/api/runs`, `/api/runs/{run_id}/events`, `/api/runs/{run_id}/clarifications`, and approval endpoints.
+- **不生成兜底假计划**：远程规划必须返回合法的结构化 JSON 计划。Markdown、纯文本、缺失行程或空备选方案都会以 `planner_contract_invalid` 失败，而不是生成空的审批页面。
+- **一次只问一个问题**：意图抽取只识别一次缺失字段，并将它们存入队列；UI 每轮只提出优先级最高的一个问题。
+- **最终校验独立执行**：`FinalValidationTool` 在澄清队列完成后只运行一次，它不是被循环复用的意图抽取器。
+- **先审批，后执行副作用**：规划阶段只创建待审批动作。只有用户批准选中的 action id 后，执行才会开始。
+- **以 run 为中心的契约**：所有实时状态都通过 `/api/runs`、`/api/runs/{run_id}/events`、`/api/runs/{run_id}/clarifications` 和审批端点流转。
 
-## Architecture
+## 架构
 
 ![LocalLife-Agent architecture](docs/assets/locallife-architecture.png)
 
-### Frontend
+### 前端
 
-- `app/` and `components/` implement the Next.js workbench.
-- `features/runs/` owns run creation, SSE subscription, clarification submission, approval, rejection, and reducer state.
-- `components/chat/` renders the assistant-style clarification flow.
-- `components/plan/` renders structured plan results, variants, overview metrics, evidence, trace, and action ledger.
+- `app/` 和 `components/` 实现 Next.js 工作台。
+- `features/runs/` 负责创建 run、订阅 SSE、提交澄清答案、审批、拒绝以及 reducer 状态。
+- `components/chat/` 渲染助手风格的澄清流程。
+- `components/plan/` 渲染结构化计划结果、备选方案、概览指标、证据、追踪信息和动作台账。
 
-### Backend
+### 后端
 
-- `backend/api/` exposes FastAPI JSON and SSE endpoints.
-- `backend/application/run_service.py` owns run lifecycle, persisted answers, current question, plan snapshots, events, and worker execution.
-- `backend/agents/openai_runtime.py` wires the OpenAI Agents SDK runtime.
-- `backend/agents/intent_extraction_tool.py` extracts intent and the initial missing-field queue.
-- `backend/agents/final_validation_tool.py` performs one final completeness check after the queue is exhausted.
-- `backend/infrastructure/` persists workflow state and replayable events in SQLite.
+- `backend/api/` 暴露 FastAPI JSON 和 SSE 端点。
+- `backend/application/run_service.py` 负责 run 生命周期、持久化答案、当前问题、计划快照、事件和 worker 执行。
+- `backend/agents/openai_runtime.py` 连接 OpenAI Agents SDK 运行时。
+- `backend/agents/intent_extraction_tool.py` 抽取意图和初始缺失字段队列。
+- `backend/agents/final_validation_tool.py` 在队列耗尽后执行一次最终完整性检查。
+- `backend/infrastructure/` 使用 SQLite 持久化工作流状态和可回放事件。
 
-## Planning Flow
+## 规划流程
 
 ![LocalLife-Agent planning flow](docs/assets/locallife-planning-flow.png)
 
-1. The frontend calls `POST /api/runs` with the natural-language goal.
-2. The frontend subscribes to `GET /api/runs/{run_id}/events` and reduces named `run.event` SSE frames.
-3. `IntentExtractionTool` runs once to extract known constraints and an ordered list of missing fields.
-4. If fields are missing, the backend emits `clarification.required` and stores the current question. The user answers through `POST /api/runs/{run_id}/clarifications`.
-5. When the queue is empty, `FinalValidationTool` runs once. It may request one more missing field or allow planning.
-6. `PlannerAgent` must return compact JSON with `title`, `summary`, `overview`, `constraint_fit`, non-empty `itinerary`, and non-empty `variants`.
-7. The backend validates the planner contract. Invalid planner output raises `planner_contract_invalid` and the run fails instead of showing a synthetic plan.
-8. A valid plan is persisted as an approval-required snapshot with pending actions.
-9. The user approves selected actions with `POST /api/runs/{run_id}/actions/approve`.
-10. The backend executes approved local adapters idempotently and returns receipts.
+1. 前端用自然语言目标调用 `POST /api/runs`。
+2. 前端订阅 `GET /api/runs/{run_id}/events`，并归约命名的 `run.event` SSE 帧。
+3. `IntentExtractionTool` 运行一次，抽取已知约束和有序缺失字段列表。
+4. 如果仍有缺失字段，后端会发出 `clarification.required`，并保存当前问题。用户通过 `POST /api/runs/{run_id}/clarifications` 提交答案。
+5. 当队列为空时，`FinalValidationTool` 运行一次。它可能要求补充一个额外缺失字段，也可能允许进入规划。
+6. `PlannerAgent` 必须返回紧凑 JSON，包含 `title`、`summary`、`overview`、`constraint_fit`、非空 `itinerary` 和非空 `variants`。
+7. 后端校验 planner 契约。无效 planner 输出会抛出 `planner_contract_invalid` 并让 run 失败，而不是显示合成计划。
+8. 合法计划会以“需要审批”的快照形式持久化，并包含待处理动作。
+9. 用户通过 `POST /api/runs/{run_id}/actions/approve` 批准选中的动作。
+10. 后端以幂等方式执行已批准的本地适配器，并返回回执。
 
-## Strict Planner Contract
+## 严格 Planner 契约
 
-The planner prompt requires JSON only. The backend rejects outputs that cannot render a real plan.
+planner 提示词要求只返回 JSON。后端会拒绝任何无法渲染为真实计划的输出。
 
 ```json
 {
@@ -110,21 +110,21 @@ The planner prompt requires JSON only. The backend rejects outputs that cannot r
 
 ## API
 
-| Method | Endpoint | Purpose |
+| 方法 | 端点 | 用途 |
 | --- | --- | --- |
-| `GET` | `/api/health` | Backend health check |
-| `GET` | `/api/llm/status` | LLM configuration and connectivity status |
-| `POST` | `/api/runs` | Create a run from a user goal |
-| `GET` | `/api/runs/{run_id}` | Read current run status |
-| `GET` | `/api/runs/{run_id}/events` | Stream named `run.event` SSE frames |
-| `POST` | `/api/runs/{run_id}/clarifications` | Submit the answer for the current question |
-| `POST` | `/api/runs/{run_id}/actions/approve` | Execute selected pending actions |
-| `POST` | `/api/runs/{run_id}/actions/reject` | Reject the current approval-required run |
-| `GET` | `/api/plans` | List persisted plan summaries |
-| `GET` | `/api/plans/{plan_id}` | Read the persisted plan snapshot |
-| `GET` | `/api/tool-schemas` | Inspect tool/action schemas |
+| `GET` | `/api/health` | 后端健康检查 |
+| `GET` | `/api/llm/status` | LLM 配置和连通性状态 |
+| `POST` | `/api/runs` | 根据用户目标创建 run |
+| `GET` | `/api/runs/{run_id}` | 读取当前 run 状态 |
+| `GET` | `/api/runs/{run_id}/events` | 流式传输命名的 `run.event` SSE 帧 |
+| `POST` | `/api/runs/{run_id}/clarifications` | 提交当前问题的答案 |
+| `POST` | `/api/runs/{run_id}/actions/approve` | 执行选中的待处理动作 |
+| `POST` | `/api/runs/{run_id}/actions/reject` | 拒绝当前需要审批的 run |
+| `GET` | `/api/plans` | 列出已持久化的计划摘要 |
+| `GET` | `/api/plans/{plan_id}` | 读取已持久化的计划快照 |
+| `GET` | `/api/tool-schemas` | 查看工具和动作 schema |
 
-Important run statuses:
+重要 run 状态：
 
 - `queued`
 - `running`
@@ -135,7 +135,7 @@ Important run statuses:
 - `rejected`
 - `failed`
 
-Important SSE event types:
+重要 SSE 事件类型：
 
 - `run.started`
 - `run.running`
@@ -149,30 +149,30 @@ Important SSE event types:
 - `run.failed`
 - `run.rejected`
 
-## Quick Start
+## 快速开始
 
-### Requirements
+### 环境要求
 
 - Node.js 18+
 - Python 3.11+
 - `uv`
 
-### Install
+### 安装
 
 ```bash
 npm install
 uv sync
 ```
 
-### Configure LLM
+### 配置 LLM
 
-Copy the example environment file and set your OpenAI-compatible model endpoint.
+复制示例环境变量文件，并设置 OpenAI 兼容模型端点。
 
 ```bash
 cp .env.example .env
 ```
 
-Typical remote configuration:
+典型远程配置：
 
 ```env
 LLM_PROVIDER=mimo
@@ -187,34 +187,34 @@ LLM_DISABLE_THINKING=true
 LLM_TRUST_ENV_PROXY=false
 ```
 
-`LLM_REMOTE_ENABLED=true` is the intended product demo mode. If the model returns invalid JSON or an incomplete plan, the run fails by design.
+`LLM_REMOTE_ENABLED=true` 是预期的产品演示模式。如果模型返回无效 JSON 或不完整计划，run 会按设计失败。
 
-### Run Frontend And Backend
+### 运行前端和后端
 
 ```bash
 npm run dev:full
 ```
 
-Or run them separately:
+也可以分别运行：
 
 ```bash
 npm run dev
 npm run dev:backend
 ```
 
-Frontend:
+前端：
 
 ```text
 http://127.0.0.1:4174
 ```
 
-Backend OpenAPI docs:
+后端 OpenAPI 文档：
 
 ```text
 http://127.0.0.1:8787/docs
 ```
 
-## Tests
+## 测试
 
 ```bash
 npm run test:all
@@ -222,7 +222,7 @@ npm run build
 npm run test:e2e
 ```
 
-Focused commands:
+按范围执行：
 
 ```bash
 npm run test:contracts
@@ -231,57 +231,57 @@ npm run test:backend
 uv run pytest tests/backend/test_openai_agents_runtime.py -q
 ```
 
-The backend runtime tests cover:
+后端运行时测试覆盖：
 
-- one-question-at-a-time clarification,
-- no repeated intent extraction while consuming the clarification queue,
-- `FinalValidationTool` running once after the queue is complete,
-- structured planner JSON being merged into the plan contract,
-- non-structured planner output failing with `planner_contract_invalid`,
-- approval and execution identity handling.
+- 一次只问一个澄清问题；
+- 消费澄清队列时不会重复执行意图抽取；
+- `FinalValidationTool` 在队列完成后只运行一次；
+- 结构化 planner JSON 会合并进计划契约；
+- 非结构化 planner 输出会以 `planner_contract_invalid` 失败；
+- 审批与执行身份处理。
 
-## Project Layout
+## 项目结构
 
 ```text
-app/                    Next.js app entry
-components/             React UI components
-components/chat/        Chat and clarification UI
-components/plan/        Plan workbench, variants, evidence, ledger
-features/runs/          REST/SSE run client, reducer, controller
-features/plans/         Plan list/detail API client
-lib/contracts/          Zod schemas for frontend/backend contract tests
-types/                  Shared TypeScript types
+app/                    Next.js 应用入口
+components/             React UI 组件
+components/chat/        聊天与澄清 UI
+components/plan/        计划工作台、备选方案、证据、台账
+features/runs/          REST/SSE run 客户端、reducer、controller
+features/plans/         计划列表/详情 API 客户端
+lib/contracts/          前后端契约测试用 Zod schema
+types/                  共享 TypeScript 类型
 
-backend/api/            FastAPI app, routes, schemas
-backend/application/    Run lifecycle and approval services
-backend/agents/         OpenAI Agents SDK runtime and tools
-backend/domain/         Run/domain constants and models
-backend/infrastructure/ SQLite repositories and event persistence
-backend/llm/            OpenAI-compatible LLM config
-backend/tools/          Local side-effect adapters and registry
+backend/api/            FastAPI 应用、路由、schema
+backend/application/    Run 生命周期与审批服务
+backend/agents/         OpenAI Agents SDK 运行时与工具
+backend/domain/         Run/领域常量与模型
+backend/infrastructure/ SQLite 仓储与事件持久化
+backend/llm/            OpenAI 兼容 LLM 配置
+backend/tools/          本地副作用适配器与注册表
 
-tests/contracts/        API/schema contract tests
-tests/frontend/         React/reducer/client tests
-tests/backend/          Pytest backend tests
-tests/e2e/              Playwright browser flows
+tests/contracts/        API/schema 契约测试
+tests/frontend/         React/reducer/client 测试
+tests/backend/          Pytest 后端测试
+tests/e2e/              Playwright 浏览器流程
 ```
 
-## Data And Persistence
+## 数据与持久化
 
-Local workflow state is written under:
+本地工作流状态会写入：
 
 ```text
 .weekendpilot/workflow.sqlite
 .weekendpilot/profiles.sqlite
 ```
 
-These SQLite files store runs, events, plan snapshots, approvals, receipts, and user profile data for local demo use.
+这些 SQLite 文件会保存 run、事件、计划快照、审批、回执和本地演示用的用户画像数据。
 
-## Safety Model
+## 安全模型
 
-- Planner output is data, not executable authority.
-- Pending actions are inert until approval.
-- `approve` requires explicit selected action ids.
-- Execution uses idempotency-aware local adapters.
-- Receipts are persisted and shown back to the user.
-- Invalid planner output fails loudly instead of silently producing an empty or misleading plan.
+- Planner 输出是数据，不具备可执行权限。
+- 待处理动作在审批前不会生效。
+- `approve` 要求显式传入选中的 action id。
+- 执行使用具备幂等意识的本地适配器。
+- 回执会被持久化，并展示给用户。
+- 无效 planner 输出会明确失败，而不是静默生成空计划或误导性计划。
