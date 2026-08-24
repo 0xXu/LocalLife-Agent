@@ -4,9 +4,9 @@
 
 ## 架构
 
-- Google ADK + DeepSeek V4 Flash：`IntentGovernor` 先把自然语言目标解释成强类型 `IntentFrame`，再由 `LifeGoalPlanner` 基于运行时能力目录组合供给；思考模式关闭。
-- 动态 Scout：Scout、可见工具和专业指令全部由 MCP 供给方发布的能力目录生成，不存在关键词路由、固定垂类分支或全量工具暴露。
-- Supply MCP：独立 Streamable HTTP 服务，暴露 13 个只读工具、能力目录和供给资源；推荐决策与写操作不进入 MCP。
+- Google ADK + DeepSeek V4 Flash：`IntentGovernor` 把自然语言目标解释成强类型 `IntentFrame` 并拆出必要的单问澄清，`LifeGoalPlanner` 基于运行时能力目录组合供给，`question_presenter` 与 `constraint_negotiator` 负责追问和恢复的呈现；所有模型调用温度 0 且思考模式关闭。
+- 能力目录驱动：可见工具与专业指令按意图从 MCP 供给方发布的能力目录动态生成，不存在关键词路由、固定垂类分支或全量工具暴露。
+- Supply MCP：独立 Streamable HTTP 服务，暴露 13 个供给检索工具与 `supply.quote_and_hold`、`supply.observe`、`supply.commit` 生命周期工具、能力目录和供给资源；推荐与定价决策不进入 MCP。
 - 约束边界：模型只输出紧凑的 `PlanDecision`；领域 Module 从供给事实物化价格、地点、动作、证据、时长、总价和授权，避免模型复写或篡改事实。
 - 上下文：每个 task revision 使用独立 ADK Session，不做跨轮会话复用；任务状态通过去除工具历史的强类型决策上下文传入。
 - PlanGraph：版本化计划与最小 `PlanPatch` 是任务的核心状态。
