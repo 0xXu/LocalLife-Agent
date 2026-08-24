@@ -34,6 +34,7 @@ dist/
 build/
 out/
 .next/
+*.tsbuildinfo
 .nuxt/
 .vite/
 coverage/
@@ -56,4 +57,3 @@ temp/
 .worktrees/
 *.tmp
 *.bak
-.weekendpilot/

@@ -1,38 +1,29 @@
 {
-  "name": "weekendpilot-frontend",
-  "version": "0.1.0",
+  "name": "local-life-agent-workbench",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "next dev -H 127.0.0.1 -p 4174",
     "dev:backend": "uv run uvicorn backend.api.app:app --host 127.0.0.1 --port 8787",
-    "dev:full": "concurrently \"npm run dev:backend\" \"npm run dev\"",
     "build": "next build",
-    "start": "next start -H 127.0.0.1 -p 4174",
-    "test": "npm run test:frontend && npm run test:backend",
-    "test:backend": "uv run pytest tests/backend -q",
-    "test:contracts": "tsx --test tests/contracts/*.test.ts",
-    "test:frontend": "tsx --test tests/frontend/*.test.ts tests/frontend/*.test.tsx",
-    "test:e2e": "playwright test tests/e2e",
-    "test:all": "npm run test:contracts && npm run test:frontend && npm run test:backend"
+    "start": "HOSTNAME=0.0.0.0 PORT=4174 node .next/standalone/server.js",
+    "test": "npm run typecheck && npm run test:backend",
+    "test:backend": "uv run pytest tests/backend -q -p no:cacheprovider",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test tests/e2e"
   },
   "dependencies": {
-    "@types/node": "^25.6.2",
     "lucide-react": "^0.468.0",
-    "mapbox-gl": "^3.23.1",
-    "next": "^15.0.0",
+    "next": "^16.3.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "tsx": "^4.21.0",
-    "typescript": "^6.0.3",
-    "zod": "^4.4.3"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
-    "@types/jsdom": "^28.0.1",
+    "@types/node": "^25.6.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "concurrently": "^9.2.1",
-    "jsdom": "^29.1.1"
+    "typescript": "^6.0.3"
   }
 }

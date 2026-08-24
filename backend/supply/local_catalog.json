@@ -1,0 +1,947 @@
+[
+  {
+    "id": "food_yanlan",
+    "vertical": "food",
+    "name": "宴岚·京味小馆",
+    "venue": "宴岚·京味小馆（国贸店）",
+    "district": "国贸",
+    "price_yuan": 188,
+    "duration_minutes": 80,
+    "rating": 4.8,
+    "availability": "available",
+    "substitution_group": "quiet_social_dining",
+    "tags": [
+      "安静",
+      "京味",
+      "适合聊天",
+      "少排队"
+    ],
+    "time_slots": [
+      "18:40",
+      "19:00",
+      "19:20"
+    ],
+    "actions": [
+      "buy_coupon",
+      "reserve_table"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.910869Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "walk_minutes": 8,
+      "coupon": "双人晚餐代金券",
+      "party_capacity": 4,
+      "queue_minutes": 0,
+      "private_room": false,
+      "opening_status": "open",
+      "environment": "安静卡座，桌距较宽",
+      "coupon_terms": "双人使用，到店核销，可与订座同时使用",
+      "reservation_grace_minutes": 15
+    }
+  },
+  {
+    "id": "food_monsoon",
+    "vertical": "food",
+    "name": "季风里·云南菜",
+    "venue": "季风里（大望路店）",
+    "district": "大望路",
+    "price_yuan": 218,
+    "duration_minutes": 90,
+    "rating": 4.7,
+    "availability": "available",
+    "substitution_group": "social_dining",
+    "tags": [
+      "云南菜",
+      "松弛",
+      "环境好",
+      "朋友聚会"
+    ],
+    "time_slots": [
+      "19:00",
+      "19:30"
+    ],
+    "actions": [
+      "buy_coupon",
+      "reserve_table"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911137Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "walk_minutes": 14,
+      "coupon": "双人套餐",
+      "party_capacity": 6,
+      "queue_minutes": 8,
+      "private_room": false,
+      "opening_status": "open",
+      "environment": "绿植露台，晚间音乐音量适中",
+      "coupon_terms": "双人套餐，不含酒水",
+      "reservation_grace_minutes": 15
+    }
+  },
+  {
+    "id": "food_nightmarket",
+    "vertical": "food",
+    "name": "胡同夜市",
+    "venue": "胡同夜市（建外店）",
+    "district": "建外",
+    "price_yuan": 146,
+    "duration_minutes": 70,
+    "rating": 4.5,
+    "availability": "available",
+    "tags": [
+      "热闹",
+      "小吃",
+      "性价比"
+    ],
+    "time_slots": [
+      "18:30",
+      "19:00",
+      "19:30"
+    ],
+    "actions": [
+      "buy_coupon",
+      "reserve_table"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911143Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "walk_minutes": 6,
+      "coupon": "多人通用券",
+      "party_capacity": 8,
+      "queue_minutes": 18,
+      "private_room": false,
+      "opening_status": "open",
+      "environment": "开放式夜市，氛围热闹",
+      "coupon_terms": "多人通用券可叠加订座",
+      "reservation_grace_minutes": 10,
+      "booking_channel": "phone",
+      "merchant_note": "19:00 两人桌可留 10 分钟，多人通用券可叠加订座"
+    }
+  },
+  {
+    "id": "food_sushi_wangjing",
+    "vertical": "food",
+    "name": "鮨白·板前日料",
+    "venue": "鮨白（望京店）",
+    "district": "望京",
+    "price_yuan": 398,
+    "duration_minutes": 95,
+    "rating": 4.8,
+    "availability": "available",
+    "substitution_group": "quiet_social_dining",
+    "tags": [
+      "日料",
+      "寿司",
+      "安静",
+      "约会",
+      "板前"
+    ],
+    "time_slots": [
+      "18:30",
+      "19:00",
+      "20:00"
+    ],
+    "actions": [
+      "buy_coupon",
+      "reserve_table"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911147Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "walk_minutes": 5,
+      "coupon": "双人板前套餐",
+      "party_capacity": 2,
+      "queue_minutes": 0,
+      "private_room": false,
+      "opening_status": "open",
+      "environment": "板前席，安静，适合约会",
+      "coupon_terms": "仅限双人板前套餐，需按场次到店",
+      "reservation_grace_minutes": 10
+    }
+  },
+  {
+    "id": "food_hotpot_guomao",
+    "vertical": "food",
+    "name": "山城里·鲜切火锅",
+    "venue": "山城里（国贸店）",
+    "district": "国贸",
+    "price_yuan": 328,
+    "duration_minutes": 110,
+    "rating": 4.7,
+    "availability": "available",
+    "tags": [
+      "火锅",
+      "聚会",
+      "四人餐",
+      "热闹",
+      "包间"
+    ],
+    "time_slots": [
+      "18:30",
+      "19:00",
+      "19:30"
+    ],
+    "actions": [
+      "buy_coupon",
+      "reserve_table"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911152Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "walk_minutes": 7,
+      "coupon": "四人鲜切套餐",
+      "party_capacity": 10,
+      "queue_minutes": 12,
+      "private_room": true,
+      "opening_status": "open",
+      "environment": "聚会桌与可预约包间",
+      "coupon_terms": "四人套餐，锅底另付",
+      "reservation_grace_minutes": 15
+    }
+  },
+  {
+    "id": "activity_comedy",
+    "vertical": "activity",
+    "name": "城市喜剧夜",
+    "venue": "开心麻花A33剧场",
+    "district": "国贸",
+    "price_yuan": 156,
+    "duration_minutes": 90,
+    "rating": 4.9,
+    "availability": "available",
+    "tags": [
+      "脱口秀",
+      "轻松",
+      "室内",
+      "少移动"
+    ],
+    "time_slots": [
+      "20:30"
+    ],
+    "actions": [
+      "buy_ticket"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911160Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "remaining": 8,
+      "seat": "中区连座",
+      "ticket_type": "中区双人票",
+      "admission_rule": "开演前 30 分钟取票，迟到按场务安排入场",
+      "refund_rule": "开演前 2 小时可退",
+      "change_rule": "有余票时可改同日场次",
+      "indoor": true
+    }
+  },
+  {
+    "id": "activity_cinema",
+    "vertical": "activity",
+    "name": "晚间电影",
+    "venue": "英皇电影城（国贸店）",
+    "district": "国贸",
+    "price_yuan": 116,
+    "duration_minutes": 118,
+    "rating": 4.7,
+    "availability": "available",
+    "tags": [
+      "电影",
+      "安静",
+      "室内",
+      "连座"
+    ],
+    "time_slots": [
+      "20:20",
+      "20:45"
+    ],
+    "actions": [
+      "buy_ticket"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911163Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "remaining": 18,
+      "seat": "黄金区连座",
+      "ticket_type": "2D 双人票",
+      "admission_rule": "凭电子票码入场",
+      "refund_rule": "开场前 60 分钟可退",
+      "change_rule": "开场前可改同影院场次",
+      "indoor": true
+    }
+  },
+  {
+    "id": "activity_aroma",
+    "vertical": "activity",
+    "name": "夜间香氛手作",
+    "venue": "气味档案馆",
+    "district": "CBD",
+    "price_yuan": 196,
+    "duration_minutes": 75,
+    "rating": 4.8,
+    "availability": "available",
+    "tags": [
+      "手作",
+      "安静",
+      "新鲜体验"
+    ],
+    "time_slots": [
+      "20:15",
+      "20:45"
+    ],
+    "actions": [
+      "buy_ticket"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911167Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "remaining": 4,
+      "seat": "双人工作台",
+      "ticket_type": "双人材料套票",
+      "admission_rule": "开始前 10 分钟签到",
+      "refund_rule": "开始前 4 小时可退",
+      "change_rule": "有工作台时可改期",
+      "indoor": true
+    }
+  },
+  {
+    "id": "activity_family_science",
+    "vertical": "activity",
+    "name": "小小科学家双人体验票",
+    "venue": "朝阳科技体验馆（望京店）",
+    "district": "望京",
+    "price_yuan": 168,
+    "duration_minutes": 100,
+    "rating": 4.8,
+    "availability": "available",
+    "tags": [
+      "亲子",
+      "室内",
+      "周末",
+      "科学",
+      "儿童"
+    ],
+    "time_slots": [
+      "10:00",
+      "14:00",
+      "16:00"
+    ],
+    "actions": [
+      "buy_ticket"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911170Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "remaining": 12,
+      "age_range": "5-10岁",
+      "ticket_count": 2,
+      "price_basis": "all_in_party_total",
+      "ticket_type": "一大一小体验票",
+      "admission_rule": "儿童需由成人全程陪同",
+      "refund_rule": "场次前 24 小时可退",
+      "change_rule": "可改一次同价场次",
+      "indoor": true
+    }
+  },
+  {
+    "id": "activity_art_exhibition",
+    "vertical": "activity",
+    "name": "光影之间当代艺术展",
+    "venue": "悦美术馆",
+    "district": "CBD",
+    "price_yuan": 88,
+    "duration_minutes": 90,
+    "rating": 4.7,
+    "availability": "available",
+    "tags": [
+      "展览",
+      "艺术",
+      "安静",
+      "一个人",
+      "室内"
+    ],
+    "time_slots": [
+      "11:00",
+      "14:30",
+      "18:30"
+    ],
+    "actions": [
+      "buy_ticket"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911174Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "remaining": 30,
+      "last_entry": "19:00",
+      "ticket_type": "单人通票",
+      "admission_rule": "闭馆前 60 分钟停止入场",
+      "refund_rule": "未核销可随时退",
+      "change_rule": "当日有效，无需改期",
+      "indoor": true
+    }
+  },
+  {
+    "id": "service_massage_wangjing",
+    "vertical": "service",
+    "name": "澄心·肩颈舒缓",
+    "venue": "澄心推拿（望京店）",
+    "district": "望京",
+    "price_yuan": 268,
+    "duration_minutes": 75,
+    "rating": 4.8,
+    "availability": "available",
+    "substitution_group": "wellness_recovery",
+    "tags": [
+      "按摩",
+      "肩颈",
+      "放松",
+      "单人",
+      "安静"
+    ],
+    "time_slots": [
+      "18:30",
+      "20:00",
+      "21:30"
+    ],
+    "actions": [
+      "book_service"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911177Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "remaining": 3,
+      "room": "独立房间"
+    }
+  },
+  {
+    "id": "service_hair_wangjing",
+    "vertical": "service",
+    "name": "简研造型·设计剪发",
+    "venue": "简研造型（望京店）",
+    "district": "望京",
+    "price_yuan": 168,
+    "duration_minutes": 60,
+    "rating": 4.7,
+    "availability": "available",
+    "substitution_group": "personal_grooming",
+    "tags": [
+      "理发",
+      "剪发",
+      "造型",
+      "单人"
+    ],
+    "time_slots": [
+      "11:00",
+      "15:00",
+      "19:30"
+    ],
+    "actions": [
+      "book_service"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911182Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "remaining": 4,
+      "stylist_level": "资深"
+    }
+  },
+  {
+    "id": "service_nails_guomao",
+    "vertical": "service",
+    "name": "Nail Lab 双人美甲",
+    "venue": "Nail Lab（国贸店）",
+    "district": "国贸",
+    "price_yuan": 298,
+    "duration_minutes": 90,
+    "rating": 4.8,
+    "availability": "available",
+    "substitution_group": "personal_grooming",
+    "tags": [
+      "美甲",
+      "两个人",
+      "闺蜜",
+      "约会",
+      "安静"
+    ],
+    "time_slots": [
+      "13:00",
+      "16:00",
+      "19:00"
+    ],
+    "actions": [
+      "book_service"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911185Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "remaining": 2,
+      "stations": 2
+    }
+  },
+  {
+    "id": "service_bath_spa_changying",
+    "vertical": "service",
+    "name": "云栖汤泉·夜间放松票",
+    "venue": "云栖汤泉（常营店）",
+    "district": "常营",
+    "price_yuan": 198,
+    "duration_minutes": 180,
+    "rating": 4.7,
+    "availability": "available",
+    "substitution_group": "wellness_recovery",
+    "tags": ["洗浴", "汗蒸", "夜间", "放松", "可休息", "单人"],
+    "time_slots": ["18:00", "20:00", "22:00"],
+    "actions": ["book_service"],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911190Z",
+      "detail": "夜间入场库存、休息区开放状态和价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "remaining": 24,
+      "last_entry": "22:00",
+      "rest_area": true,
+      "refund_rule": "未核销可退"
+    }
+  },
+  {
+    "id": "service_pet_grooming_wangjing",
+    "vertical": "service",
+    "name": "毛孩子·基础洗护",
+    "venue": "毛孩子宠物生活馆（望京店）",
+    "district": "望京",
+    "price_yuan": 158,
+    "duration_minutes": 90,
+    "rating": 4.8,
+    "availability": "available",
+    "substitution_group": "pet_care",
+    "tags": ["宠物", "洗护", "猫狗", "预约", "可视护理"],
+    "time_slots": ["10:30", "14:00", "18:30"],
+    "actions": ["book_service"],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911192Z",
+      "detail": "护理师时段、体型价格边界和可预约名额已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "remaining": 2,
+      "pet_weight_limit_kg": 15,
+      "requires_pet_profile": true
+    }
+  },
+  {
+    "id": "delivery_pet_supplies_wangjing",
+    "vertical": "delivery",
+    "name": "宠物应急日用闪送",
+    "venue": "宠物家即时零售（望京店）",
+    "district": "望京",
+    "price_yuan": 129,
+    "duration_minutes": 35,
+    "rating": 4.7,
+    "availability": "available",
+    "tags": ["宠物", "猫粮", "狗粮", "猫砂", "日用", "闪送"],
+    "time_slots": ["18:00", "19:00", "20:00", "21:00", "22:00"],
+    "actions": ["place_order"],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911194Z",
+      "detail": "门店库存、配送范围和含运费总价已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 180
+    },
+    "metadata": {
+      "remaining": 12,
+      "eta_minutes": 35,
+      "delivery_fee_included": true,
+      "destination": "望京"
+    }
+  },
+  {
+    "id": "delivery_pharmacy_wangjing",
+    "vertical": "delivery",
+    "name": "24小时药房配送",
+    "venue": "叮当智慧药房（望京店）",
+    "district": "望京",
+    "price_yuan": 64,
+    "duration_minutes": 32,
+    "rating": 4.8,
+    "availability": "available",
+    "tags": [
+      "感冒药",
+      "退烧药",
+      "送药",
+      "送到家",
+      "夜间配送"
+    ],
+    "time_slots": [
+      "18:00",
+      "20:00",
+      "22:00"
+    ],
+    "actions": [
+      "place_order"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911188Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "goods_price_yuan": 58,
+      "delivery_minutes": 32,
+      "delivery_fee_yuan": 6
+    }
+  },
+  {
+    "id": "delivery_congee_wangjing",
+    "vertical": "delivery",
+    "name": "暖胃砂锅粥外卖",
+    "venue": "粥小满（望京店）",
+    "district": "望京",
+    "price_yuan": 72,
+    "duration_minutes": 35,
+    "rating": 4.7,
+    "availability": "available",
+    "tags": [
+      "外卖",
+      "粥",
+      "清淡",
+      "夜宵",
+      "送到家"
+    ],
+    "time_slots": [
+      "18:00",
+      "20:00",
+      "22:00"
+    ],
+    "actions": [
+      "place_order"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911192Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "goods_price_yuan": 68,
+      "delivery_minutes": 35,
+      "delivery_fee_yuan": 4
+    }
+  },
+  {
+    "id": "delivery_flowers_guomao",
+    "vertical": "delivery",
+    "name": "暮色玫瑰花束",
+    "venue": "野兽派花店（国贸配送站）",
+    "district": "国贸",
+    "price_yuan": 238,
+    "duration_minutes": 55,
+    "rating": 4.8,
+    "availability": "available",
+    "tags": [
+      "鲜花",
+      "玫瑰",
+      "约会",
+      "礼物",
+      "同城配送"
+    ],
+    "time_slots": [
+      "14:00",
+      "18:00",
+      "20:00"
+    ],
+    "actions": [
+      "place_order"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911195Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "goods_price_yuan": 238,
+      "delivery_minutes": 55,
+      "delivery_fee_yuan": 0
+    }
+  },
+  {
+    "id": "delivery_cake_wangjing",
+    "vertical": "delivery",
+    "name": "六寸生日蛋糕",
+    "venue": "M Cake（望京配送站）",
+    "district": "望京",
+    "price_yuan": 198,
+    "duration_minutes": 90,
+    "rating": 4.8,
+    "availability": "available",
+    "tags": [
+      "生日蛋糕",
+      "蛋糕",
+      "庆祝",
+      "配送"
+    ],
+    "time_slots": [
+      "12:00",
+      "16:00",
+      "19:00"
+    ],
+    "actions": [
+      "place_order"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911198Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "goods_price_yuan": 198,
+      "delivery_minutes": 90,
+      "delivery_fee_yuan": 0,
+      "advance_order": true
+    }
+  },
+  {
+    "id": "delivery_grocery_guomao",
+    "vertical": "delivery",
+    "name": "30分钟买菜日用",
+    "venue": "小象超市（国贸站）",
+    "district": "国贸",
+    "price_yuan": 101,
+    "duration_minutes": 30,
+    "rating": 4.7,
+    "availability": "available",
+    "tags": [
+      "买菜",
+      "日用品",
+      "生鲜",
+      "超市",
+      "即时零售"
+    ],
+    "time_slots": [
+      "10:00",
+      "14:00",
+      "18:00",
+      "21:00"
+    ],
+    "actions": [
+      "place_order"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911201Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "goods_price_yuan": 96,
+      "delivery_minutes": 30,
+      "delivery_fee_yuan": 5
+    }
+  },
+  {
+    "id": "mobility_connector",
+    "vertical": "mobility",
+    "name": "活动间接驳",
+    "venue": "餐厅 → 娱乐场所",
+    "district": "CBD",
+    "price_yuan": 24,
+    "duration_minutes": 18,
+    "rating": 4.8,
+    "availability": "available",
+    "tags": [
+      "少走路",
+      "实时叫车"
+    ],
+    "time_slots": [
+      "20:05",
+      "20:15"
+    ],
+    "actions": [
+      "request_ride"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911204Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "service_level": "实时快车",
+      "route_delay_minutes": 0,
+      "eta_minutes": 6,
+      "distance_km": 3.1,
+      "walking_minutes": 2,
+      "fare_detail": "含基础车费与实时调度费",
+      "supports_multi_stop": true,
+      "arrival_constraint_supported": true
+    }
+  },
+  {
+    "id": "mobility_home",
+    "vertical": "mobility",
+    "name": "安心返程",
+    "venue": "活动场所 → 家",
+    "district": "北京",
+    "price_yuan": 42,
+    "duration_minutes": 32,
+    "rating": 4.8,
+    "availability": "available",
+    "tags": [
+      "准时到家",
+      "实时叫车"
+    ],
+    "time_slots": [
+      "22:05",
+      "22:20"
+    ],
+    "actions": [
+      "request_ride"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911207Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "service_level": "舒适返程",
+      "route_delay_minutes": 4,
+      "eta_minutes": 5,
+      "distance_km": 8.4,
+      "walking_minutes": 3,
+      "fare_detail": "含基础车费与实时调度费",
+      "supports_multi_stop": true,
+      "arrival_constraint_supported": true
+    }
+  },
+  {
+    "id": "mobility_navigation",
+    "vertical": "mobility",
+    "name": "步行导航",
+    "venue": "美团地图导航",
+    "district": "北京",
+    "price_yuan": 0,
+    "duration_minutes": 12,
+    "rating": 4.9,
+    "availability": "available",
+    "tags": [
+      "步行",
+      "导航",
+      "少走路",
+      "国贸",
+      "望京"
+    ],
+    "time_slots": [
+      "18:00",
+      "19:00",
+      "20:00",
+      "21:00",
+      "22:00"
+    ],
+    "actions": [
+      "start_navigation"
+    ],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911210Z",
+      "detail": "数字孪生实时库存与价格已校验",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "route_mode": "walk",
+      "live_traffic": true,
+      "distance_km": 1.1,
+      "walking_minutes": 12,
+      "supports_multi_stop": true,
+      "arrival_constraint_supported": true
+    }
+  },
+  {
+    "id": "food_courtyard_phone",
+    "vertical": "food",
+    "name": "院里私房菜",
+    "venue": "院里私房菜（国贸店）",
+    "district": "国贸",
+    "price_yuan": 198,
+    "duration_minutes": 80,
+    "rating": 4.7,
+    "availability": "available",
+    "tags": ["安静", "适合聊天", "电话订座"],
+    "time_slots": ["18:30", "19:00", "19:30"],
+    "actions": ["reserve_table", "buy_coupon"],
+    "evidence": {
+      "checked_at": "2026-08-20T05:20:16.911220Z",
+      "detail": "线上展示价格，桌位需要电话向商户确认",
+      "inventory_version": 1,
+      "valid_for_seconds": 300
+    },
+    "metadata": {
+      "walk_minutes": 6,
+      "coupon": "198 元双人券",
+      "party_capacity": 6,
+      "queue_minutes": 0,
+      "private_room": true,
+      "opening_status": "open",
+      "environment": "独立院落安静桌",
+      "coupon_terms": "双人券可与电话订座同时使用",
+      "reservation_grace_minutes": 10,
+      "booking_channel": "phone",
+      "merchant_note": "19:00 两人安静桌可留 10 分钟，198 元双人券可用，迟到需重新排桌"
+    }
+  }
+]

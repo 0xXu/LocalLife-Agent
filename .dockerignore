@@ -1,8 +1,11 @@
 .git
 .next
 .venv
-.weekendpilot
 node_modules
 test-results
 playwright-report
+docs
+research
+tests
+*.docx
 *.log

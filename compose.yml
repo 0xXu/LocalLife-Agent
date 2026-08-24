@@ -1,45 +1,101 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: locallife
+      POSTGRES_USER: locallife
+      POSTGRES_PASSWORD: locallife
+    ports:
+      - "55432:5432"
+    volumes:
+      - locallife-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U locallife -d locallife"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  temporal:
+    image: temporalio/auto-setup:1.28.1
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: locallife
+      POSTGRES_PWD: locallife
+      POSTGRES_SEEDS: postgres
+      DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/docker.yaml
+    ports:
+      - "7233:7233"
+    healthcheck:
+      test: ["CMD", "tctl", "--address", "temporal:7233", "cluster", "health"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  supply-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    command: [".venv/bin/python", "-m", "backend.mcp.server"]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://locallife:locallife@postgres:5432/locallife
+      SUPPLY_MCP_HOST: 0.0.0.0
+      SUPPLY_MCP_PORT: 8790
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8790:8790"
+    healthcheck:
+      test: ["CMD", ".venv/bin/python", "-c", "import socket; socket.create_connection(('127.0.0.1', 8790), 2).close()"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
   backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    container_name: locallife-backend
-    restart: unless-stopped
-    env_file:
-      - .env
-    volumes:
-      - locallife-data:/app/.weekendpilot
+    environment:
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-v4-flash}
+      DEEPSEEK_THINKING: disabled
+      DATABASE_URL: postgresql+asyncpg://locallife:locallife@postgres:5432/locallife
+      TEMPORAL_ADDRESS: temporal:7233
+      SUPPLY_MCP_URL: http://supply-mcp:8790/mcp
+      CORS_ORIGINS: http://127.0.0.1:4174,http://localhost:4174
+    depends_on:
+      postgres:
+        condition: service_healthy
+      temporal:
+        condition: service_healthy
+      supply-mcp:
+        condition: service_healthy
+    ports:
+      - "8787:8787"
     healthcheck:
-      test:
-        - CMD
-        - .venv/bin/python
-        - -c
-        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8787/api/llm/status')"
-      interval: 20s
+      test: ["CMD", ".venv/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8787/api/health', timeout=3)"]
+      interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 20s
-    networks:
-      - gateway
+      retries: 12
+      start_period: 10s
 
   frontend:
     build:
       context: .
       dockerfile: Dockerfile.frontend
       args:
-        NEXT_PUBLIC_API_URL: https://local-life.vectornest.space
-    container_name: locallife-frontend
-    restart: unless-stopped
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://127.0.0.1:8787}
     depends_on:
       backend:
         condition: service_healthy
-    networks:
-      - gateway
+    ports:
+      - "4174:4174"
 
 volumes:
-  locallife-data:
-
-networks:
-  gateway:
-    external: true
-    name: gateway-net
+  locallife-postgres:

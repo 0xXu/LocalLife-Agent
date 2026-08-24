@@ -1,1 +1,0 @@
-"""Retrieval and ranking helpers."""

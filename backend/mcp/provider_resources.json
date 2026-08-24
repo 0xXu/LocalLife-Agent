@@ -1,0 +1,36 @@
+{
+  "taxonomy": {
+    "verticals": {
+      "food": ["安静", "热闹", "京味", "日料", "火锅", "适合聊天", "少排队"],
+      "activity": ["脱口秀", "电影", "手作", "展览", "亲子", "室内", "少移动"],
+      "service": ["按摩", "理发", "美甲", "到店预约"],
+      "delivery": ["外卖", "送药", "鲜花", "蛋糕", "买菜", "即时零售"],
+      "mobility": ["实时叫车", "步行导航", "少走路", "准时到家"]
+    }
+  },
+  "fulfillment": {
+    "delivery": {
+      "dispatch_interval_minutes": 5
+    }
+  },
+  "city": {
+    "name": "北京",
+    "districts": ["国贸", "大望路", "建外", "CBD", "望京"],
+    "adjacent": {
+      "国贸": ["建外", "CBD", "大望路"],
+      "大望路": ["国贸", "CBD"],
+      "建外": ["国贸", "CBD"],
+      "CBD": ["国贸", "大望路", "建外"],
+      "望京": ["CBD"]
+    },
+    "route_model": {
+      "same_district_minutes": 10,
+      "ride_minutes_per_hop": 18,
+      "walk_minutes_per_hop": 28,
+      "distance_km_per_hop": 4.2,
+      "max_walk_hops": 1,
+      "on_demand_quote_horizon_minutes": 180,
+      "departure_interval_minutes": 5
+    }
+  }
+}

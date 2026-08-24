@@ -1,13 +1,17 @@
 [project]
-name = "weekendpilot-demo"
-version = "0.1.0"
-description = "周末管家本地生活执行助手静态演示"
+name = "local-life-agent"
+version = "1.0.0"
+description = "基于 Google ADK、DeepSeek、MCP 与 Temporal 的美团意图到履约 Agent"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "asyncpg>=0.30.0",
     "fastapi>=0.136.1",
-    "langchain-openai>=0.3.0",
-    "openai-agents>=0.17.5",
+    "google-adk[db,mcp]>=2.0.0",
+    "litellm>=1.83.12",
+    "ortools>=9.15.6755",
+    "pydantic-settings>=2.10.0",
+    "temporalio>=1.24.0",
     "uvicorn[standard]>=0.46.0",
 ]
 
@@ -16,13 +20,11 @@ package = false
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-filterwarnings = [
-    "ignore:The default value of `allowed_objects` will change in a future version:langchain_core._api.deprecation.LangChainPendingDeprecationWarning",
-    "ignore:create_react_agent has been moved",
-]
+asyncio_mode = "auto"
 
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",
     "pytest>=9.0.3",
+    "pytest-asyncio>=1.2.0",
 ]

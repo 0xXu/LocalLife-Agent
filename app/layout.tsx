@@ -1,12 +1,12 @@
+import type { Metadata } from 'next';
 import './globals.css';
-import type { ReactNode } from 'react';
 
-export const metadata = {
-  title: 'WeekendPilot',
-  description: '本地生活规划助手前端原型'
+export const metadata: Metadata = {
+  title: '好办 · 美团生活意图履约 Agent',
+  description: '你说想要，剩下好办。从一句生活目标，到可解释、可授权、可恢复的本地生活履约。',
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="zh-CN">
       <body>{children}</body>

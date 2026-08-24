@@ -1,2 +1,2 @@
-"""WeekendPilot layered backend package."""
+"""Local Life intent-to-fulfillment agent."""
 

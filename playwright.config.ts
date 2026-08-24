@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const port = process.env.PLAYWRIGHT_PORT || '4174';
+
 export default defineConfig({
   testDir: './tests/e2e',
   timeout: 30_000,
@@ -7,19 +9,19 @@ export default defineConfig({
     timeout: 10_000,
   },
   use: {
-    baseURL: 'http://127.0.0.1:4174',
+    baseURL: `http://127.0.0.1:${port}`,
     trace: 'retain-on-failure',
   },
   webServer: {
-    command: 'LLM_REMOTE_ENABLED=false npm run dev:full',
-    url: 'http://127.0.0.1:4174',
+    command: `npx next dev -H 127.0.0.1 -p ${port}`,
+    url: `http://127.0.0.1:${port}`,
     reuseExistingServer: true,
     timeout: 120_000,
   },
   projects: [
     {
-      name: 'chrome',
-      use: { ...devices['Desktop Chrome'], channel: 'chrome' },
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
     },
   ],
 });

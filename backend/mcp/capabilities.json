@@ -1,0 +1,67 @@
+{
+  "catalog_version": 2,
+  "provider": "meituan-local-life-twin",
+  "decision_policy": {
+    "scope": "Turn local-life outcomes into grounded supply commitments. Goals outside the published capabilities are unsupported.",
+    "clarification": "Ask one question only when plausible answers change the capability set, feasibility, a hard constraint, destination, or authorization. Otherwise use explicit editable assumptions.",
+    "safety": "Do not diagnose, prescribe, select medicine, or replace emergency care with commerce. Delivery is allowed for a specifically named non-prescription product after the user has independently chosen it."
+  },
+  "lifecycle_tools": ["supply.quote_and_hold", "supply.observe", "supply.commit"],
+  "capabilities": [
+    {
+      "id": "dining",
+      "display_name": "到店餐饮",
+      "description": "Restaurants, dine-in meals, tables, queues, coupons, and meal packages.",
+      "outcome_fit": "Use when the outcome requires eating at a venue or reserving a restaurant. Do not use for food delivered to an address.",
+      "tools": ["food.search", "food.get_availability", "offline.call_verify", "supply.get", "supply.refresh"],
+      "retrieval": {"entry_tools": ["food.search"]},
+      "context_schema": [{"key":"party_size","description":"Number of diners represented by the booking","required_by":"verify"},{"key":"desired_time","description":"Requested arrival or seating time","required_by":"verify"},{"key":"dining_environment","description":"Environment needs that materially affect venue fit","required_by":"planning"}],
+      "planning": {"consumes_user_time": true, "trigger_kind": "queue_delay", "minimum_commitments": 1, "maximum_commitments": 1, "location_bound": true, "provides_transition_evidence": false},
+      "lifecycle": {"stages": ["verified", "quoted", "held", "committed", "changed", "cancelled", "refunded", "expired"], "hold_ttl_seconds": 600, "refresh_before_commit": true, "observable_signals": ["queue_delay", "price_increase", "inventory_unavailable", "hold_expired", "user_late"], "change_actions": ["change_reservation"], "compensation_actions": {"reserve_table": "cancel_reservation", "buy_coupon": "refund_coupon"}, "offline_verification": true, "completion": {"evidence_sources": ["redemption", "provider_status", "user_confirmation"], "provider_statuses": ["consumed", "completed"], "timezone": "Asia/Shanghai", "user_confirmation_earliest_minutes_from_start": -15, "user_confirmation_latest_minutes_from_end": 180}}
+    },
+    {
+      "id": "experiences",
+      "display_name": "休闲娱乐",
+      "description": "Bookable shows, cinema, exhibitions, workshops, attractions, and parent-child experiences.",
+      "outcome_fit": "Use when attending a scheduled or ticketed local experience directly advances the desired outcome.",
+      "tools": ["activity.search", "activity.get_sessions", "supply.get", "supply.refresh"],
+      "retrieval": {"entry_tools": ["activity.search"]},
+      "context_schema": [{"key":"party_size","description":"Number of attendees represented by the ticket commitment","required_by":"verify"},{"key":"experience_window","description":"Acceptable entry or session time window","required_by":"planning"},{"key":"audience_context","description":"Age, relationship, accessibility or occasion facts affecting admission and fit","required_by":"planning"}],
+      "planning": {"consumes_user_time": true, "trigger_kind": "inventory_unavailable", "minimum_commitments": 1, "maximum_commitments": 1, "location_bound": true, "provides_transition_evidence": false},
+      "lifecycle": {"stages": ["verified", "quoted", "held", "committed", "changed", "cancelled", "refunded", "expired"], "hold_ttl_seconds": 480, "refresh_before_commit": true, "observable_signals": ["inventory_unavailable", "price_increase", "hold_expired", "weather_change", "user_late"], "change_actions": ["change_ticket"], "compensation_actions": {"buy_ticket": "refund_ticket"}, "offline_verification": true, "completion": {"evidence_sources": ["redemption", "provider_status", "user_confirmation"], "provider_statuses": ["admitted", "completed"], "timezone": "Asia/Shanghai", "user_confirmation_earliest_minutes_from_start": -30, "user_confirmation_latest_minutes_from_end": 240}}
+    },
+    {
+      "id": "appointments",
+      "display_name": "到店服务",
+      "description": "Appointment-based massage, bathhouse, hair, beauty, manicure, pet care, and comparable in-store services.",
+      "outcome_fit": "Use when the outcome requires a timed service appointment. Wellness supply is not medical care or advice.",
+      "tools": ["service.search", "service.get_slots", "supply.get", "supply.refresh"],
+      "retrieval": {"entry_tools": ["service.search"]},
+      "context_schema": [{"key":"party_size","description":"Number of service recipients","required_by":"verify"},{"key":"appointment_window","description":"Acceptable appointment time window","required_by":"planning"},{"key":"service_recipient_context","description":"Person, pet, size or other recipient facts required by the selected provider","required_by":"verify"}],
+      "planning": {"consumes_user_time": true, "trigger_kind": "fulfillment_failure", "minimum_commitments": 1, "maximum_commitments": 1, "location_bound": true, "provides_transition_evidence": false},
+      "lifecycle": {"stages": ["verified", "quoted", "held", "committed", "cancelled", "refunded", "expired"], "hold_ttl_seconds": 600, "refresh_before_commit": true, "observable_signals": ["fulfillment_failure", "price_increase", "hold_expired", "user_late"], "change_actions": [], "compensation_actions": {"book_service": "cancel_service"}, "offline_verification": false, "completion": {"evidence_sources": ["provider_status", "user_confirmation"], "provider_statuses": ["checked_out", "completed"], "timezone": "Asia/Shanghai", "user_confirmation_earliest_minutes_from_start": -15, "user_confirmation_latest_minutes_from_end": 240}}
+    },
+    {
+      "id": "delivery",
+      "display_name": "即时配送",
+      "description": "Takeout, specifically selected OTC products, flowers, cakes, groceries, and instant retail delivered to an address.",
+      "outcome_fit": "Use when goods must arrive at a destination. Do not use it to infer which medicine or treatment a person needs.",
+      "tools": ["delivery.search", "delivery.get_quote", "supply.get", "supply.refresh"],
+      "retrieval": {"entry_tools": ["delivery.search"]},
+      "context_schema": [{"key":"destination","description":"Area sufficient for search and exact address required before commit","required_by":"commit"},{"key":"deliver_by","description":"Latest acceptable arrival time","required_by":"planning"}],
+      "planning": {"consumes_user_time": false, "trigger_kind": "fulfillment_failure", "minimum_commitments": 1, "maximum_commitments": 1, "location_bound": false, "provides_transition_evidence": false, "required_evidence_fields": ["destination", "payable_total_yuan", "scheduling_window_start", "scheduling_window_end", "scheduling_interval_minutes"]},
+      "lifecycle": {"stages": ["verified", "quoted", "held", "committed", "cancelled", "refunded", "expired"], "hold_ttl_seconds": 300, "refresh_before_commit": true, "observable_signals": ["fulfillment_failure", "price_increase", "eta_delay", "hold_expired", "weather_change"], "change_actions": [], "compensation_actions": {"place_order": "cancel_order"}, "offline_verification": false, "completion": {"evidence_sources": ["arrival", "provider_status", "user_confirmation"], "provider_statuses": ["delivered", "signed"], "timezone": "Asia/Shanghai", "user_confirmation_earliest_minutes_from_start": -60, "user_confirmation_latest_minutes_from_end": 240}}
+    },
+    {
+      "id": "mobility",
+      "display_name": "出行与导航",
+      "description": "Ride quotes, route feasibility, multi-stop timing, and navigation.",
+      "outcome_fit": "Use for an explicit ride or navigation goal, or when route evidence is necessary to satisfy a deadline, walking constraint, or multi-stop plan.",
+      "tools": ["mobility.quote", "mobility.estimate_route", "mobility.plan_navigation", "supply.get", "supply.refresh"],
+      "retrieval": {"entry_tools": ["mobility.quote", "mobility.plan_navigation"]},
+      "context_schema": [{"key":"origin","description":"Route origin known at planning or refreshed from live location","required_by":"planning"},{"key":"destination","description":"Route destination","required_by":"planning"},{"key":"arrival_constraint","description":"Arrival deadline or downstream commitment being protected","required_by":"planning"},{"key":"mobility_limit","description":"Walking, accessibility, luggage or party constraints","required_by":"planning"}],
+      "planning": {"consumes_user_time": true, "trigger_kind": "eta_delay", "minimum_commitments": 1, "maximum_commitments": 2, "location_bound": false, "provides_transition_evidence": true, "required_evidence_fields": ["origin", "destination", "depart_at", "on_demand", "scheduling_window_start", "scheduling_window_end", "scheduling_interval_minutes"]},
+      "lifecycle": {"stages": ["verified", "quoted", "held", "committed", "changed", "cancelled", "refunded", "expired"], "hold_ttl_seconds": 180, "refresh_before_commit": true, "observable_signals": ["eta_delay", "price_increase", "fulfillment_failure", "hold_expired", "weather_change", "user_late", "location_change"], "change_actions": ["change_ride"], "compensation_actions": {"request_ride": "cancel_ride"}, "offline_verification": false, "completion": {"evidence_sources": ["arrival", "provider_status", "user_confirmation"], "provider_statuses": ["arrived", "completed"], "timezone": "Asia/Shanghai", "user_confirmation_earliest_minutes_from_start": -30, "user_confirmation_latest_minutes_from_end": 120}}
+    }
+  ]
+}
