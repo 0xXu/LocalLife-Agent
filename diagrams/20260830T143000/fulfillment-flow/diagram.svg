@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="980" viewBox="0 0 1600 980" role="img" aria-labelledby="title description">
+  <title id="title">好办 Local Life Agent 规划与履约流程图</title>
+  <desc id="description">从生活目标到授权履约、现场观察和最小恢复的任务流程。</desc>
+  <rect x="0" y="0" width="1600" height="980" fill="#f5f8fc"/>
+  <rect x="48" y="38" width="1504" height="112" rx="16" fill="#ffffff" stroke="#d7e2ef" stroke-width="2"/>
+  <rect x="78" y="67" width="10" height="56" rx="5" fill="#d28a2c"/>
+  <text x="112" y="85" fill="#17324d" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="38" font-weight="700">从规划到履约</text>
+  <text x="112" y="119" fill="#5f7185" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="19">任务后台持续推进；现实变化只修复受影响部分，不推翻已完成或已承诺节点。</text>
+
+  <rect x="66" y="208" width="276" height="178" rx="18" fill="#eaf8f8" stroke="#9ed9d7" stroke-width="2"/>
+  <rect x="366" y="208" width="276" height="178" rx="18" fill="#edf4ff" stroke="#aecaf5" stroke-width="2"/>
+  <rect x="666" y="208" width="276" height="178" rx="18" fill="#f1f8e8" stroke="#c1dba7" stroke-width="2"/>
+  <rect x="966" y="208" width="276" height="178" rx="18" fill="#f1f8e8" stroke="#c1dba7" stroke-width="2"/>
+  <rect x="1266" y="208" width="268" height="178" rx="18" fill="#fff4e5" stroke="#f0cf98" stroke-width="2"/>
+  <circle cx="101" cy="242" r="18" fill="#0f9b8e"/><text x="101" y="248" text-anchor="middle" fill="#ffffff" font-family="Arial" font-size="15" font-weight="700">1</text>
+  <text x="132" y="249" fill="#1d3a52" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700">创建生活任务</text>
+  <text x="94" y="290" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="14">描述结果、同行人、预算、</text>
+  <text x="94" y="315" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="14">时间或偏好，立即返回快照。</text>
+  <rect x="90" y="337" width="228" height="26" rx="13" fill="#d3f0ef"/><text x="204" y="356" text-anchor="middle" fill="#2f7272" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="13" font-weight="700">POST /api/tasks -> 202</text>
+
+  <circle cx="401" cy="242" r="18" fill="#3478d7"/><text x="401" y="248" text-anchor="middle" fill="#ffffff" font-family="Arial" font-size="15" font-weight="700">2</text>
+  <text x="432" y="249" fill="#1d3a52" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700">理解与单问澄清</text>
+  <text x="394" y="290" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="14">IntentGovernor 形成目标</text>
+  <text x="394" y="315" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="14">契约，仅追问会改变方案的问题。</text>
+  <rect x="390" y="337" width="228" height="26" rx="13" fill="#dce9ff"/><text x="504" y="356" text-anchor="middle" fill="#426b9e" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="13" font-weight="700">GoalContract / IntentFrame</text>
+
+  <circle cx="701" cy="242" r="18" fill="#639660"/><text x="701" y="248" text-anchor="middle" fill="#ffffff" font-family="Arial" font-size="15" font-weight="700">3</text>
+  <text x="732" y="249" fill="#1d3a52" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700">并行核验供给</text>
+  <text x="694" y="290" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="14">按能力目录调用 Supply MCP，</text>
+  <text x="694" y="315" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="14">获得有版本的供给事实与证据。</text>
+  <rect x="690" y="337" width="228" height="26" rx="13" fill="#e2f0d4"/><text x="804" y="356" text-anchor="middle" fill="#5b7d48" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="13" font-weight="700">GroundedCandidateSet</text>
+
+  <circle cx="1001" cy="242" r="18" fill="#639660"/><text x="1001" y="248" text-anchor="middle" fill="#ffffff" font-family="Arial" font-size="15" font-weight="700">4</text>
+  <text x="1032" y="249" fill="#1d3a52" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700">求解可行计划</text>
+  <text x="994" y="290" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="14">OR-Tools 校验预算、时间、</text>
+  <text x="994" y="315" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="14">容量、路线与节点依赖关系。</text>
+  <rect x="990" y="337" width="228" height="26" rx="13" fill="#e2f0d4"/><text x="1104" y="356" text-anchor="middle" fill="#5b7d48" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="13" font-weight="700">Pareto -> PlanPolicy</text>
+
+  <circle cx="1301" cy="242" r="18" fill="#d28a2c"/><text x="1301" y="248" text-anchor="middle" fill="#ffffff" font-family="Arial" font-size="15" font-weight="700">5</text>
+  <text x="1332" y="249" fill="#1d3a52" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700">共同决策</text>
+  <text x="1294" y="290" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="14">比较主方案与候补，用户可编辑、</text>
+  <text x="1294" y="315" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="14">锁定或局部替换计划节点。</text>
+  <rect x="1290" y="337" width="220" height="26" rx="13" fill="#ffebce"/><text x="1400" y="356" text-anchor="middle" fill="#966b32" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="13" font-weight="700">revision + PlanPatch</text>
+
+  <line x1="342" y1="297" x2="366" y2="297" stroke="#3478d7" stroke-width="4"/><polygon points="366,297 354,290 354,304" fill="#3478d7"/>
+  <line x1="642" y1="297" x2="666" y2="297" stroke="#3478d7" stroke-width="4"/><polygon points="666,297 654,290 654,304" fill="#3478d7"/>
+  <line x1="942" y1="297" x2="966" y2="297" stroke="#639660" stroke-width="4"/><polygon points="966,297 954,290 954,304" fill="#639660"/>
+  <line x1="1242" y1="297" x2="1266" y2="297" stroke="#639660" stroke-width="4"/><polygon points="1266,297 1254,290 1254,304" fill="#639660"/>
+
+  <rect x="140" y="456" width="1320" height="152" rx="18" fill="#ffffff" stroke="#d5e0ec" stroke-width="2"/>
+  <text x="172" y="496" fill="#1d3a52" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="21" font-weight="700">两级授权边界</text>
+  <text x="172" y="524" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="15">Agent 只能提出命令，</text>
+  <text x="172" y="549" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="15">不能绕过用户产生交易。</text>
+  <rect x="560" y="480" width="330" height="100" rx="14" fill="#edf4ff" stroke="#b8d0f4" stroke-width="2"/>
+  <circle cx="596" cy="516" r="18" fill="#3478d7"/><text x="596" y="522" text-anchor="middle" fill="#ffffff" font-family="Arial" font-size="15" font-weight="700">6</text>
+  <text x="628" y="514" fill="#1d3a52" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700">代办授权 Mandate</text>
+  <text x="628" y="544" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="14">确认时间、预算、品类与替换范围</text>
+  <text x="628" y="566" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="13">可执行预约、导航等非交易动作</text>
+  <rect x="950" y="480" width="330" height="100" rx="14" fill="#fff4e5" stroke="#f0cf98" stroke-width="2"/>
+  <circle cx="986" cy="516" r="18" fill="#d28a2c"/><text x="986" y="522" text-anchor="middle" fill="#ffffff" font-family="Arial" font-size="15" font-weight="700">7</text>
+  <text x="1018" y="514" fill="#1d3a52" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700">交易确认 Transaction</text>
+  <text x="1018" y="544" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="14">逐项确认购券、购票、下单或叫车</text>
+  <text x="1018" y="566" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="13">生成可提交的 FulfillmentCommand</text>
+  <line x1="890" y1="530" x2="950" y2="530" stroke="#d28a2c" stroke-width="4"/><polygon points="950,530 938,523 938,537" fill="#d28a2c"/>
+
+  <rect x="120" y="696" width="390" height="172" rx="18" fill="#fff4e5" stroke="#f0cf98" stroke-width="2"/>
+  <rect x="605" y="696" width="390" height="172" rx="18" fill="#eaf8f8" stroke="#9ed9d7" stroke-width="2"/>
+  <rect x="1090" y="696" width="390" height="172" rx="18" fill="#f1f8e8" stroke="#c1dba7" stroke-width="2"/>
+  <circle cx="156" cy="731" r="18" fill="#d28a2c"/><text x="156" y="737" text-anchor="middle" fill="#ffffff" font-family="Arial" font-size="15" font-weight="700">8</text>
+  <text x="188" y="738" fill="#1d3a52" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="20" font-weight="700">Temporal 持久履约</text>
+  <text x="150" y="780" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="14">按命令顺序执行，支持重试、失败停止、</text>
+  <text x="150" y="805" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="14">回执记录与补偿。</text>
+  <rect x="148" y="828" width="334" height="22" rx="11" fill="#ffebce"/><text x="315" y="844" text-anchor="middle" fill="#8d6b40" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="12" font-weight="700">FulfillmentWorkflow / Activities</text>
+  <circle cx="641" cy="731" r="18" fill="#0f9b8e"/><text x="641" y="737" text-anchor="middle" fill="#ffffff" font-family="Arial" font-size="15" font-weight="700">9</text>
+  <text x="673" y="738" fill="#1d3a52" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="20" font-weight="700">现场观察与完成证据</text>
+  <text x="635" y="780" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="14">队列、库存、价格、ETA、到达与核销，</text>
+  <text x="635" y="805" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="14">持续写入可回放的任务状态。</text>
+  <rect x="633" y="828" width="334" height="22" rx="11" fill="#d3f0ef"/><text x="800" y="844" text-anchor="middle" fill="#47797a" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="12" font-weight="700">supply.observe / LiveCompanion</text>
+  <circle cx="1126" cy="731" r="18" fill="#639660"/><text x="1126" y="737" text-anchor="middle" fill="#ffffff" font-family="Arial" font-size="15" font-weight="700">10</text>
+  <text x="1158" y="738" fill="#1d3a52" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="20" font-weight="700">最小恢复或完成</text>
+  <text x="1120" y="780" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="14">候补在授权范围内自动切换；无候补时，</text>
+  <text x="1120" y="805" fill="#5c7283" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="14">只重规划受影响的节点。</text>
+  <rect x="1118" y="828" width="334" height="22" rx="11" fill="#e2f0d4"/><text x="1285" y="844" text-anchor="middle" fill="#5b7d48" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="12" font-weight="700">FallbackPolicy / PlanPatch / Outcome</text>
+  <polyline points="1115,580 1115,650 315,650 315,696" fill="none" stroke="#d28a2c" stroke-width="4"/>
+  <polygon points="315,696 308,684 322,684" fill="#d28a2c"/>
+  <line x1="510" y1="782" x2="605" y2="782" stroke="#3478d7" stroke-width="4"/><polygon points="605,782 593,775 593,789" fill="#3478d7"/>
+  <line x1="995" y1="782" x2="1090" y2="782" stroke="#639660" stroke-width="4"/><polygon points="1090,782 1078,775 1078,789" fill="#639660"/>
+  <polyline points="1285,868 1285,912 1104,912 1104,622" fill="none" stroke="#639660" stroke-width="3" stroke-dasharray="9 8"/>
+  <polygon points="1104,622 1097,634 1111,634" fill="#639660"/>
+  <text x="1194" y="939" text-anchor="middle" fill="#64788b" font-family="Noto Sans SC, Microsoft YaHei, Arial, sans-serif" font-size="14">现实变化优先回到已认证候补</text>
+</svg>
