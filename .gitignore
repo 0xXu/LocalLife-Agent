@@ -55,5 +55,6 @@ tmp/
 temp/
 .codex-run/
 .worktrees/
+.trae/
 *.tmp
 *.bak
